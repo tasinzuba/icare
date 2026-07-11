@@ -56,16 +56,23 @@ class BranchCredit extends Model
     public function addCredits(float $amount, ?int $userId = null, string $reason = 'admin_topup', ?string $description = null, ?array $metadata = null): BranchCreditTransaction
     {
         return DB::transaction(function () use ($amount, $userId, $reason, $description, $metadata) {
-            $this->balance += $amount;
-            $this->total_purchased += $amount;
-            $this->save();
+            // H24: lock and re-read inside the transaction so a concurrent deduction/top-up can't
+            // clobber this balance via a stale in-memory read.
+            $locked = self::whereKey($this->getKey())->lockForUpdate()->first() ?? $this;
+
+            $locked->balance += $amount;
+            $locked->total_purchased += $amount;
+            $locked->save();
+
+            $this->balance = $locked->balance;
+            $this->total_purchased = $locked->total_purchased;
 
             return BranchCreditTransaction::create([
-                'branch_id' => $this->branch_id,
+                'branch_id' => $locked->branch_id,
                 'user_id' => $userId,
                 'type' => 'credit',
                 'amount' => $amount,
-                'balance_after' => $this->balance,
+                'balance_after' => $locked->balance,
                 'reason' => $reason,
                 'description' => $description ?? "Added {$amount} credits",
                 'metadata' => $metadata,
@@ -79,21 +86,28 @@ class BranchCredit extends Model
     public function deductCredits(float $amount, ?int $userId = null, string $reason = 'evaluation', ?string $description = null, ?array $metadata = null): ?BranchCreditTransaction
     {
         return DB::transaction(function () use ($amount, $userId, $reason, $description, $metadata) {
-            // Check sufficient balance
-            if ($this->balance < $amount) {
+            // H24: lock and re-read this row INSIDE the transaction. Previously the check used the
+            // stale $this->balance (loaded before the transaction, with no row lock), so two
+            // concurrent deductions could both pass and overdraw the branch's credits.
+            $locked = self::whereKey($this->getKey())->lockForUpdate()->first();
+            if (!$locked || $locked->balance < $amount) {
                 return null; // Insufficient balance
             }
 
-            $this->balance -= $amount;
-            $this->total_used += $amount;
-            $this->save();
+            $locked->balance -= $amount;
+            $locked->total_used += $amount;
+            $locked->save();
+
+            // Keep the in-memory instance consistent for the caller.
+            $this->balance = $locked->balance;
+            $this->total_used = $locked->total_used;
 
             return BranchCreditTransaction::create([
-                'branch_id' => $this->branch_id,
+                'branch_id' => $locked->branch_id,
                 'user_id' => $userId,
                 'type' => 'debit',
                 'amount' => $amount,
-                'balance_after' => $this->balance,
+                'balance_after' => $locked->balance,
                 'reason' => $reason,
                 'description' => $description ?? "Deducted {$amount} credits for {$reason}",
                 'metadata' => $metadata,

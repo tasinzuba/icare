@@ -184,7 +184,10 @@ Route::middleware(['auth', \App\Http\Middleware\CheckBanned::class])->group(func
         Route::post('/evaluate/speaking/single', [AIEvaluationController::class, 'evaluateSingleRecording'])->name('evaluation.speaking.single');
         Route::post('/evaluate/speaking/finalize', [AIEvaluationController::class, 'finalizeEvaluation'])->name('evaluation.speaking.finalize');
         Route::get('/evaluation/{attempt}', [AIEvaluationController::class, 'getEvaluation'])->name('evaluation.get');
-        Route::post('/explain-answer', [AIEvaluationController::class, 'getAnswerExplanation'])->name('explain.answer');
+        // H8: rate-limit the LLM explanation proxy (per authenticated user).
+        Route::post('/explain-answer', [AIEvaluationController::class, 'getAnswerExplanation'])
+            ->middleware('throttle:30,1')
+            ->name('explain.answer');
     });
 
     // Notification routes

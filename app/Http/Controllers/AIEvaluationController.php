@@ -90,14 +90,24 @@ class AIEvaluationController extends Controller
                 }
             }
 
-            // Check if already evaluated (skip if force_reevaluate is true)
+            // H10: atomically claim the evaluation so two concurrent requests can't both evaluate
+            // and both charge. Flipping ai_evaluated_at only-if-null in a single UPDATE is the
+            // guard — only the request whose UPDATE affects a row (returns 1) proceeds. On failure
+            // below we roll the claim back so the student can retry.
             $forceReEvaluate = $request->boolean('force_reevaluate', false);
-            if ($attempt->ai_evaluated_at && !$forceReEvaluate) {
-                return response()->json([
-                    'success' => true,
-                    'redirect_url' => route('ai.evaluation.get', $attempt->id),
-                    'already_evaluated' => true
-                ]);
+            $claimedThisRequest = false;
+            if (!$forceReEvaluate) {
+                $claimed = StudentAttempt::whereKey($attempt->id)
+                    ->whereNull('ai_evaluated_at')
+                    ->update(['ai_evaluated_at' => now()]);
+                if (!$claimed) {
+                    return response()->json([
+                        'success' => true,
+                        'redirect_url' => route('ai.evaluation.get', $attempt->id),
+                        'already_evaluated' => true
+                    ]);
+                }
+                $claimedThisRequest = true;
             }
 
             // Get writing answers
@@ -179,6 +189,10 @@ class AIEvaluationController extends Controller
             ]);
 
         } catch (InsufficientCreditsException $e) {
+            // H10: roll back the evaluation claim so the student can retry.
+            if (!empty($claimedThisRequest) && isset($attempt)) {
+                StudentAttempt::whereKey($attempt->id)->update(['ai_evaluated_at' => null]);
+            }
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage(),
@@ -188,6 +202,10 @@ class AIEvaluationController extends Controller
             ], 402);
 
         } catch (\Exception $e) {
+            // H10: roll back the evaluation claim so a failed evaluation doesn't permanently block retries.
+            if (!empty($claimedThisRequest) && isset($attempt)) {
+                StudentAttempt::whereKey($attempt->id)->update(['ai_evaluated_at' => null]);
+            }
             Log::error('AI Writing evaluation failed', [
                 'attempt_id' => $attemptId ?? null,
                 'error' => $e->getMessage(),
@@ -266,14 +284,22 @@ class AIEvaluationController extends Controller
                 }
             }
 
-            // Check if already evaluated (skip if force_reevaluate is true)
+            // H10: atomically claim the evaluation so two concurrent requests can't both evaluate
+            // and both charge (rolled back below on failure so the student can retry).
             $forceReEvaluate = $request->boolean('force_reevaluate', false);
-            if ($attempt->ai_evaluated_at && !$forceReEvaluate) {
-                return response()->json([
-                    'success' => true,
-                    'redirect_url' => route('ai.evaluation.get', $attempt->id),
-                    'already_evaluated' => true
-                ]);
+            $claimedThisRequest = false;
+            if (!$forceReEvaluate) {
+                $claimed = StudentAttempt::whereKey($attempt->id)
+                    ->whereNull('ai_evaluated_at')
+                    ->update(['ai_evaluated_at' => now()]);
+                if (!$claimed) {
+                    return response()->json([
+                        'success' => true,
+                        'redirect_url' => route('ai.evaluation.get', $attempt->id),
+                        'already_evaluated' => true
+                    ]);
+                }
+                $claimedThisRequest = true;
             }
 
             // Get speaking answers with audio
@@ -461,6 +487,10 @@ class AIEvaluationController extends Controller
             ]);
 
         } catch (InsufficientCreditsException $e) {
+            // H10: roll back the evaluation claim so the student can retry.
+            if (!empty($claimedThisRequest) && isset($attempt)) {
+                StudentAttempt::whereKey($attempt->id)->update(['ai_evaluated_at' => null]);
+            }
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage(),
@@ -470,6 +500,10 @@ class AIEvaluationController extends Controller
             ], 402);
 
         } catch (\Exception $e) {
+            // H10: roll back the evaluation claim so a failed evaluation doesn't permanently block retries.
+            if (!empty($claimedThisRequest) && isset($attempt)) {
+                StudentAttempt::whereKey($attempt->id)->update(['ai_evaluated_at' => null]);
+            }
             Log::error('AI Speaking evaluation failed', [
                 'attempt_id' => $attemptId ?? null,
                 'error' => $e->getMessage(),
@@ -698,6 +732,35 @@ class AIEvaluationController extends Controller
                 'ai_evaluated_at' => now(),
                 'transcription' => $evaluation['transcription'] ?? null,
             ]);
+
+            // H9: charge the branch ONCE, at the point the paid evaluation actually succeeds —
+            // not in the separate, client-triggered finalizeEvaluation() (which a client could skip
+            // to get free speaking evaluations). The attempt's ai_evaluated_at is used as an atomic
+            // idempotency marker so only the first successful recording triggers exactly one charge;
+            // finalizeEvaluation() then sees it already set and does not double-charge.
+            if ($user->isOfflineStudent() && $user->branch_id) {
+                $claimedCharge = StudentAttempt::whereKey($attempt->id)
+                    ->whereNull('ai_evaluated_at')
+                    ->update(['ai_evaluated_at' => now()]);
+                if ($claimedCharge) {
+                    $this->creditService->deductForEvaluation(
+                        $user->branch_id,
+                        'speaking',
+                        $user->id,
+                        [
+                            'attempt_id' => $attempt->id,
+                            'test_set' => $attempt->testSet->title ?? 'Speaking Test',
+                            'student_name' => $user->name,
+                            'via' => 'single_recording',
+                        ]
+                    );
+                    Log::info('Credits deducted for speaking evaluation (single recording)', [
+                        'branch_id' => $user->branch_id,
+                        'user_id' => $user->id,
+                        'attempt_id' => $attempt->id,
+                    ]);
+                }
+            }
 
             Log::info('Single recording evaluated successfully', [
                 'answer_id' => $answerId,
@@ -1200,10 +1263,26 @@ class AIEvaluationController extends Controller
             ]);
 
             $questionId = $request->input('question_id');
+
+            // H8: this endpoint proxies text to the LLM. Restrict it to students who actually
+            // answered THIS question (in one of their own attempts), so it cannot be used as a
+            // free, arbitrary LLM proxy, and use the SERVER's question content rather than
+            // whatever the client supplies (prompt-injection hardening).
+            $question = \App\Models\Question::find($questionId);
+            if (!$question) {
+                return response()->json(['success' => false, 'error' => 'Question not found'], 404);
+            }
+            $ownsAnswer = \App\Models\StudentAnswer::where('question_id', $questionId)
+                ->whereHas('attempt', fn ($q) => $q->where('user_id', auth()->id()))
+                ->exists();
+            if (!$ownsAnswer) {
+                return response()->json(['success' => false, 'error' => 'You are not authorized to request this explanation.'], 403);
+            }
+
             $studentAnswer = $request->input('student_answer');
             $correctAnswer = $request->input('correct_answer');
-            $questionContent = $request->input('question_content');
-            $questionType = $request->input('question_type');
+            $questionContent = $question->content; // server-side, not client-supplied
+            $questionType = $question->question_type ?: $request->input('question_type');
             $context = $request->input('context');
             $options = $request->input('options');
 

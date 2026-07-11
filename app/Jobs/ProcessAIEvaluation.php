@@ -175,13 +175,21 @@ class ProcessAIEvaluation implements ShouldQueue
         $evaluations = [];
         $totalAnswers = $answers->count();
         $processed = 0;
+        $hasNewEvaluation = false;
 
         foreach ($answers as $answer) {
             $processed++;
             $progress = 10 + (int)(($processed / $totalAnswers) * 80);
             $this->evaluationJob->updateProgress($progress);
 
-            if (empty($answer->answer) || $answer->ai_evaluation) {
+            if (empty($answer->answer)) {
+                continue;
+            }
+
+            // H22: include already-evaluated answers in the aggregate so a retry does not recompute
+            // the overall band from an empty set (which previously overwrote the real score with 0).
+            if ($answer->ai_evaluation) {
+                $evaluations[] = $answer->ai_evaluation;
                 continue;
             }
 
@@ -199,6 +207,7 @@ class ProcessAIEvaluation implements ShouldQueue
                 ]);
 
                 $evaluations[] = $evaluation;
+                $hasNewEvaluation = true;
 
             } catch (Exception $e) {
                 Log::error('Failed to evaluate writing answer', [
@@ -211,13 +220,20 @@ class ProcessAIEvaluation implements ShouldQueue
 
         $overallBand = $this->calculateOverallBand($evaluations);
 
-        $this->attempt->update([
-            'ai_band_score' => $overallBand,
-            'ai_evaluated_at' => now(),
-        ]);
+        // H22: never overwrite a real band with 0 when there was nothing to aggregate.
+        $updateData = ['ai_evaluated_at' => now()];
+        if (!empty($evaluations)) {
+            $updateData['ai_band_score'] = $overallBand;
+        }
+        $this->attempt->update($updateData);
 
         $this->evaluationJob->updateProgress(90);
-        $this->attempt->user->incrementAIEvaluationCount();
+
+        // M57: only count usage when new work was actually done, so a job retry / re-dispatch
+        // does not double-charge the user's AI usage quota.
+        if ($hasNewEvaluation) {
+            $this->attempt->user->incrementAIEvaluationCount();
+        }
     }
 
     protected function calculateOverallBand(array $evaluations): float

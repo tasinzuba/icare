@@ -1,6 +1,6 @@
 # ───────────── Dependencies (never commit) ─────────────
-node_modules/
-vendor/
+/node_modules/
+/vendor/
 
 # ───────────── Secrets / environment ─────────────
 .env
@@ -8,39 +8,39 @@ vendor/
 !.env.example
 *.key
 auth.json
-Icare-CD/storage/oauth-*.key
+/storage/oauth-*.key
 
 # ───────────── Laravel storage (runtime data, logs, DB dumps, uploads) ─────────────
-Icare-CD/storage/framework/cache/*
-Icare-CD/storage/framework/sessions/*
-Icare-CD/storage/framework/views/*
-Icare-CD/storage/framework/testing/*
-Icare-CD/storage/logs/*
-Icare-CD/storage/db-backups/*
-Icare-CD/storage/app/public/*
-Icare-CD/storage/app/livewire-tmp/*
-Icare-CD/bootstrap/cache/*.php
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/framework/testing/*
+/storage/logs/*
+/storage/db-backups/*
+/storage/app/public/*
+/storage/app/livewire-tmp/*
+/bootstrap/cache/*.php
 
 # ───────────── Build artifacts ─────────────
-# (If your live server has NO Node.js, delete the next two lines so compiled
-#  assets get committed and you can deploy without running "npm run build".)
-Icare-CD/public/build/
-Icare-CD/public/hot
-Icare-CD/public/storage
+# (If your live/deploy host has NO Node.js, delete the next line so compiled
+#  Vite assets get committed and you can deploy without running "npm run build".)
+/public/build/
+/public/hot
+/public/storage
 
 # ───────────── OS / editor / tooling junk ─────────────
 __MACOSX/
 .DS_Store
 Thumbs.db
 *.log
-.idea/
-.vscode/
-.fleet/
-.nova/
-.zed/
+/.idea/
+/.vscode/
+/.fleet/
+/.nova/
+/.zed/
 .phpunit.result.cache
 npm-debug.log
 yarn-error.log
 
 # ───────────── Claude Code local state (not app code) ─────────────
-.claude/
+/.claude/

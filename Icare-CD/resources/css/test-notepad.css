@@ -1,0 +1,92 @@
+/* Context Menu Addition */
+.notepad-context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 4px;
+    z-index: 10000;
+    display: none;
+}
+
+.notepad-context-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #374151;
+}
+
+.notepad-context-btn:hover {
+    background: #f3f4f6;
+}
+
+/* Mini Mode for existing panel */
+.notepad-panel.mini-mode {
+    width: 300px;
+    height: auto;
+    max-height: 250px;
+}
+
+.notepad-panel.mini-mode .notepad-header {
+    background: #fef3c7;
+}
+
+.notepad-panel.mini-mode .notepad-header h4 {
+    font-size: 14px;
+}
+
+/* Selected text preview */
+.selected-text-preview {
+    background: #fef3c7;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #78350f;
+    margin-bottom: 8px;
+    font-style: italic;
+    display: none;
+}
+
+.notepad-panel.mini-mode .selected-text-preview {
+    display: block;
+}
+
+/* Hide controls in mini mode */
+.notepad-panel.mini-mode .notepad-footer {
+    display: none;
+}
+
+.notepad-panel.mini-mode .notepad-textarea {
+    min-height: 100px;
+    max-height: 150px;
+}
+
+/* Floating indicator - modify existing toggle */
+.notepad-toggle.minimal {
+    width: auto;
+    height: auto;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notepad-toggle.minimal svg {
+    width: 16px;
+    height: 16px;
+}
+
+.notes-count {
+    font-weight: 600;
+}

@@ -1,0 +1,1995 @@
+/* Updated CSS for Reading Test - resources/css/reading-test.css */
+/* Simplified IELTS Reading Test Interface - Clean Layout */
+/* ========== BASE STYLES ========== */
+body,
+html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    overflow-x: hidden;
+}
+
+/* ========== HEADER STYLES ========== */
+.ielts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    background-color: white;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.ielts-header-left {
+    display: flex;
+    align-items: center;
+}
+
+.user-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 24px;
+    background-color: #1a1a1a;
+    color: white;
+    border-bottom: 1px solid #333;
+    position: relative;
+}
+
+.timer-center-wrapper {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.user-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* ========== MAIN CONTENT WRAPPER ========== */
+.main-content-wrapper {
+    height: calc(100vh - 110px);
+    /* 50px header + 60px bottom nav */
+    display: flex;
+    flex-direction: column;
+    background: #f5f5f5;
+    overflow: hidden;
+}
+
+/* ========== GLOBAL PART HEADER ========== */
+.global-part-header {
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 16px 5%;
+    z-index: 200;
+    flex-shrink: 0;
+}
+
+.global-part-header .part-header {
+    margin: 0;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    background: #f0f0f0;
+}
+
+/* ========== CONTENT AREA - FULL HEIGHT ========== */
+.content-area {
+    display: flex;
+    flex: 1;
+    gap: 0;
+    padding: 0;
+    background: #f5f5f5;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    /* Create new stacking context */
+}
+
+/* ========== PASSAGE SECTION - IMPROVED LAYOUT ========== */
+.passage-section {
+    flex: 0 0 50%;
+    background: white;
+    border-right: 1px solid #e0e0e0;
+    padding: 20px 40px 30px 40px;
+    overflow-y: auto;
+    position: relative;
+    height: 100%;
+    box-sizing: border-box;
+    z-index: 1;
+}
+
+
+
+.passage-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.passage-section::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.passage-section::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+}
+
+.passage-section::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* ========== MINIMAL SPLIT DIVIDER WITH VISIBLE ICON ========== */
+.split-divider {
+    width: 2px;
+    background: #d1d5db;
+    cursor: col-resize;
+    position: relative;
+    user-select: none;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.split-divider:hover {
+    width: 4px;
+    background: #3b82f6;
+}
+
+/* Drag handle icon - transparent background */
+.split-divider::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(55, 65, 81, 0.3);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+/* Horizontal resize icon - simple arrows with line */
+.split-divider::before {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"%3E%3Cpath d="M9 6L3 12L9 18" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/%3E%3Cpath d="M15 6L21 12L15 18" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/%3E%3Cpath d="M12 3L12 21" stroke="black" stroke-width="2" stroke-linecap="round"/%3E%3C/svg%3E');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 20px 20px;
+    z-index: 11;
+    filter: none;
+    opacity: 1;
+}
+
+/* Remove the span styles since we're using dots pattern */
+.split-divider span {
+    display: none;
+}
+
+/* Hover state for handle */
+.split-divider:hover::after {
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(239, 246, 255, 0.9);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+}
+
+.split-divider:hover::before {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+/* Invisible draggable area for better UX */
+.split-divider-hitbox {
+    position: absolute;
+    left: -6px;
+    right: -6px;
+    top: 0;
+    bottom: 0;
+    cursor: col-resize;
+}
+
+/* ========== QUESTIONS SECTION - FULL HEIGHT ========== */
+.questions-section {
+    flex: 1;
+    background: white;
+    padding: 20px 40px 30px 40px;
+    overflow-y: auto;
+    position: relative;
+    min-width: 400px;
+    height: 100%;
+    box-sizing: border-box;
+    z-index: 1;
+}
+
+.questions-section::-webkit-scrollbar {
+    width: 6px;
+}
+
+.questions-section::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.questions-section::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+/* ========== DRAGGING STATE ========== */
+body.dragging {
+    cursor: col-resize !important;
+    user-select: none !important;
+}
+
+body.dragging * {
+    cursor: col-resize !important;
+    pointer-events: none !important;
+}
+
+/* Active dragging state for divider */
+body.dragging .split-divider {
+    width: 4px;
+    background: #1e40af;
+}
+
+body.dragging .split-divider::after {
+    border-color: #1e40af;
+    background: #dbeafe;
+    transform: scale(1.1);
+}
+
+body.dragging .split-divider::before {
+    opacity: 0.6;
+    transform: scale(1.2);
+}
+
+/* ========== PART HEADER - CARD STYLE ========== */
+.part-header {
+    background: #f0f0f0;
+    padding: 16px 24px;
+    margin: 0 0 30px 0;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.part-header:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.part-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.part-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a202c;
+}
+
+.part-instruction {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 400;
+}
+
+/* ========== QUESTION GROUP HEADERS ========== */
+.question-group-header {
+    background: #fef3c7;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #92400e;
+    border-left: 3px solid #f59e0b;
+}
+
+/* ========== QUESTION INSTRUCTIONS - ENHANCED FOR TINYMCE OUTPUT ========== */
+.question-instructions {
+    padding: 0 0 16px 0;
+    margin-bottom: 16px;
+    color: #374151;
+    line-height: 1.6;
+    border-bottom: 1px solid #e5e7eb;
+    /* Inherit font size from TinyMCE content */
+}
+
+/* Reset margins for all elements inside instructions */
+.question-instructions * {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.question-instructions *:last-child {
+    margin-bottom: 0;
+}
+
+/* Paragraphs */
+.question-instructions p {
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+/* Headings */
+.question-instructions h1,
+.question-instructions h2,
+.question-instructions h3,
+.question-instructions h4,
+.question-instructions h5,
+.question-instructions h6 {
+    font-weight: 600;
+    color: #111827;
+    margin-top: 12px;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.question-instructions h1 {
+    font-size: 24px;
+}
+
+.question-instructions h2 {
+    font-size: 20px;
+}
+
+.question-instructions h3 {
+    font-size: 18px;
+}
+
+.question-instructions h4 {
+    font-size: 16px;
+}
+
+.question-instructions h5 {
+    font-size: 14px;
+}
+
+.question-instructions h6 {
+    font-size: 14px;
+}
+
+/* Preserve inline font-size styles from TinyMCE */
+
+/* Strong and bold */
+.question-instructions strong,
+.question-instructions b,
+.passage-content strong,
+.passage-content b,
+.question-content strong,
+.question-content b {
+    font-weight: 700 !important;
+    color: #000000 !important;
+}
+
+/* Italic and emphasis */
+.question-instructions em,
+.question-instructions i,
+.passage-content em,
+.passage-content i,
+.question-content em,
+.question-content i {
+    font-style: italic !important;
+}
+
+/* Underline */
+.question-instructions u,
+.passage-content u,
+.question-content u {
+    text-decoration: underline !important;
+}
+
+/* Lists */
+.question-instructions ul,
+.question-instructions ol {
+    margin: 8px 0;
+    padding-left: 24px;
+    line-height: 1.6;
+}
+
+.question-instructions li {
+    margin-bottom: 4px;
+}
+
+.question-instructions ul ul,
+.question-instructions ol ol,
+.question-instructions ul ol,
+.question-instructions ol ul {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+/* Links */
+.question-instructions a {
+    color: #3b82f6;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.question-instructions a:hover {
+    color: #2563eb;
+}
+
+/* Tables */
+.question-instructions table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 14px;
+}
+
+.question-instructions th,
+.question-instructions td {
+    border: 1px solid #e5e7eb;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.question-instructions th {
+    background-color: #f3f4f6;
+    font-weight: 600;
+    color: #111827;
+}
+
+.question-instructions td {
+    background-color: white;
+}
+
+/* Blockquotes */
+.question-instructions blockquote {
+    margin: 12px 0;
+    padding: 12px 16px;
+    padding-left: 16px;
+    border-left: 4px solid #3b82f6;
+    background-color: #f8fafc;
+    color: #4b5563;
+    font-style: italic;
+}
+
+/* Code */
+.question-instructions code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    background-color: #f3f4f6;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #1f2937;
+}
+
+.question-instructions pre {
+    margin: 12px 0;
+    padding: 12px;
+    background-color: #f3f4f6;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.question-instructions pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+/* Horizontal rule */
+.question-instructions hr {
+    margin: 16px 0;
+    border: none;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Images */
+.question-instructions img {
+    max-width: 100%;
+    height: auto;
+    margin: 8px 0;
+    border-radius: 4px;
+}
+
+/* Text alignment */
+.question-instructions .text-left,
+.question-instructions div[style*="text-align: left"] {
+    text-align: left !important;
+}
+
+.question-instructions .text-center,
+.question-instructions div[style*="text-align: center"] {
+    text-align: center !important;
+}
+
+.question-instructions .text-right,
+.question-instructions div[style*="text-align: right"] {
+    text-align: right !important;
+}
+
+.question-instructions .text-justify,
+.question-instructions div[style*="text-align: justify"] {
+    text-align: justify !important;
+}
+
+/* Special formatting for IELTS-style instructions */
+.question-instructions .instruction-nowrap {
+    white-space: nowrap;
+    display: inline-block;
+}
+
+/* Prevent line breaks in key phrases */
+.question-instructions strong:has-text("NO MORE THAN"),
+.question-instructions strong:has-text("ONE WORD ONLY"),
+.question-instructions strong:has-text("TRUE/FALSE/NOT GIVEN"),
+.question-instructions strong:has-text("YES/NO/NOT GIVEN") {
+    white-space: nowrap;
+}
+
+/* Highlighted text */
+.question-instructions mark {
+    background-color: #fef3c7;
+    color: #92400e;
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+
+/* ========== QUESTION STYLING - OFFICIAL IELTS FORMAT ========== */
+.question-box {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0 0 20px 0;
+    margin-bottom: 20px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.question-box:hover {
+    background: transparent;
+    border: none;
+}
+
+.question-box:last-child {
+    margin-bottom: 0;
+}
+
+.question-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.question-number {
+    color: #000000;
+    font-weight: 400;
+    font-size: 14px;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+/* Just the number styling */
+.q-number {
+    font-weight: 700;
+    color: #000000;
+}
+
+.q-number::after {
+    content: ".";
+}
+
+/* IELTS Question Override Styles */
+.ielts-question-item {
+    margin-bottom: 24px !important;
+}
+
+.ielts-q-number {
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    color: #000000 !important;
+    line-height: 1.5 !important;
+    margin-bottom: 10px !important;
+    display: block !important;
+}
+
+.ielts-options {
+    margin-left: 24px !important;
+    margin-top: 8px !important;
+}
+
+.ielts-option {
+    margin-bottom: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.ielts-radio {
+    margin-right: 8px !important;
+    width: 14px !important;
+    height: 14px !important;
+    cursor: pointer !important;
+}
+
+.ielts-option label {
+    cursor: pointer !important;
+    font-size: 14px !important;
+    color: #000000 !important;
+    font-weight: normal !important;
+}
+
+/* Remove question number box completely - numbers are inside inputs now */
+.question-number-box {
+    display: none !important;
+}
+
+/* Question content .question-number-box also hidden */
+.question-content .question-number-box {
+    display: none !important;
+}
+
+/* Question content for fill-in-the-blanks - IELTS style */
+.question-box.has-blanks .question-content {
+    font-size: 14px;
+    /* Smaller font to match official */
+    line-height: 1.8;
+    /* Tighter line height */
+    color: #000000;
+    /* Pure black */
+    padding: 2px 0;
+}
+
+/* Remove bullet points for fill-in-blanks */
+.question-box.has-blanks {
+    position: relative;
+    padding-left: 0;
+    /* Remove left padding */
+}
+
+/* Remove bullet point */
+.question-box.has-blanks::before {
+    display: none;
+    /* Hide bullet point */
+}
+
+/* Regular question content */
+.question-content {
+    color: #374151;
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 14px;
+    flex: 1;
+}
+
+/* Ensure proper spacing for blanks */
+.question-content .gap-input {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 6px;
+}
+
+
+
+/* ========== FILL-IN-THE-BLANK STYLING - Matching Listening Test ========== */
+.gap-input {
+    all: unset !important;
+    display: inline-block !important;
+    width: 140px !important;
+    min-width: 140px !important;
+    padding: 2px 8px !important;
+    margin: 8px 6px !important;
+    border: 1px solid rgb(235, 236, 237) !important;
+    border-radius: 4px !important;
+    background-color: rgb(247, 247, 248) !important;
+    font-size: 14px !important;
+    font-family: inherit !important;
+    color: #374151 !important;
+    text-align: center !important;
+    transition: all 0.2s ease !important;
+    vertical-align: middle !important;
+    line-height: 1.4 !important;
+    height: 28px !important;
+    box-sizing: border-box !important;
+    font-weight: 600 !important;
+}
+
+.gap-input:hover {
+    border-color: #d1d5db !important;
+}
+
+.gap-input:focus {
+    background-color: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: -1px !important;
+}
+
+.gap-input:not(:placeholder-shown) {
+    border-color: rgb(235, 236, 237) !important;
+    background-color: rgb(247, 247, 248) !important;
+    font-weight: normal !important;
+}
+
+.gap-input::placeholder {
+    color: #374151 !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    opacity: 1 !important;
+    text-align: center !important;
+}
+
+/* ========== DROPDOWN STYLING - Matching Listening Test ========== */
+.gap-dropdown {
+    all: unset !important;
+    display: inline-block !important;
+    width: 110px !important;
+    min-width: 110px !important;
+    padding: 0 20px 0 8px !important;
+    margin: 8px 6px !important;
+    border: 1px solid rgb(235, 236, 237) !important;
+    border-radius: 4px !important;
+    background-color: rgb(247, 247, 248) !important;
+    font-size: 13px !important;
+    color: #374151 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    vertical-align: middle !important;
+    height: 28px !important;
+    line-height: 26px !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%236b7280' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 6px center !important;
+    background-size: 10px 10px !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+}
+
+.gap-dropdown:hover {
+    border-color: #9ca3af !important;
+}
+
+.gap-dropdown:focus {
+    background-color: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: -1px !important;
+}
+
+/* For dropdown - show number in first option bold */
+.gap-dropdown option:first-child {
+    color: #374151 !important;
+    font-weight: 600 !important;
+}
+
+/* ========== PASSAGE STYLING - SMALLER TEXT WITH PROPER SPACING ========== */
+.passage-container {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.passage-container.active {
+    display: block;
+}
+
+.passage-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: #1a202c;
+    line-height: 1.4;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.passage-content {
+    line-height: 1.8;
+    color: #374151;
+    text-align: justify;
+    font-size: 16px;
+    cursor: text;
+    user-select: text;
+    letter-spacing: 0.01em;
+    word-spacing: 0.05em;
+}
+
+.passage-content p {
+    margin-bottom: 18px;
+    text-indent: 0;
+    line-height: 1.8;
+}
+
+.passage-content p:first-child {
+    text-indent: 0;
+}
+
+.passage-content strong,
+.passage-content b {
+    font-weight: 600;
+    color: #111827;
+}
+
+.passage-content em,
+.passage-content i {
+    font-style: italic;
+}
+
+.passage-content u {
+    text-decoration: underline;
+    text-decoration-color: #d1d5db;
+    text-underline-offset: 2px;
+}
+
+.passage-content ul,
+.passage-content ol {
+    margin: 20px 0;
+    padding-left: 28px;
+    line-height: 1.8;
+}
+
+.passage-content li {
+    margin-bottom: 8px;
+    color: #374151;
+}
+
+.passage-content blockquote {
+    margin: 20px 0;
+    padding: 16px;
+    padding-left: 20px;
+    border-left: 4px solid #3b82f6;
+    background-color: #f8fafc;
+    color: #4b5563;
+    font-style: italic;
+    border-radius: 0 4px 4px 0;
+}
+
+.passage-content h1,
+.passage-content h2,
+.passage-content h3,
+.passage-content h4 {
+    margin: 24px 0 16px 0;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.3;
+}
+
+.passage-content h1 {
+    font-size: 28px;
+}
+
+.passage-content h2 {
+    font-size: 24px;
+}
+
+.passage-content h3 {
+    font-size: 20px;
+}
+
+.passage-content h4 {
+    font-size: 18px;
+}
+
+/* Global table styling for IELTS test - Apply to ALL tables */
+table {
+    border-collapse: collapse !important;
+    border: 1px solid #000000 !important;
+}
+
+td,
+th {
+    border: 1px solid #000000 !important;
+    padding: 8px !important;
+}
+
+/* Tables in passages and instructions - Enhanced visibility with borders */
+.passage-content table,
+.question-instructions table,
+.question-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    border: 2px solid #000000 !important;
+    display: table !important;
+    visibility: visible !important;
+}
+
+.passage-content th,
+.passage-content td,
+.question-instructions th,
+.question-instructions td,
+.question-content th,
+.question-content td {
+    border: 1px solid #000000 !important;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.passage-content th,
+.question-instructions th,
+.question-content th {
+    background-color: #f3f4f6;
+    font-weight: 600;
+    color: #111827;
+    border: 1px solid #000000 !important;
+}
+
+.passage-content td,
+.question-instructions td,
+.question-content td {
+    background-color: white;
+    color: #374151;
+    border: 1px solid #000000 !important;
+}
+
+/* Ensure table elements are visible */
+.passage-content table *,
+.question-instructions table *,
+.question-content table * {
+    visibility: visible !important;
+}
+
+.passage-content tbody,
+.question-instructions tbody,
+.question-content tbody {
+    display: table-row-group !important;
+}
+
+.passage-content tr,
+.question-instructions tr,
+.question-content tr {
+    display: table-row !important;
+}
+
+.passage-content thead,
+.question-instructions thead,
+.question-content thead {
+    display: table-header-group !important;
+}
+
+.passage-content tfoot,
+.question-instructions tfoot,
+.question-content tfoot {
+    display: table-footer-group !important;
+}
+
+/* Override any inline styles that might hide borders */
+.passage-content table[border="0"],
+.question-instructions table[border="0"],
+.question-content table[border="0"] {
+    border: 1px solid #000000 !important;
+}
+
+.passage-content table[border="0"] td,
+.passage-content table[border="0"] th,
+.question-instructions table[border="0"] td,
+.question-instructions table[border="0"] th,
+.question-content table[border="0"] td,
+.question-content table[border="0"] th {
+    border: 1px solid #000000 !important;
+}
+
+/* ========== PASSAGE HIGHLIGHT STYLES ========== */
+.passage-content.highlighted {
+    background-color: #fef3c7;
+    transition: background-color 0.3s;
+}
+
+.highlight-yellow {
+    background-color: #fef3c7;
+    padding: 2px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.highlight-green {
+    background-color: #d1fae5;
+    padding: 2px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.highlight-blue {
+    background-color: #dbeafe;
+    padding: 2px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.highlight-yellow:hover {
+    background-color: #fde68a;
+    box-shadow: 0 0 0 2px #fde68a;
+}
+
+.highlight-green:hover {
+    background-color: #a7f3d0;
+    box-shadow: 0 0 0 2px #a7f3d0;
+}
+
+.highlight-blue:hover {
+    background-color: #bfdbfe;
+    box-shadow: 0 0 0 2px #bfdbfe;
+}
+
+/* ========== COLOR PICKER ========== */
+.color-picker {
+    position: fixed;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.color-picker::before {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid white;
+}
+
+.color-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.color-btn:hover {
+    transform: scale(1.1);
+    border-color: #374151;
+}
+
+.color-btn.yellow {
+    background-color: #fbbf24;
+}
+
+.color-btn.green {
+    background-color: #34d399;
+}
+
+.color-btn.blue {
+    background-color: #60a5fa;
+}
+
+.color-btn.remove {
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ========== BOTTOM NAVIGATION - FIXED HEIGHT ========== */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    padding: 12px 20px;
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 16px;
+}
+
+.review-section {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.review-check {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.review-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2c3e50;
+    cursor: pointer;
+    user-select: none;
+}
+
+.nav-section-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+}
+
+.section-label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.parts-nav {
+    display: flex;
+    gap: 6px;
+    border-right: 1px solid #e0e0e0;
+    padding-right: 16px;
+    margin-right: 12px;
+}
+
+.part-btn {
+    padding: 6px 12px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.part-btn:hover {
+    background: #f8f9fa;
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.part-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.nav-numbers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 600px;
+    transition: all 0.3s ease;
+}
+
+/* Hide inactive part numbers - NEW FEATURE */
+.nav-numbers .number-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Show only current part buttons */
+.nav-numbers .number-btn.hidden-part {
+    display: none;
+}
+
+.number-btn:hover {
+    background: #f8f9fa;
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.number-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+    font-weight: 600;
+}
+
+.number-btn.answered {
+    background: #10b981 !important;
+    color: white !important;
+    border-color: #10b981 !important;
+    font-weight: 600 !important;
+}
+
+.number-btn.flagged {
+    position: relative;
+    overflow: visible;
+}
+
+.number-btn.flagged::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 10px;
+    height: 10px;
+    background: #f59e0b;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+}
+
+.submit-test-button {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.submit-test-button:hover {
+    background: #059669;
+}
+
+.submit-test-button:active {
+    transform: translateY(1px);
+}
+
+/* ========== RESPONSIVE FIXES ========== */
+@media (max-width: 1024px) {
+    .split-divider {
+        display: none;
+    }
+
+    .main-content-wrapper {
+        height: calc(100vh - 110px);
+    }
+
+    .content-area {
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .passage-section {
+        flex: none;
+        width: 100%;
+        height: 50%;
+        border-right: none;
+        border-bottom: 2px solid #e0e0e0;
+        padding: 20px 24px;
+    }
+
+    .questions-section {
+        flex: none;
+        width: 100%;
+        height: 50%;
+        min-width: auto;
+        padding: 20px 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .global-part-header {
+        padding: 12px 5%;
+    }
+
+    .content-area {
+        padding-bottom: 160px;
+        /* Even more padding on small screens */
+    }
+
+    .passage-section,
+    .questions-section {
+        max-height: 50vh;
+        /* Further limit height on small screens */
+        padding-bottom: 80px;
+        /* Ensure content visibility */
+    }
+
+    .bottom-nav {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .nav-left {
+        width: 100%;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .nav-section-container {
+        width: 100%;
+        gap: 10px;
+    }
+
+    .parts-nav {
+        display: none;
+    }
+
+    .nav-numbers {
+        max-width: 100%;
+        gap: 3px;
+    }
+
+    .number-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .submit-test-button {
+        width: 100%;
+    }
+}
+
+/* ========== SIMPLE MATCHING HEADINGS ========== */
+/* Keep it minimal - styles handled inline */
+
+
+
+/* ========== IELTS MATCHING DROPDOWN - OFFICIAL STYLE ========== */
+.ielts-matching-dropdown {
+    position: relative;
+    margin-top: 8px;
+}
+
+.ielts-select {
+    width: 100%;
+    max-width: 380px;
+    padding: 10px 14px;
+    padding-right: 40px;
+    border: 2px solid #4B9BFF;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+    background-color: #FFFFFF;
+    color: #000000;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234B9BFF' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 12px;
+    transition: all 0.3s ease;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.ielts-select:hover {
+    border-color: #2E7FDB;
+    box-shadow: 0 2px 8px rgba(75, 155, 255, 0.2);
+}
+
+.ielts-select:focus {
+    outline: none;
+    border-color: #2E7FDB;
+    box-shadow: 0 0 0 3px rgba(75, 155, 255, 0.15);
+}
+
+/* Dropdown opened state */
+.ielts-select:focus,
+.ielts-select:active {
+    background-color: #F0F7FF;
+}
+
+/* Option styles - styled like official IELTS */
+.ielts-select option {
+    padding: 12px 14px;
+    color: #000000;
+    background-color: #FFFFFF;
+    font-size: 14px;
+    line-height: 1.6;
+    font-weight: 400;
+}
+
+.ielts-select option:hover,
+.ielts-select option:focus {
+    background-color: #F0F7FF;
+    color: #000000;
+}
+
+/* First option (placeholder) */
+.ielts-select option:first-child {
+    color: #6B7280;
+    font-style: normal;
+}
+
+.ielts-select option[selected] {
+    background-color: #4B9BFF;
+    color: #FFFFFF;
+}
+
+/* For better dropdown appearance on different browsers */
+@supports (-webkit-appearance: none) {
+    .ielts-select {
+        background-position: right 12px center;
+    }
+}
+
+/* Custom dropdown arrow on hover */
+.ielts-select:hover {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%232E7FDB' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+}
+
+/* Make the dropdown look more like the official test */
+.ielts-matching-dropdown::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 40px;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 20%);
+    pointer-events: none;
+    border-radius: 0 8px 8px 0;
+}
+
+/* Selected state styling */
+.ielts-select.answered {
+    background-color: #E8F4FF;
+    border-color: #2E7FDB;
+}
+
+/* Focus state for parent container */
+.ielts-matching-dropdown.focused::after {
+    display: none;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .ielts-select {
+        max-width: 100%;
+        font-size: 16px;
+        /* Prevent zoom on iOS */
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .ielts-select {
+        border-width: 3px;
+    }
+
+    .ielts-select:focus {
+        outline: 3px solid #000;
+        outline-offset: 2px;
+    }
+}
+
+/* Reduce motion support */
+@media (prefers-reduced-motion: reduce) {
+    .ielts-select {
+        transition: none;
+    }
+}
+
+/* ========== LEGACY DROPDOWN STYLING (for backwards compatibility) ========== */
+.ielts-options select {
+    width: 100% !important;
+    max-width: 300px !important;
+    padding: 8px 12px !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    background-color: white !important;
+    color: #000000 !important;
+    cursor: pointer !important;
+    appearance: auto !important;
+    -webkit-appearance: menulist !important;
+    -moz-appearance: menulist !important;
+    background-image: none !important;
+    line-height: 1.5 !important;
+    height: auto !important;
+}
+
+.ielts-options select:hover {
+    border-color: #9ca3af !important;
+}
+
+.ielts-options select:focus {
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: 1px !important;
+    border-color: #3b82f6 !important;
+}
+
+/* Option styles */
+.ielts-options select option {
+    padding: 4px 8px !important;
+    color: #000000 !important;
+    background-color: white !important;
+}
+
+.ielts-options select option:first-child {
+    color: #6b7280 !important;
+    font-style: italic !important;
+}
+
+/* ========== OPTIONS STYLING - OFFICIAL IELTS STYLE ========== */
+.options-list {
+    margin-left: 24px;
+    margin-top: 10px;
+}
+
+.option-item {
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
+    border-radius: 0;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.option-item:hover {
+    background: transparent;
+}
+
+.option-radio {
+    margin-right: 8px;
+    margin-top: 0;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: #000000;
+}
+
+.option-item label {
+    cursor: pointer;
+    color: #000000;
+    line-height: 1.4;
+    font-weight: 400;
+}
+
+/* ========== TEXT INPUT STYLING ========== */
+.text-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    background: #ffffff;
+    color: #111827;
+}
+
+.text-input:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+}
+
+.text-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.text-input::placeholder {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* ========== NO PASSAGE MESSAGE ========== */
+.no-passage-message {
+    background: #fef3c7;
+    padding: 40px;
+    border-radius: 8px;
+    text-align: center;
+    color: #92400e;
+    font-weight: 500;
+    font-size: 14px;
+    margin-top: 20px;
+}
+
+/* ========== MODAL STYLES ========== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #1a202c;
+}
+
+.modal-message {
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    color: #4a5568;
+}
+
+.modal-button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 0 6px;
+    transition: all 0.2s ease;
+}
+
+.modal-button:hover {
+    background: #2563eb;
+}
+
+.modal-button.secondary {
+    background: #6b7280;
+}
+
+.modal-button.secondary:hover {
+    background: #4b5563;
+}
+
+/* ========== HELP MODAL ========== */
+.help-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.help-modal-container {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 25px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+.help-modal-header {
+    background: #3b82f6;
+    color: white;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.help-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.help-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.help-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.help-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.help-close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.help-content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    background: white;
+}
+
+.help-section {
+    line-height: 1.6;
+}
+
+.help-section h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0 0 16px 0;
+}
+
+.help-section h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 20px 0 12px 0;
+}
+
+.help-section p {
+    color: #4a5568;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.help-section ul,
+.help-section ol {
+    margin: 0 0 16px 0;
+    padding-left: 24px;
+}
+
+.help-section li {
+    color: #4a5568;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.help-section strong {
+    color: #1a202c;
+    font-weight: 600;
+}
+
+.help-modal-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.help-footer-left {
+    display: flex;
+    align-items: center;
+}
+
+.help-version {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+.help-footer-right {
+    display: flex;
+    gap: 12px;
+}
+
+.help-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    color: #4a5568;
+    font-weight: 500;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.help-btn-secondary:hover {
+    background: #f8f9fa;
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.part-questions {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.passage-container {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ========== SCROLLBAR STYLING ========== */
+.help-content-area::-webkit-scrollbar {
+    width: 8px;
+}
+
+.help-content-area::-webkit-scrollbar-track {
+    background: #f3f4f6;
+}
+
+.help-content-area::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+}
+
+.help-content-area::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* ========== PRINT STYLES ========== */
+@media print {
+
+    .split-divider,
+    .bottom-nav,
+    .user-bar,
+    .help-modal-overlay {
+        display: none !important;
+    }
+
+    .content-area {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .passage-section,
+    .questions-section {
+        flex: none;
+        width: 100%;
+        max-height: none;
+        overflow: visible;
+        border: none;
+        min-width: auto;
+    }
+
+    .passage-content,
+    .question-content {
+        font-size: 12px;
+        line-height: 1.4;
+    }
+}
+
+/* ========== FULLSCREEN MODE STYLES ========== */
+body.fullscreen-mode {
+    background: #1a1a1a;
+}
+
+body.fullscreen-mode .user-bar {
+    background: #0f0f0f;
+    border-bottom-color: #333;
+}
+
+body.fullscreen-mode .bottom-nav {
+    background: #0f0f0f;
+    border-top-color: #333;
+}
+
+body.fullscreen-mode .nav-right button {
+    background: #1a1a1a;
+    border-color: #333;
+    color: #e5e7eb;
+}
+
+body.fullscreen-mode .nav-right button:hover {
+    background: #2d2d2d;
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+body.fullscreen-mode #fullscreen-btn {
+    background: #3b82f6 !important;
+    color: white !important;
+    border-color: #3b82f6 !important;
+}
+
+/* Hide elements in fullscreen that might distract */
+body.fullscreen-mode .help-button,
+body.fullscreen-mode .no-nav {
+    opacity: 0.6;
+}
+
+/* Escape key hint */
+body.fullscreen-mode::after {
+    content: 'Press ESC to exit full screen';
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 10000;
+    opacity: 0;
+    animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}

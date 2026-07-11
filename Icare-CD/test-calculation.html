@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IELTS Band Calculation Test</title>
+</head>
+<body>
+    <h2>Task 1 (Only Task Achievement)</h2>
+    <label>Task Achievement: <input type="number" id="task1_ta" step="0.5" min="0" max="9"></label><br>
+    <p>Overall: <span id="task1_overall">-</span></p>
+    
+    <h2>Task 2 (All 4 Criteria)</h2>
+    <label>Task Response: <input type="number" id="task2_tr" step="0.5" min="0" max="9"></label><br>
+    <label>Coherence: <input type="number" id="task2_cc" step="0.5" min="0" max="9"></label><br>
+    <label>Lexical: <input type="number" id="task2_lr" step="0.5" min="0" max="9"></label><br>
+    <label>Grammar: <input type="number" id="task2_gr" step="0.5" min="0" max="9"></label><br>
+    <p>Overall: <span id="task2_overall">-</span></p>
+
+    <script>
+        // IELTS Official Rounding: average of 4 criteria, rounded to nearest 0.5
+        function calculateTask1() {
+            const ta = parseFloat(document.getElementById('task1_ta').value);
+            if (!isNaN(ta)) {
+                // Task 1: Only Task Achievement = Overall
+                document.getElementById('task1_overall').textContent = ta.toFixed(1);
+            }
+        }
+        
+        function calculateTask2() {
+            const tr = parseFloat(document.getElementById('task2_tr').value);
+            const cc = parseFloat(document.getElementById('task2_cc').value);
+            const lr = parseFloat(document.getElementById('task2_lr').value);
+            const gr = parseFloat(document.getElementById('task2_gr').value);
+            
+            if (!isNaN(tr) && !isNaN(cc) && !isNaN(lr) && !isNaN(gr)) {
+                const average = (tr + cc + lr + gr) / 4;
+                const rounded = Math.round(average * 2) / 2;
+                document.getElementById('task2_overall').textContent = rounded.toFixed(1);
+            }
+        }
+        
+        document.getElementById('task1_ta').addEventListener('input', calculateTask1);
+        ['task2_tr', 'task2_cc', 'task2_lr', 'task2_gr'].forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateTask2);
+        });
+    </script>
+</body>
+</html>

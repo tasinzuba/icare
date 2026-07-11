@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use App\Models\TestSet;
+use App\Models\TestCategory;
+
+class AssignTestCategories extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'test:assign-categories';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Assign test sets to categories based on their titles';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle()
+    {
+        $this->info('Assigning test sets to categories...');
+
+        $academicCategory = TestCategory::where('slug', 'academic')->first();
+        $generalCategory = TestCategory::where('slug', 'general-training')->first();
+        $practiceCategory = TestCategory::where('slug', 'practice')->first();
+        $mockCategory = TestCategory::where('slug', 'mock-exam')->first();
+
+        if (!$academicCategory || !$generalCategory || !$practiceCategory || !$mockCategory) {
+            $this->error('Please run TestCategorySeeder first!');
+            return 1;
+        }
+
+        $testSets = TestSet::all();
+
+        foreach ($testSets as $testSet) {
+            $title = strtolower($testSet->title);
+            
+            // Clear existing categories
+            $testSet->categories()->detach();
+            
+            // Assign based on title keywords
+            if (str_contains($title, 'cambridge') || str_contains($title, 'academic')) {
+                $testSet->categories()->attach($academicCategory->id);
+                $this->info("Assigned '{$testSet->title}' to Academic category");
+            } elseif (str_contains($title, 'general') || str_contains($title, 'gt')) {
+                $testSet->categories()->attach($generalCategory->id);
+                $this->info("Assigned '{$testSet->title}' to General Training category");
+            } elseif (str_contains($title, 'mock') || str_contains($title, 'full')) {
+                $testSet->categories()->attach($mockCategory->id);
+                $this->info("Assigned '{$testSet->title}' to Mock Exam category");
+            } else {
+                // Default to practice
+                $testSet->categories()->attach($practiceCategory->id);
+                $this->info("Assigned '{$testSet->title}' to Practice category");
+            }
+        }
+
+        $this->info('Categories assigned successfully!');
+        return 0;
+    }
+}

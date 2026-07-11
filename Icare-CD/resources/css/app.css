@@ -1,0 +1,70 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+@source '../**/*.vue';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* IELTS Test Specific Overrides */
+@layer base {
+    /* Reset for IELTS questions */
+    .ielts-question-item,
+    .ielts-question-item * {
+        all: revert;
+        box-sizing: border-box;
+    }
+    
+    /* Ensure radio buttons look normal */
+    .ielts-question-item input[type="radio"] {
+        -webkit-appearance: radio !important;
+        -moz-appearance: radio !important;
+        appearance: radio !important;
+        opacity: 1 !important;
+        position: static !important;
+        pointer-events: auto !important;
+        margin: 0 !important;
+        width: auto !important;
+        height: auto !important;
+    }
+}
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Band score display animation */
+.band-score-display {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Progress bar animation */
+.progress-bar {
+    transition: width 0.5s ease-out;
+}
+
+/* Confidence badge styles */
+.confidence-badge {
+    transition: all 0.3s ease;
+}
+
+.confidence-badge:hover {
+    transform: scale(1.05);
+}

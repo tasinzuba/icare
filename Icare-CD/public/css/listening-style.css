@@ -1,0 +1,1533 @@
+        /* IELTS Listening Test - Minimal CSS */
+
+        /* ========== BASE STYLES ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ========== HEADER STYLES ========== */
+        .ielts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            background-color: white;
+            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .ielts-header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #1a1a1a;
+            color: white;
+            height: 50px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        /* Timer Center Wrapper */
+        .timer-center-wrapper {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .user-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ========== MAIN CONTAINER ========== */
+        .main-container {
+            position: fixed;
+            top: 50px;
+            /* User bar height */
+            left: 0;
+            right: 0;
+            bottom: 70px;
+            /* Bottom nav height */
+            background: white;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ========== FIXED PART HEADER ========== */
+        .part-header-container {
+            background: white;
+            padding: 20px 40px 20px 50px;
+            z-index: 10;
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ========== SCROLLABLE CONTENT AREA ========== */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 30px 40px 120px 50px;
+            position: relative;
+            background: white;
+        }
+
+        /* ========== PART SECTIONS ========== */
+        .part-section {
+            margin-bottom: 40px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .part-section:not(.active) {
+            display: none;
+        }
+
+        /* ========== PART HEADER - CARD STYLE ========== */
+        .part-header {
+            background: #f0f0f0;
+            padding: 16px 24px;
+            margin: 0 0 30px 0;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        /* Hide original part headers in scrollable area */
+        .content-area .part-header {
+            display: none;
+        }
+
+        /* Style for cloned fixed header */
+        .part-header-container .part-header {
+            display: block;
+            margin: 0;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            background: #f0f0f0;
+        }
+
+        .part-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 4px;
+        }
+
+        .part-instruction {
+            font-size: 13px;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+
+        /* ========== QUESTION GROUP HEADERS ========== */
+        .question-group-header {
+            font-size: 15px;
+            font-weight: 700;
+            /* Bold */
+            color: #000;
+            margin: 35px 0 15px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .question-instruction {
+            font-size: 14px;
+            color: #212120;
+            margin-bottom: 16px;
+            font-weight: normal;
+            /* Changed from 600 to normal so TinyMCE bold tags work properly */
+            line-height: 1.6;
+        }
+
+        /* ========== QUESTION ITEMS - LEFT ALIGNED ========== */
+        .question-item {
+            padding: 8px 0;
+            border-bottom: none;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .question-item:last-child {
+            border-bottom: none;
+        }
+
+        .question-content {
+            display: block;
+            text-align: left;
+            margin-bottom: 10px;
+        }
+
+        .question-number {
+            display: block;
+            font-weight: 700;
+            color: #000;
+            font-size: 15px;
+            margin-bottom: 4px;
+            text-align: left;
+        }
+
+        .question-text {
+            line-height: 1.6;
+            color: #212120;
+            font-size: 15px;
+            font-weight: normal;
+            /* Changed from 500 to normal so TinyMCE bold tags work properly */
+            text-align: left;
+        }
+
+        /* Options will be styled by external CSS */
+
+        /* ========== TINYMCE CONTENT STYLES ========== */
+        /* Tables from TinyMCE Editor — IELTS Reading style with subtle radius */
+        .question-text table,
+        .question-instruction table,
+        .part-instruction table,
+        .question-item table,
+        .question-content table {
+            width: auto !important;
+            max-width: 100% !important;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            margin: 12px 0 !important;
+            font-size: 14px !important;
+            background: #ffffff !important;
+            border: 1px solid #212120 !important;
+            border-radius: 4px !important;
+            overflow: hidden !important;
+            box-shadow: none !important;
+        }
+
+        .question-text table th,
+        .question-instruction table th,
+        .part-instruction table th,
+        .question-item table th,
+        .question-content table th {
+            background-color: #ffffff !important;
+            padding: 8px 14px !important;
+            text-align: left !important;
+            font-weight: 700 !important;
+            border: none !important;
+            border-right: 1px solid #212120 !important;
+            border-bottom: 1px solid #212120 !important;
+            color: #0f172a !important;
+            font-size: 14px !important;
+        }
+
+        .question-text table th:last-child,
+        .question-instruction table th:last-child,
+        .part-instruction table th:last-child,
+        .question-item table th:last-child,
+        .question-content table th:last-child {
+            border-right: none !important;
+        }
+
+        .question-text table td,
+        .question-instruction table td,
+        .part-instruction table td,
+        .question-item table td,
+        .question-content table td {
+            padding: 8px 14px !important;
+            border: none !important;
+            border-right: 1px solid #212120 !important;
+            border-bottom: 1px solid #212120 !important;
+            color: #212120 !important;
+            background: #ffffff !important;
+            font-size: 14px !important;
+            vertical-align: middle !important;
+        }
+
+        .question-text table td:last-child,
+        .question-instruction table td:last-child,
+        .part-instruction table td:last-child,
+        .question-item table td:last-child,
+        .question-content table td:last-child {
+            border-right: none !important;
+        }
+
+        .question-text table tr:last-child td,
+        .question-instruction table tr:last-child td,
+        .part-instruction table tr:last-child td,
+        .question-item table tr:last-child td,
+        .question-content table tr:last-child td {
+            border-bottom: none !important;
+        }
+
+        /* Table cell alignment from TinyMCE */
+        .question-text table td[style*="text-align: center"],
+        .question-text table th[style*="text-align: center"] {
+            text-align: center !important;
+        }
+
+        .question-text table td[style*="text-align: right"],
+        .question-text table th[style*="text-align: right"] {
+            text-align: right !important;
+        }
+
+
+        /* Lists from TinyMCE */
+        .question-text ul,
+        .question-text ol,
+        .question-instruction ul,
+        .question-instruction ol,
+        .question-content ul,
+        .question-content ol {
+            margin: 10px 0 10px 20px !important;
+            padding-left: 20px !important;
+        }
+
+        .question-text ul li,
+        .question-text ol li,
+        .question-instruction ul li,
+        .question-instruction ol li,
+        .question-content ul li,
+        .question-content ol li {
+            margin-bottom: 5px !important;
+            line-height: 1.6 !important;
+        }
+
+        /* Images from TinyMCE - Minimal style, no shadow */
+        .question-text img,
+        .question-instruction img,
+        .part-instruction img,
+        .question-content img {
+            max-width: 100% !important;
+            height: auto !important;
+            margin: 10px 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            display: block !important;
+        }
+
+        /* Bold, Italic, Underline from TinyMCE */
+        .question-text strong,
+        .question-text b,
+        .question-instruction strong,
+        .question-instruction b,
+        .question-content strong,
+        .question-content b,
+        .part-instruction strong,
+        .part-instruction b {
+            font-weight: 700 !important;
+            color: #000000 !important;
+        }
+
+        .question-text em,
+        .question-text i,
+        .question-instruction em,
+        .question-instruction i,
+        .question-content em,
+        .question-content i,
+        .part-instruction em,
+        .part-instruction i {
+            font-style: italic !important;
+        }
+
+        .question-text u,
+        .question-instruction u,
+        .question-content u,
+        .part-instruction u {
+            text-decoration: underline !important;
+        }
+
+        /* Paragraphs from TinyMCE */
+        .question-text p,
+        .question-instruction p,
+        .question-content p {
+            margin: 8px 0 !important;
+            line-height: 1.6 !important;
+        }
+
+        /* Links from TinyMCE */
+        .question-text a,
+        .question-instruction a,
+        .question-content a {
+            color: #3b82f6 !important;
+            text-decoration: underline !important;
+        }
+
+        .question-text a:hover,
+        .question-instruction a:hover,
+        .question-content a:hover {
+            color: #2563eb !important;
+        }
+
+        /* Code blocks from TinyMCE */
+        .question-text pre,
+        .question-instruction pre,
+        .question-content pre {
+            background: #f3f4f6 !important;
+            padding: 10px !important;
+            border-radius: 4px !important;
+            overflow-x: auto !important;
+            margin: 10px 0 !important;
+        }
+
+        .question-text code,
+        .question-instruction code,
+        .question-content code {
+            background: #f3f4f6 !important;
+            padding: 2px 4px !important;
+            border-radius: 3px !important;
+            font-family: monospace !important;
+            font-size: 13px !important;
+        }
+
+        /* ========== INPUT FIELDS ========== */
+        .answer-input {
+            margin-left: 47px;
+        }
+
+        .text-input,
+        .select-input {
+            width: 350px;
+            padding: 10px 14px;
+            border: 1px solid #ccc;
+            border-radius: 0;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+
+        .text-input:hover,
+        .select-input:hover {
+            border-color: #999;
+            background: #fafafa;
+        }
+
+        .text-input:focus,
+        .select-input:focus {
+            outline: none;
+            border-color: #333;
+            background: white;
+            box-shadow: none;
+        }
+
+        .text-input::placeholder {
+            color: #999;
+            font-style: italic;
+        }
+
+        /* ========== DISABLE ALL BROWSER ASSISTS FOR EXAM INTEGRITY ========== */
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select,
+        .text-input,
+        .inline-blank,
+        .dropdown {
+            /* Disable spell check */
+            spellcheck: false;
+
+            /* Disable autocomplete */
+            autocomplete: off;
+
+            /* Disable autocorrect (iOS) */
+            autocorrect: off;
+
+            /* Disable autocapitalize (iOS) */
+            autocapitalize: off;
+
+            /* Disable password managers */
+            -webkit-credentials-auto-fill-button: none !important;
+
+            /* Disable Chrome's autofill */
+            -webkit-box-shadow: 0 0 0 1000px #f5f5f5 inset !important;
+        }
+
+        /* Override Chrome autofill background */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px #f5f5f5 inset !important;
+            -webkit-text-fill-color: #000 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* ========== SPECIAL QUESTION TYPES STYLES ========== */
+        /* Matching Questions - Official IELTS Style */
+        .matching-container {
+            user-select: none;
+            margin-top: 30px;
+            display: flex;
+            gap: 40px;
+        }
+
+        .matching-left-section {
+            flex: 1;
+        }
+
+        .matching-table {
+            width: 100%;
+        }
+
+        .matching-row {
+            display: grid;
+            grid-template-columns: 40px 250px 180px;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+
+        .question-number-inline {
+            font-weight: 700;
+            background: #e8e8e8;
+            padding: 4px 10px;
+            border-radius: 3px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 32px;
+        }
+
+        .matching-question {
+            font-size: 15px;
+            font-weight: 500;
+            color: #212120;
+        }
+
+        .drop-box {
+            display: inline-flex !important;
+            min-width: 120px !important;
+            width: auto !important;
+            height: 40px !important;
+            border: 1px dashed #000000 !important;
+            border-radius: 4px !important;
+            line-height: 38px !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.2s !important;
+            background: white !important;
+            font-size: 14px !important;
+            padding: 0 20px !important;
+            cursor: pointer !important;
+            margin: 0 4px !important;
+            vertical-align: middle !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            color: #212120 !important;
+            text-align: center !important;
+        }
+
+        .drop-box.drag-over {
+            background: #f0fdf4 !important;
+            border: 1px dashed #22c55e !important;
+        }
+
+        .drop-box.has-answer {
+            min-width: auto !important;
+            width: auto !important;
+            padding: 0 12px !important;
+            border: 1px solid #d1d5db !important;
+            background: white !important;
+            cursor: move !important;
+            color: #212120 !important;
+            font-weight: normal !important;
+        }
+
+        .drop-box .placeholder-text {
+            color: #000000 !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+        }
+
+        .matching-right-section {
+            width: 150px;
+            flex-shrink: 0;
+            margin-left: -180px;
+            margin-right: 50px;
+        }
+
+        .matching-options-container {
+            position: sticky;
+            top: 100px;
+        }
+
+        .matching-options-title {
+            display: none;
+        }
+
+        .matching-options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* Drag & Drop Question Styles */
+        .drag-drop-question {
+            background: none;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        /* Drag Drop Layout - Horizontal Options on Right */
+        .drag-drop-layout {
+            display: flex !important;
+            gap: 40px !important;
+            align-items: flex-start !important;
+        }
+
+        .draggable-options-container {
+            flex: 1 !important;
+        }
+
+        .draggable-options-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            padding: 0 !important;
+            background: none !important;
+            border: none !important;
+        }
+
+        .draggable-option {
+            min-width: 120px !important;
+            padding: 10px 20px !important;
+            background: white !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 4px !important;
+            cursor: move !important;
+            transition: all 0.2s !important;
+            font-size: 14px !important;
+            font-weight: 400 !important;
+            color: #212120 !important;
+            text-align: center !important;
+            user-select: none !important;
+        }
+
+        .draggable-option:hover:not(.placed) {
+            background: #f9fafb !important;
+            border-color: #9ca3af !important;
+        }
+
+        .draggable-option.dragging {
+            opacity: 0.5 !important;
+            cursor: grabbing !important;
+        }
+
+        .draggable-option.placed {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        /* Form Completion - Official IELTS Style */
+        .form-completion-container {
+            margin-left: 40px;
+            margin-top: 20px;
+        }
+
+        .form-wrapper {
+            background: white;
+            border: 2px solid #000;
+            padding: 40px 50px;
+            max-width: 650px;
+            margin: 0;
+            position: relative;
+        }
+
+        .form-title {
+            text-align: center;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: #000;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-field-row {
+            display: grid;
+            grid-template-columns: 36px 180px 1fr;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 20px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #000;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        .form-question-number {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+            background: #f0f0f0;
+            border: 1px solid #999;
+            padding: 6px 0;
+            text-align: center;
+            border-radius: 4px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-input {
+            width: 100%;
+            max-width: 300px;
+            padding: 10px 14px;
+            border: 1px solid #999;
+            border-radius: 0;
+            font-size: 14px;
+            background: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #333;
+            background: white;
+            box-shadow: none;
+        }
+
+        .form-input::placeholder {
+            color: #999;
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        /* Diagram Labeling */
+        .diagram-container {
+            margin-left: 40px;
+            margin-top: 20px;
+        }
+
+        .diagram-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .diagram-image {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .diagram-hotspot {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            cursor: help;
+            transition: transform 0.2s;
+        }
+
+        .diagram-hotspot:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .hotspot-marker {
+            width: 32px;
+            height: 32px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .diagram-answers {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+        }
+
+        .diagram-answer-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+        }
+
+        .diagram-label {
+            display: inline-flex;
+            width: 28px;
+            height: 28px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .diagram-number {
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 13px;
+            margin-right: 5px;
+        }
+
+        .diagram-input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        /* ========== BOTTOM NAVIGATION ========== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+            height: 70px;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            gap: 16px;
+        }
+
+        .review-section {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .review-check {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .review-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #2c3e50;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .nav-section-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .section-label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .parts-nav {
+            display: flex;
+            gap: 6px;
+            border-right: 1px solid #e0e0e0;
+            padding-right: 16px;
+            margin-right: 12px;
+        }
+
+        .part-btn {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .part-btn:hover {
+            background: #f8f9fa;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        .part-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+
+
+        .nav-numbers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            max-width: 600px;
+        }
+
+        .number-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .number-btn:hover {
+            background: #f8f9fa;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        .number-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .number-btn.answered {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+
+        .number-btn.flagged {
+            position: relative;
+            overflow: visible;
+        }
+
+        .number-btn.flagged::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 10px;
+            height: 10px;
+            background: #f59e0b;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+
+
+        .number-btn.hidden-part {
+            display: none;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-secondary {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .notes-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            background-color: #ef4444;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 10px;
+        }
+
+        .submit-test-button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .submit-test-button:hover {
+            background: #059669;
+        }
+
+        /* ========== MODAL STYLES ========== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #1a202c;
+        }
+
+        .modal-message {
+            font-size: 16px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+            color: #4a5568;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .modal-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 0 6px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-button:hover {
+            background: #2563eb;
+        }
+
+        .modal-button.secondary {
+            background: #6b7280;
+        }
+
+        .modal-button.secondary:hover {
+            background: #4b5563;
+        }
+
+        /* ========== HIGHLIGHT & NOTES STYLES ========== */
+        .highlighted-text {
+            background-color: #fde047;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: inline;
+            line-height: inherit;
+        }
+
+        .highlighted-text:hover {
+            background-color: #facc15;
+        }
+
+        .note-text {
+            background-color: #fee2e2;
+            border-bottom: 1px solid #dc2626;
+            border-radius: 2px;
+            cursor: pointer;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: inline;
+            line-height: inherit;
+        }
+
+        /* Annotation Menu */
+        #annotation-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 6px;
+            display: flex;
+            gap: 6px;
+            z-index: 99999;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .main-container {
+                bottom: 120px;
+                /* Adjust for mobile bottom nav */
+            }
+
+            .content-area {
+                padding: 20px 20px 120px;
+            }
+
+            .part-header-container {
+                padding: 15px 20px;
+            }
+
+            .parts-nav {
+                display: none;
+            }
+
+            .nav-numbers {
+                max-width: 100%;
+                gap: 3px;
+            }
+
+            .number-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+
+            .bottom-nav {
+                flex-direction: column;
+                gap: 10px;
+                padding: 10px;
+            }
+
+            .nav-left {
+                width: 100%;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .submit-test-button {
+                width: 100%;
+            }
+
+            /* Mobile options styling - handled by external CSS */
+
+            /* Special types mobile */
+            .matching-grid {
+                grid-template-columns: 1fr !important;
+                gap: 10px !important;
+            }
+
+            .matching-lines {
+                display: none;
+            }
+
+            .form-completion-container table {
+                font-size: 13px;
+            }
+
+            .diagram-container img {
+                max-width: 100% !important;
+            }
+        }
+
+        /* ========== QUESTION NAVIGATION ARROWS ========== */
+        .question-nav-arrows {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            z-index: 50;
+        }
+
+        /* ========== SCROLLBAR STYLING ========== */
+        .content-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content-area::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .content-area::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .content-area::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .nav-arrow {
+            width: 44px;
+            height: 44px;
+            background: #000000;
+            border: none;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-arrow:hover {
+            background: #333333;
+        }
+
+        .nav-arrow:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #666666;
+        }
+
+        .nav-arrow svg {
+            color: #ffffff;
+        }
+
+        .nav-arrow:hover svg {
+            color: #ffffff;
+        }
+
+        .nav-arrow:disabled svg {
+            color: #cccccc;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .question-nav-arrows {
+                bottom: 140px;
+                right: 50%;
+                transform: translateX(50%);
+            }
+        }
+
+        /* ========== ANIMATIONS ========== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========== PROFESSIONAL MULTIPLE CHOICE STYLES ========== */
+        .options-list {
+            margin: 24px 0 24px 47px;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            cursor: pointer;
+            padding: 14px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            border: 1.5px solid #e5e7eb;
+            background: white;
+            position: relative;
+        }
+
+        .option-item:hover {
+            background: #fafafa;
+            border-color: #9ca3af;
+            transform: translateX(4px);
+        }
+
+        .option-radio,
+        .option-checkbox {
+            margin-top: 3px;
+            margin-right: 14px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            flex-shrink: 0;
+            accent-color: #111827;
+            position: relative;
+        }
+
+        /* Custom Radio Button */
+        .option-radio {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            background: white;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .option-radio:checked {
+            border-color: #111827;
+            background: #111827;
+        }
+
+        .option-radio:checked::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: white;
+        }
+
+        /* Custom Checkbox */
+        .option-checkbox {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            background: white;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .option-checkbox:checked {
+            border-color: #111827;
+            background: #111827;
+        }
+
+        .option-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .option-label {
+            flex: 1;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .option-label strong {
+            font-weight: 600;
+            margin-right: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #374151;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        /* Selected state */
+        .option-item:has(input:checked) {
+            background: #fafafa;
+            border-color: #111827;
+            border-width: 2px;
+            padding: 13px 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .option-item:has(input:checked) .option-label {
+            color: #111827;
+            font-weight: 500;
+        }
+
+        .option-item:has(input:checked) .option-label strong {
+            background: #111827;
+            color: white;
+            border-color: #111827;
+        }
+
+        /* Mobile responsive for options */
+        @media (max-width: 768px) {
+            .options-list {
+                margin-left: 16px;
+            }
+
+            .option-item {
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+
+            .option-label {
+                font-size: 14px;
+            }
+        }
+
+        /* ========== TOAST NOTIFICATION ANIMATIONS ========== */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        #toast-notification.error {
+            background: #dc2626;
+        }
+
+        #toast-notification.warning {
+            background: #f59e0b;
+        }
+
+        #toast-notification.success {
+            background: #10b981;
+        }
+
+        #toast-notification.info {
+            background: #3b82f6;
+        }
+
+        .answer-input,
+        .options-list,
+        .option-item,
+        .option-label,
+        .single-choice-options,
+        .single-choice-option-item,
+        .single-choice-label,
+        .matching-container,
+        .form-completion-container,
+        .diagram-answers,
+        .drop-box,
+        .draggable-option {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* Allow text selection ONLY in question areas */
+        .question-text,
+        .part-instruction,
+        .question-instruction,
+        .question-group-header {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        /* Ensure input fields are still editable */
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }

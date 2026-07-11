@@ -1,0 +1,350 @@
+/* IELTS Reading Test Style Radio Buttons */
+.question-item input[type="radio"].option-radio {
+    -webkit-appearance: radio !important;
+    -moz-appearance: radio !important;
+    appearance: radio !important;
+    margin: 0 !important;
+    margin-right: 8px !important;
+    width: 14px !important;
+    height: 14px !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    vertical-align: middle !important;
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+}
+
+/* Ensure option items display properly - IELTS Reading Style */
+.question-item .options-list {
+    margin-left: 47px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+}
+
+.question-item .option-item {
+    margin-bottom: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+}
+
+.question-item .option-item:hover {
+    background: rgba(59, 130, 246, 0.05) !important;
+    padding-left: 8px !important;
+}
+
+.question-item .option-label {
+    cursor: pointer !important;
+    font-size: 14px !important;
+    color: #000000 !important;
+    font-weight: normal !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.4 !important;
+    flex: 1 !important;
+    user-select: none !important;
+}
+
+.question-item .option-label strong {
+    font-weight: 600 !important;
+    margin-right: 4px !important;
+}
+
+/* Checkbox styling for multiple choice - Same as reading */
+.question-item input[type="checkbox"].option-checkbox {
+    -webkit-appearance: checkbox !important;
+    -moz-appearance: checkbox !important;
+    appearance: checkbox !important;
+    margin: 0 !important;
+    margin-right: 8px !important;
+    width: 14px !important;
+    height: 14px !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    vertical-align: middle !important;
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Remove all custom styling - let browser handle it */
+input[type="radio"].option-radio::-webkit-inner-spin-button,
+input[type="radio"].option-radio::-webkit-outer-spin-button {
+    -webkit-appearance: radio !important;
+}
+
+/* Fallback for webkit browsers */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    input[type="radio"].option-radio {
+        -webkit-appearance: radio !important;
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .question-item .options-list {
+        margin-left: 30px !important;
+    }
+
+    .question-item input[type="radio"].option-radio,
+    .question-item input[type="checkbox"].option-checkbox {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .question-item .option-label {
+        font-size: 13px !important;
+    }
+}
+
+/* Fill-in-the-blanks placeholder: subtle question numbers */
+.inline-blank-input::placeholder,
+.inline-blank::placeholder,
+.gap-input::placeholder {
+    color: #64748b !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+}
+
+/* IELTS Matching Matrix — perfectly centered radio buttons in each cell */
+.ielts-matching-matrix {
+    max-width: 100% !important;
+}
+/* High-specificity selectors to override .question-item table td rules from listening-style.css */
+body.ielts-test-mode .question-item .ielts-matching-matrix table {
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+    border: 2px solid #374151 !important;
+}
+body.ielts-test-mode .question-item .ielts-matching-matrix table td,
+body.ielts-test-mode .question-item .ielts-matching-matrix table th {
+    border-top: 1px solid #374151 !important;
+    border-right: 1px solid #374151 !important;
+    border-bottom: 1px solid #374151 !important;
+    border-left: 1px solid #374151 !important;
+    vertical-align: middle !important;
+    background: #ffffff !important;
+}
+body.ielts-test-mode .question-item .ielts-matching-matrix table td:last-child,
+body.ielts-test-mode .question-item .ielts-matching-matrix table th:last-child {
+    border-right: 1px solid #374151 !important;
+}
+body.ielts-test-mode .question-item .ielts-matching-matrix table tr:last-child td {
+    border-bottom: 1px solid #374151 !important;
+}
+body.ielts-test-mode .question-item .ielts-matching-matrix table thead tr {
+    background: #e5e7eb !important;
+}
+body.ielts-test-mode .question-item .ielts-matching-matrix table thead th {
+    border-bottom: 2px solid #374151 !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+    background: #e5e7eb !important;
+}
+.ielts-matching-matrix table td.matrix-statement-cell {
+    padding: 12px 14px !important;
+    text-align: left !important;
+    vertical-align: middle !important;
+}
+.ielts-matching-matrix table td.matrix-radio-cell {
+    padding: 4px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+.ielts-matching-matrix table td.matrix-radio-cell label {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100%;
+    height: 100%;
+    min-height: 32px;
+    margin: 0 !important;
+    padding: 0 !important;
+    cursor: pointer;
+}
+.ielts-matching-matrix table input[type="radio"].matching-matrix-radio {
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    cursor: pointer;
+    accent-color: #2563eb;
+    display: inline-block;
+}
+
+/* Fill-in-the-blanks box spacing — prevent boxes from touching */
+.inline-blank-input,
+.inline-blank,
+.gap-input.inline-blank-input {
+    margin: 4px 6px !important;
+    vertical-align: middle !important;
+}
+
+/* Official IELTS CBT Single Choice Styling */
+.ielts-question-item .ielts-option {
+    margin-bottom: 0 !important;
+    padding: 5px 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    border: none !important;
+    transition: background-color 0.15s ease !important;
+    cursor: pointer !important;
+    background: none !important;
+    max-width: 80% !important;
+    border-radius: 4px !important;
+}
+
+.ielts-question-item .ielts-option:hover {
+    background-color: #f3f4f6 !important;
+}
+
+/* Light blue highlight when radio/checkbox is checked */
+.ielts-question-item .ielts-option:has(input[type="radio"]:checked),
+.ielts-question-item .ielts-option:has(input[type="checkbox"]:checked) {
+    background-color: #dbeafe !important;
+}
+
+/* Radio & Checkbox native look */
+.ielts-question-item .ielts-radio {
+    -webkit-appearance: auto !important;
+    appearance: auto !important;
+    margin: 0 10px 0 0 !important;
+    width: 16px !important;
+    height: 16px !important;
+    cursor: pointer !important;
+    accent-color: #2563eb !important;
+}
+
+/* Question number bold black */
+.ielts-question-item .ielts-q-number {
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    color: #000 !important;
+}
+
+/* ==========================================
+   DRAG & DROP — Native HTML5 API classes
+   All element styles are INLINE (no conflicts)
+   ========================================== */
+
+/* Drag item base */
+.dd-drag-item {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: grab !important;
+}
+
+.dd-drag-item:hover {
+    border-color: #374151 !important;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(-1px);
+}
+
+/* Drop zone base */
+.dd-drop-zone {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Drag-drop question header spacing */
+.drag-drop-question .ielts-q-number {
+    margin-bottom: 6px !important;
+}
+
+/* Responsive: stack layout on mobile */
+@media (max-width: 768px) {
+    .drag-drop-question > div:nth-child(2) {
+        flex-direction: column !important;
+        gap: 14px !important;
+    }
+    .dd-source {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        margin-left: 0 !important;
+    }
+}
+
+/* Options — responsive gap & width */
+.ielts-question-item .ielts-options {
+    margin-left: 22px;
+    margin-top: 0;
+}
+
+@media (max-width: 1024px) {
+    .ielts-question-item .ielts-option {
+        max-width: 90% !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .ielts-question-item .ielts-option {
+        padding: 4px 8px !important;
+        max-width: 100% !important;
+    }
+    .ielts-question-item .ielts-options {
+        margin-left: 10px !important;
+        margin-top: 0 !important;
+    }
+    .ielts-question-item .ielts-radio {
+        width: 14px !important;
+        height: 14px !important;
+        margin: 0 8px 0 0 !important;
+    }
+}
+
+/* ==========================================
+   DROPDOWN STYLING — same as Reading test
+   ========================================== */
+.gap-dropdown {
+    all: unset !important;
+    display: inline-block !important;
+    width: 110px !important;
+    min-width: 110px !important;
+    padding: 0 20px 0 8px !important;
+    margin: 8px 6px !important;
+    border: 1px solid rgb(235, 236, 237) !important;
+    border-radius: 4px !important;
+    background-color: rgb(247, 247, 248) !important;
+    font-size: 13px !important;
+    color: #374151 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    vertical-align: middle !important;
+    height: 28px !important;
+    line-height: 26px !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%236b7280' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 6px center !important;
+    background-size: 10px 10px !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+}
+
+.gap-dropdown:hover {
+    border-color: #9ca3af !important;
+}
+
+.gap-dropdown:focus {
+    background-color: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: -1px !important;
+}
+
+.gap-dropdown option:first-child {
+    color: #374151 !important;
+    font-weight: 600 !important;
+}

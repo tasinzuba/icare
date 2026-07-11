@@ -1,0 +1,46 @@
+# ───────────── Dependencies (never commit) ─────────────
+node_modules/
+vendor/
+
+# ───────────── Secrets / environment ─────────────
+.env
+.env.*
+!.env.example
+*.key
+auth.json
+Icare-CD/storage/oauth-*.key
+
+# ───────────── Laravel storage (runtime data, logs, DB dumps, uploads) ─────────────
+Icare-CD/storage/framework/cache/*
+Icare-CD/storage/framework/sessions/*
+Icare-CD/storage/framework/views/*
+Icare-CD/storage/framework/testing/*
+Icare-CD/storage/logs/*
+Icare-CD/storage/db-backups/*
+Icare-CD/storage/app/public/*
+Icare-CD/storage/app/livewire-tmp/*
+Icare-CD/bootstrap/cache/*.php
+
+# ───────────── Build artifacts ─────────────
+# (If your live server has NO Node.js, delete the next two lines so compiled
+#  assets get committed and you can deploy without running "npm run build".)
+Icare-CD/public/build/
+Icare-CD/public/hot
+Icare-CD/public/storage
+
+# ───────────── OS / editor / tooling junk ─────────────
+__MACOSX/
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+.fleet/
+.nova/
+.zed/
+.phpunit.result.cache
+npm-debug.log
+yarn-error.log
+
+# ───────────── Claude Code local state (not app code) ─────────────
+.claude/

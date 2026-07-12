@@ -13,6 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Behind Railway's TLS-terminating proxy the app receives plain HTTP with
+        // X-Forwarded-* headers. Trust the proxy so Laravel knows the request is
+        // HTTPS — otherwise it generates http:// URLs / non-secure cookies and the
+        // browser fails to round-trip the session cookie (CSRF 419 on login).
+        $middleware->trustProxies(at: '*');
+
         // Register middleware aliases
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,

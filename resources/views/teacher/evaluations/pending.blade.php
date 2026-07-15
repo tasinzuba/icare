@@ -30,6 +30,14 @@
                     @if(request('student_type'))
                         <input type="hidden" name="student_type" value="{{ request('student_type') }}">
                     @endif
+                    {{-- #3: search the offline queue by student name/email --}}
+                    <div class="relative">
+                        <input type="text" name="search" value="{{ request('search') }}"
+                               placeholder="Search student by name..."
+                               class="text-sm border-orange-300 rounded-md shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 bg-white pl-8 pr-3 py-1.5 w-56">
+                        <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-orange-400 text-xs"></i>
+                    </div>
+                    <button type="submit" class="text-sm px-3 py-1.5 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors">Search</button>
                     <select name="branch_id" onchange="this.form.submit()" class="text-sm border-orange-300 rounded-md shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 bg-white">
                         <option value="">All Branches</option>
                         @foreach($branches as $branch)
@@ -51,7 +59,7 @@
                         <option value="desc" {{ request('dir', 'desc') === 'desc' ? 'selected' : '' }}>Newest First</option>
                         <option value="asc" {{ request('dir') === 'asc' ? 'selected' : '' }}>Oldest First</option>
                     </select>
-                    @if(request('branch_id') || request('section') || request('sort') !== null)
+                    @if(request('branch_id') || request('section') || request('search') || request('sort') !== null)
                         <a href="{{ route('teacher.evaluations.pending') }}" class="text-sm text-orange-600 hover:text-orange-800 font-medium">
                             <i class="fas fa-times mr-1"></i>Clear Filters
                         </a>

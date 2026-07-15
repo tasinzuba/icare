@@ -314,8 +314,7 @@
                                     <textarea name="part_scores[{{ $partNumber }}][feedback]" 
                                               rows="4"
                                               class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                                              placeholder="Provide comprehensive feedback for Part {{ $partNumber }}... Include observations on fluency, vocabulary usage, grammar accuracy, and pronunciation."
-                                              required></textarea>
+                                              placeholder="Provide comprehensive feedback for Part {{ $partNumber }}... (optional)"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -550,8 +549,7 @@
                                     <textarea name="task_scores[{{ $index }}][feedback]" 
                                               rows="3"
                                               class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                                              placeholder="Provide specific feedback for this task..."
-                                              required></textarea>
+                                              placeholder="Provide specific feedback for this task... (optional)"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -590,8 +588,17 @@
                             </div>
                         </div>
                         
-                        <!-- Hidden input for overall band -->
-                        <input type="hidden" name="overall_band_score" id="speaking_overall_band" value="" required>
+                        <!-- #1/#2: Overall band is auto-calculated but VISIBLE + editable, so a teacher can
+                             override it, and an empty value shows a normal validation error instead of a
+                             silent submit failure (a hidden required field can't be focused/reported). -->
+                        <div class="mt-4 max-w-xs">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Overall Band <span class="text-red-500">*</span></label>
+                            <input type="number" name="overall_band_score" id="speaking_overall_band" value=""
+                                   min="0" max="9" step="0.5" required
+                                   placeholder="Auto-filled — adjust if needed"
+                                   class="w-full rounded-lg border-gray-300 text-lg font-semibold text-indigo-700 focus:border-indigo-500 focus:ring-indigo-500">
+                            <p class="text-xs text-gray-500 mt-1">Auto-calculated from the part scores above; you can override it.</p>
+                        </div>
                     @else
                         <!-- Writing Overall Band Calculation -->
                         <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 mb-6 border-2 border-purple-200">
@@ -615,8 +622,17 @@
                             </div>
                         </div>
                         
-                        <!-- Hidden input for overall band -->
-                        <input type="hidden" name="overall_band_score" id="writing_overall_band" value="" required>
+                        <!-- #1/#2: Overall band is auto-calculated but VISIBLE + editable, so a teacher can
+                             override it, and an empty value shows a normal validation error instead of a
+                             silent submit failure (a hidden required field can't be focused/reported). -->
+                        <div class="mt-4 max-w-xs">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Overall Band <span class="text-red-500">*</span></label>
+                            <input type="number" name="overall_band_score" id="writing_overall_band" value=""
+                                   min="0" max="9" step="0.5" required
+                                   placeholder="Auto-filled — adjust if needed"
+                                   class="w-full rounded-lg border-gray-300 text-lg font-semibold text-pink-700 focus:border-pink-500 focus:ring-pink-500">
+                            <p class="text-xs text-gray-500 mt-1">Auto-calculated from the task scores above; you can override it.</p>
+                        </div>
                     @endif
                     
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -630,8 +646,7 @@
                                     <input type="text" 
                                            name="strengths[]" 
                                            class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                                           placeholder="e.g., Good vocabulary range"
-                                           required>
+                                           placeholder="e.g., Good vocabulary range (optional)">
                                 </div>
                             </div>
                             <button type="button" 
@@ -651,8 +666,7 @@
                                     <input type="text" 
                                            name="improvements[]" 
                                            class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                                           placeholder="e.g., Work on paragraph structure"
-                                           required>
+                                           placeholder="e.g., Work on paragraph structure (optional)">
                                 </div>
                             </div>
                             <button type="button" 

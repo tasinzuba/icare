@@ -41,7 +41,8 @@
                                     <option value="fill_blanks">Fill in the Blanks</option>
                                     <option value="single_choice">Single Choice</option>
                                     <option value="multiple_choice">Multiple Choice</option>
-                                    <option value="dropdown_selection">Matching Letters</option>
+                                    <option value="dropdown_selection">Dropdown / Summary (Inline)</option>
+                                    <option value="matching_grid">Matching Grid (Radio)</option>
                                     <option value="drag_drop">Drag & Drop</option>
                                 </select>
                             </div>
@@ -330,7 +331,7 @@
                         if (window.ListeningQuestionTypes) {
                             window.ListeningQuestionTypes.updateBlanks();
                         }
-                    } else if (['dropdown_selection', 'form_completion'].includes(questionType)) {
+                    } else if (['dropdown_selection', 'matching_grid', 'form_completion'].includes(questionType)) {
                         if (window.ListeningQuestionTypes) {
                             window.ListeningQuestionTypes.updateDropdowns();
                         }
@@ -367,7 +368,7 @@
 
                 if (selectedType === 'fill_blanks' && blankButtons) {
                     blankButtons.style.display = 'flex';
-                } else if (selectedType === 'dropdown_selection' && dropdownButtons) {
+                } else if ((selectedType === 'dropdown_selection' || selectedType === 'matching_grid') && dropdownButtons) {
                     dropdownButtons.style.display = 'flex';
                 } else if (selectedType === 'drag_drop' && dragZoneButtons) {
                     dragZoneButtons.style.display = 'flex';
@@ -429,7 +430,7 @@
                     insertListeningBlank();
                 }
                 
-                if (questionType === 'dropdown_selection' && (e.key === 'd' || e.key === 'D')) {
+                if ((questionType === 'dropdown_selection' || questionType === 'matching_grid') && (e.key === 'd' || e.key === 'D')) {
                     e.preventDefault();
                     insertListeningDropdown();
                 }

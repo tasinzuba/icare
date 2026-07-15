@@ -13,6 +13,7 @@ use App\Models\StudentAnswer;
 use App\Models\TestSet;
 use App\Models\HumanEvaluationRequest;
 use App\Services\TestAccessService;
+use App\Traits\EnforcesTestTimeLimit;
 use App\Traits\HandlesFileUploads;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +24,7 @@ use Illuminate\View\View;
 
 class SpeakingTestController extends Controller
 {
+    use EnforcesTestTimeLimit;
     use HandlesFileUploads;
 
     protected TestAccessService $testAccess;
@@ -358,7 +360,10 @@ class SpeakingTestController extends Controller
         
         $completionRate = $totalQuestions > 0 ? round(($recordedAnswers / $totalQuestions) * 100, 2) : 0;
         
-        // Mark attempt as completed
+        // Mark attempt as completed.
+        // H17: speaking is ACCEPT-and-FLAG — record()/autoSave() are never rejected (a legitimately
+        // recorded answer can arrive late on a slow upload and must not be discarded), so we only
+        // record the overtime flag + non-negative timing here.
         $attempt->update([
             'end_time' => now(),
             'status' => 'completed',
@@ -367,6 +372,9 @@ class SpeakingTestController extends Controller
             'answered_questions' => $recordedAnswers,
             'is_complete_attempt' => ($completionRate >= 80),
             'band_score' => null, // Speaking scores are set when teacher evaluates
+            'is_overtime' => $this->isTimeExceeded($attempt, 'speaking'),
+            'time_taken_minutes' => $this->elapsedMinutes($attempt),
+            'allowed_minutes' => $this->resolveAllowedMinutes($attempt),
         ]);
 
         // Dispatch TestCompleted event - handles all side effects

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Traits\EnforcesTestTimeLimit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,6 +15,8 @@ use Illuminate\Http\Request;
  */
 class TestSessionController extends Controller
 {
+    use EnforcesTestTimeLimit;
+
     /**
      * Keep session alive during test.
      * Called every 5 minutes from the test interface via JavaScript.
@@ -96,6 +99,17 @@ class TestSessionController extends Controller
                     'success' => false,
                     'message' => 'Attempt not found or already completed',
                 ], 404);
+            }
+
+            // H17: refuse late emergency writes so a timer-bypassed client cannot stash post-deadline
+            // answers into draft_answers (which the overtime submit path scores). Freezes the draft.
+            // Section is taken from the attempt itself, not the client-supplied field.
+            $sectionName = strtolower($attempt->testSet->section->name ?? '');
+            if ($this->isTimeExceeded($attempt, $sectionName)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Time limit exceeded; your saved answers are frozen.',
+                ], 422);
             }
 
             // Save to draft_answers

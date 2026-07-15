@@ -45,6 +45,7 @@ window.ListeningQuestionTypes = {
                 this.initMultipleChoice();
                 break;
                 
+            case 'matching_grid':
             case 'dropdown_selection':
                 this.initDropdownSelection();
                 break;
@@ -814,7 +815,7 @@ window.ListeningQuestionTypes = {
                         this.loadSingleChoiceData(questionData);
                     } else if (questionType === 'multiple_choice') {
                         this.loadMultipleChoiceData(questionData);
-                    } else if (questionType === 'dropdown_selection') {
+                    } else if (questionType === 'dropdown_selection' || questionType === 'matching_grid') {
                         this.loadDropdownData(questionData);
                     } else if (questionType === 'drag_drop') {
                         this.loadDragDropData(questionData);

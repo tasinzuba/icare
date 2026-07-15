@@ -121,7 +121,8 @@
                                             'summary_completion' => 'Summary Completion',
                                             'short_answer' => 'Short Answer',
                                             'fill_blanks' => 'Fill in the Blanks',
-                                            'dropdown_selection' => 'Matching Letters'
+                                            'dropdown_selection' => 'Dropdown / Summary (Inline)',
+                                            'matching_grid' => 'Matching Grid (Radio)'
                                         ]
                                     ])
                                     
@@ -144,7 +145,54 @@
                     
                     <!-- Options Manager -->
                     @include('admin.questions.partials.options-manager')
-                    
+
+                    <!-- #6: Bulk-add TF/YN (shown only for true_false / yes_no) -->
+                    <div id="bulk-tfyn-wrapper" class="hidden mt-3">
+                        <button type="button" onclick="toggleBulkTfyn()"
+                                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+                            <i class="fas fa-layer-group mr-2"></i> Bulk add multiple statements
+                        </button>
+                        <span class="text-xs text-gray-500 ml-2">Create several True/False (or Yes/No) questions at once.</span>
+
+                        <!-- Inline panel — opens right below the button (not a popup) -->
+                        <div id="bulk-tfyn-panel" class="hidden mt-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+                            <div class="px-4 sm:px-5 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                                <h3 class="text-base font-semibold text-gray-900">Bulk add <span id="bulk-tfyn-title">True/False/Not Given</span> questions</h3>
+                                <p class="text-sm text-gray-500 mt-0.5">Enter each statement and pick its answer. Each row becomes a separate question in this test set.</p>
+                            </div>
+
+                            <!-- Instruction note: the batch reuses the top "Instructions / Notes" editor -->
+                            <div class="px-4 sm:px-5 pt-4">
+                                <div class="flex items-start gap-2 rounded-md bg-indigo-50 border border-indigo-100 px-3 py-2">
+                                    <i class="fas fa-lightbulb text-indigo-500 mt-0.5"></i>
+                                    <p class="text-xs text-indigo-800">Type the shared instruction in the <span class="font-semibold">Instructions / Notes</span> box at the top of the form. It is applied to every statement below and shown once as a group heading in the test.</p>
+                                </div>
+                            </div>
+
+                            <!-- Choice options (fixed by the selected question type) -->
+                            <div class="px-4 sm:px-5 pt-4">
+                                <div class="text-xs font-semibold tracking-wide text-gray-500 uppercase mb-2">Choice Options</div>
+                                <div id="bulk-tfyn-choices" class="flex flex-wrap items-center gap-2"></div>
+                            </div>
+
+                            <!-- Statement rows -->
+                            <div id="bulk-tfyn-rows" class="px-4 sm:px-5 py-4 space-y-2"></div>
+
+                            <div class="px-4 sm:px-5 pb-2">
+                                <button type="button" onclick="addBulkTfynRow()" class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                    <i class="fas fa-plus-circle mr-1.5"></i> Add statement
+                                </button>
+                            </div>
+
+                            <div id="bulk-tfyn-error" class="hidden mx-4 sm:mx-5 mb-3 text-sm text-red-600"></div>
+
+                            <div class="flex justify-end gap-3 px-4 sm:px-5 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+                                <button type="button" onclick="closeBulkTfyn()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 text-sm font-medium">Cancel</button>
+                                <button type="button" id="bulk-tfyn-submit" onclick="submitBulkTfyn()" class="px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium">Create all</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Enhanced Matching Headings Manager -->
                     @include('admin.questions.partials.matching-headings-enhanced')
     
@@ -426,7 +474,7 @@
                     
                     // Check for fill blanks or dropdown selection
                     const questionType = document.getElementById('question_type')?.value;
-                    if (fillBlanksMode || questionType === 'dropdown_selection') {
+                    if (fillBlanksMode || questionType === 'dropdown_selection' || questionType === 'matching_grid') {
                         updateBlanks();
                     }
                 });
@@ -447,7 +495,7 @@
         // Initialize TinyMCE for content
         const questionType = document.getElementById('question_type');
         const isFillBlanks = questionType && questionType.value === 'fill_blanks';
-        const isDropdownSelection = questionType && questionType.value === 'dropdown_selection';
+        const isDropdownSelection = questionType && (questionType.value === 'dropdown_selection' || questionType.value === 'matching_grid');
         
         initTinyMCE('#content', isFillBlanks || isDropdownSelection);
         
@@ -487,14 +535,14 @@
                     insertBlank();
                 }
                 
-                if (questionType === 'dropdown_selection' && (e.key === 'd' || e.key === 'D')) {
+                if ((questionType === 'dropdown_selection' || questionType === 'matching_grid') && (e.key === 'd' || e.key === 'D')) {
                     e.preventDefault();
                     insertDropdown();
                 }
-                
-                if (questionType === 'dropdown_selection' && (e.key === 'b' || e.key === 'B')) {
+
+                if ((questionType === 'dropdown_selection' || questionType === 'matching_grid') && (e.key === 'b' || e.key === 'B')) {
                     e.preventDefault();
-                    insertDropdown(); // For dropdown_selection, Alt+B also inserts dropdown
+                    insertDropdown(); // For dropdown/matching-grid, Alt+B also inserts dropdown
                 }
             }
         });
@@ -710,6 +758,9 @@
     // Handle question type changes
     function handleReadingQuestionTypeChange() {
         const type = this.value;
+        // #6: show the "bulk add" button only for true_false / yes_no
+        const bulkTfynWrap = document.getElementById('bulk-tfyn-wrapper');
+        if (bulkTfynWrap) bulkTfynWrap.classList.toggle('hidden', !(type === 'true_false' || type === 'yes_no'));
         const questionContentField = document.getElementById('question-content-field');
         const passageContentField = document.getElementById('passage-content-field');
         const passageTitleField = document.getElementById('passage-title-field');
@@ -875,11 +926,11 @@
             if (orderInput) orderInput.value = '0';
             if (marksInput) marksInput.value = '0';
 
-        } else if (type === 'dropdown_selection') {
-            // Show dropdown buttons and manager
+        } else if (type === 'dropdown_selection' || type === 'matching_grid') {
+            // Show dropdown buttons and manager (matching_grid authors identically to dropdown_selection)
             if (dropdownButtons) dropdownButtons.style.display = 'flex';
             blanksManager?.classList.remove('hidden');
-            
+
             // Initial update to show any existing dropdowns
             setTimeout(updateBlanks, 500);
         } else if (type === 'fill_blanks') {
@@ -1431,7 +1482,174 @@
 
     // Make add option available globally
     window.addOption = addOption;
-    
+
+    // #5: "Add Bulk Options" for single/multiple choice. The button (options-manager partial) and
+    // the modal (modals partial: #bulk-modal / #bulk-text) existed, but these handlers were never
+    // defined on this page (they lived in an unloaded JS file), so the button did nothing.
+    window.showBulkOptions = function () {
+        const modal = document.getElementById('bulk-modal');
+        if (modal) modal.classList.remove('hidden');
+    };
+    window.closeBulkOptions = function () {
+        const modal = document.getElementById('bulk-modal');
+        if (modal) modal.classList.add('hidden');
+        const bulkText = document.getElementById('bulk-text');
+        if (bulkText) bulkText.value = '';
+    };
+    window.addBulkOptions = function () {
+        const bulkText = document.getElementById('bulk-text');
+        const container = document.getElementById('options-container');
+        if (!bulkText || !container) return;
+        const options = bulkText.value.split('\n').map(o => o.trim()).filter(o => o.length);
+        if (options.length === 0) return;
+        container.innerHTML = '';
+        options.forEach((opt, index) => addOption(opt, index === 0));
+        closeBulkOptions();
+    };
+
+    // #6: Bulk-create TRUE/FALSE/NOT-GIVEN or YES/NO/NOT-GIVEN questions.
+    (function () {
+        const bulkTfynTestSetId = {{ $testSet->id ?? 'null' }};
+        // Real starting question number (same logic the backend uses) so row badges read 29, 30, ...
+        const bulkTfynStartNumber = {{ isset($testSet) ? app(\App\Services\QuestionService::class)->calculateNextQuestionNumber($testSet) : 1 }};
+        function bulkTfynType() { return document.getElementById('question_type') ? document.getElementById('question_type').value : ''; }
+        function bulkTfynAnswerOptions(type) {
+            return type === 'yes_no' ? ['YES', 'NO', 'NOT GIVEN'] : ['TRUE', 'FALSE', 'NOT GIVEN'];
+        }
+        // Colour-code answers: YES/TRUE green, NO/FALSE red, NOT GIVEN gray. Inline styles so a
+        // Tailwind purge can never strip the colours.
+        window.bulkTfynColorFor = function (v) {
+            if (v === 'YES' || v === 'TRUE') return '#15803d';
+            if (v === 'NO' || v === 'FALSE') return '#b91c1c';
+            return '#4b5563';
+        };
+        window.bulkTfynSetAnsColor = function (sel) { if (sel) sel.style.color = window.bulkTfynColorFor(sel.value); };
+        function renderBulkTfynChoices() {
+            const wrap = document.getElementById('bulk-tfyn-choices');
+            if (!wrap) return;
+            const opts = bulkTfynAnswerOptions(bulkTfynType());
+            wrap.innerHTML = opts.map(function (o) {
+                return '<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100" style="color:' + window.bulkTfynColorFor(o) + '">' + o + '</span>';
+            }).join('');
+        }
+        window.renumberBulkTfyn = function () {
+            const rows = document.getElementById('bulk-tfyn-rows');
+            if (!rows) return;
+            Array.prototype.forEach.call(rows.children, function (row, i) {
+                const numEl = row.querySelector('.bulk-tfyn-num');
+                if (numEl) numEl.textContent = (bulkTfynStartNumber + i) + '.';
+            });
+        };
+        window.addBulkTfynRow = function (statement, answer) {
+            const rows = document.getElementById('bulk-tfyn-rows');
+            if (!rows) return;
+            const opts = bulkTfynAnswerOptions(bulkTfynType());
+            const number = bulkTfynStartNumber + rows.children.length;
+            const initial = answer || opts[0];
+            const safe = (statement || '').replace(/"/g, '&quot;');
+            const row = document.createElement('div');
+            row.className = 'bulk-tfyn-row flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5';
+            row.innerHTML =
+                '<span class="bulk-tfyn-num shrink-0 w-8 text-right text-sm font-bold text-indigo-600">' + number + '.</span>' +
+                '<input type="text" class="bulk-stmt flex-1 rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Statement..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore value="' + safe + '">' +
+                '<select class="bulk-ans shrink-0 rounded-md border-gray-300 text-sm font-semibold" style="color:' + window.bulkTfynColorFor(initial) + '" onchange="bulkTfynSetAnsColor(this)">' +
+                opts.map(function (o) { return '<option value="' + o + '"' + (o === initial ? ' selected' : '') + '>' + o + '</option>'; }).join('') +
+                '</select>' +
+                '<button type="button" class="bulk-tfyn-del shrink-0 text-gray-400 hover:text-red-600" title="Remove" onclick="this.closest(\'.bulk-tfyn-row\').remove(); window.renumberBulkTfyn();"><i class="fas fa-times"></i></button>';
+            rows.appendChild(row);
+        };
+        window.toggleBulkTfyn = function () {
+            const type = bulkTfynType();
+            if (type !== 'true_false' && type !== 'yes_no') return;
+            const panel = document.getElementById('bulk-tfyn-panel');
+            if (!panel) return;
+            if (panel.classList.contains('hidden')) {
+                document.getElementById('bulk-tfyn-title').textContent = type === 'yes_no' ? 'Yes/No/Not Given' : 'True/False/Not Given';
+                renderBulkTfynChoices();
+                document.getElementById('bulk-tfyn-rows').innerHTML = '';
+                document.getElementById('bulk-tfyn-error').classList.add('hidden');
+                for (let i = 0; i < 3; i++) window.addBulkTfynRow();
+                panel.classList.remove('hidden');
+            } else {
+                panel.classList.add('hidden');
+            }
+        };
+        window.closeBulkTfyn = function () {
+            const panel = document.getElementById('bulk-tfyn-panel');
+            if (panel) panel.classList.add('hidden');
+        };
+        window.submitBulkTfyn = function () {
+            const type = bulkTfynType();
+            const partEl = document.querySelector('[name="part_number"]');
+            const errEl = document.getElementById('bulk-tfyn-error');
+            errEl.classList.add('hidden');
+            // Reuse the main "Instructions / Notes" rich-text editor (same one single questions use),
+            // so bold/formatting works and the admin has one place to type instructions.
+            let instruction = '';
+            try {
+                if (window.tinymce && tinymce.get('instructions')) {
+                    instruction = tinymce.get('instructions').getContent();
+                } else {
+                    const el = document.getElementById('instructions');
+                    instruction = el ? el.value : '';
+                }
+            } catch (e) { instruction = ''; }
+            // Read rows defensively (a missing input must not silently kill the whole submit).
+            const items = [];
+            document.querySelectorAll('#bulk-tfyn-rows .bulk-tfyn-row').forEach(function (r) {
+                const stmtEl = r.querySelector('.bulk-stmt');
+                const ansEl = r.querySelector('.bulk-ans');
+                if (!stmtEl || !ansEl) return;
+                const s = (stmtEl.value || '').trim();
+                if (s.length) items.push({ statement: s, answer: ansEl.value });
+            });
+            console.log('[bulk-tfyn] items to submit:', items);
+            if (!items.length) { errEl.textContent = 'Please type at least one statement in the rows below, then click Create all.'; errEl.classList.remove('hidden'); return; }
+            const btn = document.getElementById('bulk-tfyn-submit');
+            btn.disabled = true; btn.textContent = 'Creating...';
+            fetch('/admin/questions/bulk-simple/' + bulkTfynTestSetId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || ''
+                },
+                body: JSON.stringify({ question_type: type, part_number: partEl ? partEl.value : 1, instruction: instruction, items: items })
+            }).then(function (res) {
+                return res.json().then(function (d) { return { ok: res.ok, status: res.status, d: d }; })
+                                 .catch(function () { return { ok: false, status: res.status, d: {} }; });
+            }).then(function (r) {
+                console.log('[bulk-tfyn] response:', r);
+                if (r.ok && r.d && r.d.success) {
+                    alert((r.d.message || 'Questions created.') + '\nReloading the form.');
+                    window.location.reload();
+                } else {
+                    let msg = (r.d && r.d.message) || '';
+                    if (r.d && r.d.errors) { msg += ' ' + Object.values(r.d.errors).join(' '); }
+                    if (!msg) { msg = 'Failed (HTTP ' + r.status + '). Please try again.'; }
+                    errEl.textContent = msg;
+                    errEl.classList.remove('hidden');
+                }
+            }).catch(function (e) {
+                console.error('[bulk-tfyn] network error:', e);
+                errEl.textContent = 'Network error — please try again.';
+                errEl.classList.remove('hidden');
+            }).finally(function () { btn.disabled = false; btn.textContent = 'Create all'; });
+        };
+        // IMPORTANT: the bulk panel lives inside the main question <form>. Pressing Enter in a
+        // statement input would otherwise SUBMIT that form (creating a single stray question and
+        // losing the bulk rows). Intercept Enter here and add a new row instead.
+        const bulkPanelEl = document.getElementById('bulk-tfyn-panel');
+        if (bulkPanelEl) {
+            bulkPanelEl.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target && e.target.classList && e.target.classList.contains('bulk-stmt')) {
+                    e.preventDefault();
+                    window.addBulkTfynRow();
+                }
+            });
+        }
+    })();
+
     // Enhanced Matching Headings Implementation
     const MatchingHeadingsManager = {
         headingCount: 0,

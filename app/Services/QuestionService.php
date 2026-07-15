@@ -38,6 +38,7 @@ class QuestionService
         'plan_map_diagram',
         'matching_headings',
         'dropdown_selection',
+        'matching_grid',
         'drag_drop'
     ];
 
@@ -283,8 +284,8 @@ class QuestionService
             }
         }
 
-        // Handle dropdown selection
-        if (in_array($request->question_type, ['dropdown_selection', 'form_completion'])) {
+        // Handle dropdown selection / matching grid
+        if (in_array($request->question_type, ['dropdown_selection', 'matching_grid', 'form_completion'])) {
             if ($request->has('dropdown_options')) {
                 $this->processDropdownOptions($request, $sectionSpecificData);
             }

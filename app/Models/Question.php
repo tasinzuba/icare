@@ -390,6 +390,54 @@ public function getDropdownData(): array
     return ['options' => [], 'correct' => []];
 }
 
+/**
+ * Remove correct-answer fields from section_specific_data before sending a question to a
+ * student during test-taking. Grading reads answers from the DB (never from this payload),
+ * so this only prevents answer-key leakage and does NOT affect scoring. Do not use on results
+ * pages, where showing correct answers after completion is intended.
+ */
+public static function sanitizeSectionDataForStudent(?array $ssd): ?array
+{
+    if (empty($ssd)) {
+        return $ssd;
+    }
+
+    // Top-level answer keys — never needed by the test-taking UI.
+    unset($ssd['dropdown_correct'], $ssd['blank_answers'], $ssd['correct_answers']);
+
+    // matching_headings: keep each mapping's structure (question, paragraph), drop the correct letter.
+    if (!empty($ssd['mappings']) && is_array($ssd['mappings'])) {
+        $ssd['mappings'] = array_map(function ($m) {
+            if (is_array($m)) {
+                unset($m['correct']);
+            }
+            return $m;
+        }, $ssd['mappings']);
+    }
+
+    // sentence_completion: keep sentence text + options, drop each sentence's correctAnswer.
+    if (!empty($ssd['sentence_completion']['sentences']) && is_array($ssd['sentence_completion']['sentences'])) {
+        $ssd['sentence_completion']['sentences'] = array_map(function ($s) {
+            if (is_array($s)) {
+                unset($s['correctAnswer'], $s['correct_answer']);
+            }
+            return $s;
+        }, $ssd['sentence_completion']['sentences']);
+    }
+
+    // drag_drop: keep zone structure + draggable options, drop each zone's correct answer.
+    if (!empty($ssd['drop_zones']) && is_array($ssd['drop_zones'])) {
+        $ssd['drop_zones'] = array_map(function ($z) {
+            if (is_array($z)) {
+                unset($z['answer'], $z['correct'], $z['correct_answer']);
+            }
+            return $z;
+        }, $ssd['drop_zones']);
+    }
+
+    return $ssd;
+}
+
 
 public function checkBlankAnswer($blankNumber, $studentAnswer): bool
 {

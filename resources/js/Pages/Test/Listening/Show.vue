@@ -270,7 +270,7 @@ const generateQuestionHtml = (q, dItem) => {
             </div>
         </div>`;
     }
-    else if (q.question_type === 'dropdown_selection' || q.question_type === 'fill_blanks') {
+    else if (q.question_type === 'dropdown_selection' || q.question_type === 'fill_blanks' || q.question_type === 'matching_grid') {
         let dropdownContent = q.content || '';
 
         dropdownContent = dropdownContent.replace(/<span([^>]*style="[^"]*")([^>]*)>([^<]*\[DROPDOWN_\d+\][^<]*)<\/span>/gi, "$3");
@@ -285,9 +285,9 @@ const generateQuestionHtml = (q, dItem) => {
         const opts = q.section_specific_data?.dropdown_options || {};
         const firstKey = Object.keys(opts)[0];
         const defaultColumns = firstKey ? String(opts[firstKey]).split(',').map(s => s.trim()) : [];
-        const isLetterMatrix = q.question_type === 'dropdown_selection'
-            && defaultColumns.length > 0
-            && defaultColumns.every(c => /^[A-Z]$/.test(c));
+        // #4: matrix mode is the explicit 'matching_grid' type now, not a letter heuristic on
+        // dropdown_selection. dropdown_selection always renders inline <select> below.
+        const isLetterMatrix = q.question_type === 'matching_grid' && defaultColumns.length > 0;
 
         if (isLetterMatrix) {
             // Decompose into lines so legend/prologue stays above the matrix and only the
@@ -475,7 +475,7 @@ const processedQuestionsByPart = computed(() => {
                 } else if (q.question_type === 'drag_drop') {
                     itemsCount = q.section_specific_data?.drag_zones ? Object.keys(q.section_specific_data.drag_zones).length : 1; 
                     itemsCount = Math.max(itemsCount, (q.section_specific_data?.drop_zones ? Object.keys(q.section_specific_data.drop_zones).length : 1));
-                } else if (q.question_type === 'fill_blanks' || q.question_type === 'dropdown_selection') {
+                } else if (q.question_type === 'fill_blanks' || q.question_type === 'dropdown_selection' || q.question_type === 'matching_grid') {
                     const bCount1 = (q.content.match(/\[____\d+____\]/g) || []).length;
                     const bCount2 = (q.content.match(/\[BLANK_\d+\]/g) || []).length;
                     const dCount = (q.content.match(/\[DROPDOWN_\d+\]/g) || []).length;

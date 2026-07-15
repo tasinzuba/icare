@@ -14,6 +14,7 @@ use App\Models\QuestionOption;
 use App\Helpers\ScoreCalculator;
 use App\Services\AnswerValidator;
 use App\Services\TestAccessService;
+use App\Traits\EnforcesTestTimeLimit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,8 @@ use Illuminate\View\View;
 
 class ListeningTestController extends Controller
 {
+    use EnforcesTestTimeLimit;
+
     protected AnswerValidator $answerValidator;
     protected TestAccessService $testAccess;
 
@@ -237,7 +240,9 @@ class ListeningTestController extends Controller
                     ];
                 }),
                 'max_selections' => (int) $q->options->where('is_correct', true)->count(),
-                'section_specific_data' => $q->section_specific_data,
+                // Strip correct-answer fields (dropdown_correct/blank_answers/mappings.correct/etc.)
+                // so the student cannot read the answer key from section_specific_data.
+                'section_specific_data' => \App\Models\Question::sanitizeSectionDataForStudent($q->section_specific_data),
                 'matching_pairs' => $q->matching_pairs,
                 'form_structure' => $q->form_structure,
                 'diagram_hotspots' => $q->diagram_hotspots,
@@ -291,22 +296,32 @@ class ListeningTestController extends Controller
             throw InvalidAttemptException::alreadyCompleted();
         }
 
-        // Get time limit from test section (not hardcoded)
-        $allowedMinutes = $attempt->testSet->section->time_limit ?? 40;
+        // H17/M36: resolve the real allowed duration (respects the per-test-set override), compute a
+        // NON-NEGATIVE elapsed time, and decide overtime server-side. 'listening' includes the +120s
+        // review phase in its allowed window.
+        $allowedMinutes = $this->resolveAllowedMinutes($attempt);
         $startTime = $attempt->start_time;
-        $actualMinutes = $startTime ? (int) now()->diffInMinutes($startTime) : 0;
+        $actualMinutes = $this->elapsedMinutes($attempt);
+        $isOvertime = $this->isTimeExceeded($attempt, 'listening');
 
         // Check if this is part of a full test
         $fullTestSectionAttempt = \App\Models\FullTestSectionAttempt::where('student_attempt_id', $attempt->id)->first();
         $isPartOfFullTest = $fullTestSectionAttempt !== null;
         
+        // H17: once past the deadline, ignore whatever the (possibly timer-bypassed) client posts and
+        // score ONLY the work saved on the server as of the deadline (draft_answers frozen by the
+        // autosave / emergency-save guards). Never discard already-saved work.
+        if ($isOvertime) {
+            $request->merge(['answers' => $attempt->draft_answers ?: ['__empty' => true]]);
+        }
+
         $request->validate([
             'answers' => 'required|array',
             'answers.*' => 'nullable',
             'auto_submit' => 'nullable|boolean',
         ]);
-        
-        DB::transaction(function () use ($request, $attempt, $isPartOfFullTest, $fullTestSectionAttempt, $actualMinutes, $allowedMinutes) {
+
+        DB::transaction(function () use ($request, $attempt, $isPartOfFullTest, $fullTestSectionAttempt, $actualMinutes, $allowedMinutes, $isOvertime) {
             // Get all questions with options (eager loaded) - excluding passages
             $questions = $attempt->testSet->questions()
                 ->with('options')
@@ -483,6 +498,7 @@ class ListeningTestController extends Controller
 
                         // Save each selection as a separate record (same as reading controller)
                         $correctSelections = 0;
+                        $savedSelections = 0;
                         foreach ($answer as $selectedOptionId) {
                             if (is_numeric($selectedOptionId)) {
                                 StudentAnswer::create([
@@ -492,6 +508,7 @@ class ListeningTestController extends Controller
                                     'answer' => null,
                                 ]);
 
+                                $savedSelections++;
                                 $answeredCount++;
                                 $option = $question->options->firstWhere('id', $selectedOptionId);
                                 if ($option && $option->is_correct) {
@@ -499,7 +516,10 @@ class ListeningTestController extends Controller
                                 }
                             }
                         }
-                        $correctAnswers += $correctSelections;
+                        // H18: net-floor — every wrong tick cancels a correct tick (floored at 0),
+                        // so ticking all options can never score full marks.
+                        $incorrectSelections = max(0, $savedSelections - $correctSelections);
+                        $correctAnswers += max(0, $correctSelections - $incorrectSelections);
                     } else {
                         // Single answer (option or text)
                         StudentAnswer::updateOrCreate(
@@ -550,6 +570,7 @@ class ListeningTestController extends Controller
                 'status' => 'completed',
                 'time_taken_minutes' => $actualMinutes,
                 'allowed_minutes' => $allowedMinutes,
+                'is_overtime' => $isOvertime,
                 'draft_answers' => null,
                 'draft_saved_at' => null,
             ]);
@@ -697,6 +718,11 @@ class ListeningTestController extends Controller
 
         if ($attempt->status !== 'in_progress') {
             return response()->json(['error' => 'Attempt already completed'], 400);
+        }
+
+        // H17: reject late draft writes so the graded draft_answers is frozen at the deadline.
+        if ($this->isTimeExceeded($attempt, 'listening')) {
+            throw TestTimeExceededException::exceeded('listening', $this->resolveAllowedMinutes($attempt) ?? 0, $this->elapsedMinutes($attempt));
         }
 
         $request->validate([

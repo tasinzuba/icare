@@ -480,8 +480,8 @@ class QuestionController extends Controller
                 }
             }
             
-            // Handle dropdown selection and form completion (uses dropdowns)
-            if (in_array($request->question_type, ['dropdown_selection', 'form_completion'])) {
+            // Handle dropdown selection, matching grid and form completion (all use dropdowns)
+            if (in_array($request->question_type, ['dropdown_selection', 'matching_grid', 'form_completion'])) {
                 // Process dropdown options
                 if ($request->has('dropdown_options')) {
                     $dropdownOptions = [];
@@ -778,6 +778,79 @@ class QuestionController extends Controller
     }
 
     /**
+     * #6: Bulk-create TRUE/FALSE/NOT-GIVEN or YES/NO/NOT-GIVEN questions in one submission.
+     * Each item becomes a separate question (statement -> content) with the three options and the
+     * chosen answer flagged — identical in shape to a single true_false/yes_no question.
+     */
+    public function bulkStoreSimple(Request $request, TestSet $testSet): \Illuminate\Http\JsonResponse
+    {
+        abort_unless(auth()->user()->hasPermission('questions.create'), 403);
+
+        $validated = $request->validate([
+            'question_type' => 'required|in:true_false,yes_no',
+            'part_number' => 'nullable|integer|min:0|max:4',
+            'instruction' => 'nullable|string|max:5000',
+            'items' => 'required|array|min:1',
+            'items.*.statement' => 'required|string|max:2000',
+            'items.*.answer' => 'required|string',
+        ]);
+
+        $optionSet = $validated['question_type'] === 'yes_no'
+            ? ['YES', 'NO', 'NOT GIVEN']
+            : ['TRUE', 'FALSE', 'NOT GIVEN'];
+        $allowedAnswers = array_map('strtoupper', $optionSet);
+        $partNumber = $validated['part_number'] ?? 1;
+
+        // Shared instruction ("Do the following statements agree...") is applied to EVERY question in
+        // the batch. The student renderer groups consecutive questions by their instruction string and
+        // shows it once as a group heading, so an identical value across the batch renders correctly.
+        // The instruction comes from the same rich-text "Instructions / Notes" editor the single-question
+        // form uses, so store the HTML as-is (identical to store()/update()). Treat a text-empty editor
+        // (e.g. "<p></p>") as null so it doesn't create an empty instruction heading.
+        $instruction = trim((string) ($validated['instruction'] ?? ''));
+        $instructionHtml = trim(strip_tags($instruction)) !== '' ? $instruction : null;
+
+        $created = 0;
+        DB::transaction(function () use ($validated, $testSet, $optionSet, $allowedAnswers, $partNumber, $instructionHtml, &$created) {
+            // Continue numbering from where the test set currently ends — same convention as the
+            // single-question form (which auto-fills order_number with calculateNextQuestionNumber,
+            // counting multi-blank/matching items). Each TF/YN row is exactly one answerable
+            // question, so increment by 1 per created row.
+            $nextOrder = $this->questionService->calculateNextQuestionNumber($testSet);
+            foreach ($validated['items'] as $item) {
+                $answer = strtoupper(trim($item['answer']));
+                if (!in_array($answer, $allowedAnswers, true)) {
+                    continue; // skip rows whose answer is outside the allowed set
+                }
+                $question = Question::create([
+                    'test_set_id' => $testSet->id,
+                    'question_type' => $validated['question_type'],
+                    'content' => trim($item['statement']),
+                    'instructions' => $instructionHtml,
+                    'part_number' => $partNumber,
+                    'order_number' => $nextOrder,
+                    'marks' => 1,
+                ]);
+                foreach ($optionSet as $opt) {
+                    QuestionOption::create([
+                        'question_id' => $question->id,
+                        'content' => $opt,
+                        'is_correct' => (strtoupper($opt) === $answer),
+                    ]);
+                }
+                $nextOrder++;
+                $created++;
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'created' => $created,
+            'message' => "{$created} question(s) created successfully.",
+        ]);
+    }
+
+    /**
      * Display the specified question.
      */
     public function show(Question $question): View
@@ -1052,8 +1125,8 @@ class QuestionController extends Controller
             }
         }
 
-        // Handle dropdown_selection section_specific_data update
-        if (in_array($request->question_type, ['dropdown_selection', 'form_completion']) && $request->has('dropdown_options')) {
+        // Handle dropdown_selection / matching_grid section_specific_data update
+        if (in_array($request->question_type, ['dropdown_selection', 'matching_grid', 'form_completion']) && $request->has('dropdown_options')) {
             $sectionSpecificData = $question->section_specific_data ?? [];
             $dropdownOptions = [];
             $dropdownCorrect = [];

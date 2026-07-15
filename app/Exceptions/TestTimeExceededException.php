@@ -11,7 +11,7 @@ namespace App\Exceptions;
  */
 class TestTimeExceededException extends TestException
 {
-    protected string $redirectRoute = 'student.results.index';
+    protected string $redirectRoute = 'student.results';
 
     protected int $allowedMinutes;
     protected int $actualMinutes;

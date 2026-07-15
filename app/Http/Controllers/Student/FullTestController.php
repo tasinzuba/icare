@@ -265,6 +265,9 @@ class FullTestController extends Controller
             }
         }
         
+        // H17: keep the original per-section start_time across re-entry (default null = fresh clock).
+        $preservedStartTime = null;
+
         // Check if section is TRULY completed (StudentAttempt status = completed)
         $sectionAttempt = $fullTestAttempt->sectionAttempts()
             ->where('section_type', $section)
@@ -289,6 +292,11 @@ class FullTestController extends Controller
             }
 
             // Section was started but NOT completed (page reload, tab close, network drop).
+            // H17: preserve the ORIGINAL start_time so re-entering the section does NOT reset the
+            // per-section deadline (otherwise a student could get unlimited time by leaving and
+            // returning). cleanupStaleSectionAttempt() abandons the old row, so capture it first.
+            $preservedStartTime = $sectionAttempt->studentAttempt->start_time ?? null;
+
             // Clean up the stale FullTestSectionAttempt so a fresh attempt can be created.
             $fullTestAttempt->cleanupStaleSectionAttempt($section);
         }
@@ -311,11 +319,12 @@ class FullTestController extends Controller
             ->where('status', 'in_progress')
             ->update(['status' => 'abandoned']);
 
-        // Create student attempt for this section
+        // Create student attempt for this section.
+        // H17: reuse the original start_time on re-entry so the per-section deadline can't be reset.
         $studentAttempt = StudentAttempt::create([
             'user_id' => auth()->id(),
             'test_set_id' => $testSet->id,
-            'start_time' => now(),
+            'start_time' => $preservedStartTime ?? now(),
             'status' => 'in_progress',
             'is_complete_attempt' => true,
             'total_questions' => $testSet->questions()->count()
@@ -525,20 +534,30 @@ class FullTestController extends Controller
 
             // Build section-specific data
             if (in_array($sectionKey, ['listening', 'reading'])) {
+                // H19: only reveal the per-question answer key once THIS section has been submitted.
+                // buildQuestionsAnalysis() embeds correct answers + explanations into the Inertia props,
+                // so opening the full-test results mid-test would otherwise leak the key for the section
+                // the student is still working on. The Vue already hides the detail block unless
+                // status === 'completed'; this makes sure the key never reaches the browser at all.
+                $sectionCompleted = $studentAttempt->status === 'completed';
+
                 // Get questions and process through trait
                 $questions = $studentAttempt->testSet->questions
                     ->where('question_type', '!=', 'passage');
 
-                $questionsAnalysis = $this->buildQuestionsAnalysis($questions, $studentAttempt);
-                $formattedQuestions = $this->formatQuestionsForVue($questionsAnalysis);
+                $formattedQuestions = [];
+                if ($sectionCompleted) {
+                    $questionsAnalysis = $this->buildQuestionsAnalysis($questions, $studentAttempt);
+                    $formattedQuestions = $this->formatQuestionsForVue($questionsAnalysis);
+                }
 
                 // Use DB values first, fallback to trait calculation
                 $totalQuestions = $studentAttempt->total_questions ?? $this->calculateTotalQuestions($questions);
                 $answeredQuestions = $studentAttempt->answered_questions ?? 0;
                 $correctAnswers = $studentAttempt->correct_answers ?? 0;
 
-                // Fallback for old records without stored stats
-                if ($answeredQuestions == 0 && $correctAnswers == 0 && count($questionsAnalysis) > 0) {
+                // Fallback for old records without stored stats (completed sections only)
+                if ($sectionCompleted && $answeredQuestions == 0 && $correctAnswers == 0 && count($formattedQuestions) > 0) {
                     $stats = $this->calculateAnswersAndCorrections($questions, $studentAttempt);
                     $answeredQuestions = $stats['attempted'];
                     $correctAnswers = $stats['correct'];
@@ -554,7 +573,7 @@ class FullTestController extends Controller
                     'answeredQuestions' => $answeredQuestions,
                     'correctAnswers' => $correctAnswers,
                     'formattedQuestions' => $formattedQuestions,
-                    'status' => 'completed',
+                    'status' => $sectionCompleted ? 'completed' : $studentAttempt->status,
                 ];
             } elseif ($sectionKey === 'writing') {
                 $studentAnswers = $studentAttempt->answers

@@ -33,6 +33,9 @@ class StudentAttempt extends Model
         'is_practice',         // Added for practice mode
         'practice_mode',       // Added for practice mode ('full', 'task1', 'task2', 'single_question')
         'practice_question_id', // Added for single question practice
+        'is_overtime',         // H17: attempt submitted past the enforced time limit
+        'time_taken_minutes',  // H17/M36: non-negative elapsed minutes
+        'allowed_minutes',     // H17: resolved allowed duration at submit
     ];
     
     protected $casts = [
@@ -52,6 +55,9 @@ class StudentAttempt extends Model
         'draft_saved_at' => 'datetime',       // Added for server-side auto-save
         'is_practice' => 'boolean',           // Added for practice mode
         'practice_question_id' => 'integer',  // Added for single question practice
+        'is_overtime' => 'boolean',           // H17
+        'time_taken_minutes' => 'integer',    // H17/M36
+        'allowed_minutes' => 'integer',       // H17
     ];
     
     public function user(): BelongsTo

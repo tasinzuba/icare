@@ -206,7 +206,7 @@ const displayQuestions = computed(() => {
             const dropdownMatches = question.content?.match(/\[DROPDOWN_\d+\]/g) || [];
             const headingDropdownMatches = question.content?.match(/\[HEADING_DROPDOWN_\d+\]/g) || [];
             
-            if (question.question_type === 'dropdown_selection') {
+            if (question.question_type === 'dropdown_selection' || question.question_type === 'matching_grid') {
                 blankCount = dropdownMatches.length;
             } else {
                 blankCount = blankMatches.length + dropdownMatches.length + headingDropdownMatches.length;
@@ -456,9 +456,9 @@ const buildDropdownMatrix = (item) => {
     const firstKey = Object.keys(opts)[0];
     const defaultColumns = firstKey ? String(opts[firstKey]).split(',').map(s => s.trim()) : [];
 
-    // Heuristic: matrix only when every option is a single uppercase letter (matching-to-letter style)
-    const isLetterOptions = defaultColumns.length > 0 && defaultColumns.every(c => /^[A-Z]$/.test(c));
-
+    // #4: render mode is decided by the explicit question_type ('matching_grid' → grid), NOT by a
+    // letter heuristic. buildDropdownMatrix is only consulted for matching_grid, so isMatrix just
+    // needs rows. dropdown_selection always renders as inline <select> (the v-else branch).
     const content = q.content || '';
     const regex = /\[DROPDOWN_(\d+)\]/g;
     const rows = [];
@@ -494,7 +494,7 @@ const buildDropdownMatrix = (item) => {
         }
         cursor = match.index + match[0].length;
     }
-    const result = { rows, columns: defaultColumns, isMatrix: isLetterOptions && rows.length > 0 };
+    const result = { rows, columns: defaultColumns, isMatrix: rows.length > 0 };
     dropdownMatrixCache.set(q.id, result);
     return result;
 };
@@ -973,12 +973,12 @@ const isAnswered = (item, type, indexOrKey, number) => {
                                 <div v-if="item.is_multiple_choice && item.count > 1" class="ielts-q-number" style="font-weight: 700 !important; font-size: 14px !important; color: #000000 !important; line-height: 1.5 !important; margin-bottom: 10px !important; display: block !important; padding: 0 !important; background: none !important; border: none !important;">
                                     <span style="font-weight: 700 !important;">Questions {{ item.display_number }}-{{ item.display_number + item.count - 1 }}</span>
                                 </div>
-                                <div v-else-if="!item.has_blanks && item.display_number" class="ielts-q-number" style="font-weight: 700 !important; font-size: 14px !important; color: #000000 !important; line-height: 1.5 !important; margin-bottom: 10px !important; display: block !important; padding: 0 !important; background: none !important; border: none !important;">
+                                <div v-else-if="!item.has_blanks && item.display_number && !['single_choice', 'true_false', 'yes_no'].includes(item.question.question_type)" class="ielts-q-number" style="font-weight: 700 !important; font-size: 14px !important; color: #000000 !important; line-height: 1.5 !important; margin-bottom: 10px !important; display: block !important; padding: 0 !important; background: none !important; border: none !important;">
                                     <span style="font-weight: 700 !important;">{{ item.display_number }}.</span>
                                 </div>
 
                                 <!-- dropdown_selection with letter-only options → IELTS matching matrix grid -->
-                                <div v-if="item.question.question_type === 'dropdown_selection' && buildDropdownMatrix(item).isMatrix" class="ielts-dropdown-matrix" style="margin-top: 8px;">
+                                <div v-if="item.question.question_type === 'matching_grid' && buildDropdownMatrix(item).isMatrix" class="ielts-dropdown-matrix" style="margin-top: 8px;">
                                     <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #6b7280 !important; font-size: 14px;">
                                         <thead>
                                             <tr style="background: #f3f4f6;">
@@ -1011,6 +1011,11 @@ const isAnswered = (item, type, indexOrKey, number) => {
                                             </tr>
                                         </tbody>
                                     </table>
+                                </div>
+                                <!-- Simple choice / TF / YN: show the number inline with the statement ("1. Statement...") -->
+                                <div v-else-if="['single_choice', 'true_false', 'yes_no'].includes(item.question.question_type)" style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px;">
+                                    <span v-if="!item.has_blanks && item.display_number" class="ielts-q-number" style="font-weight: 700 !important; font-size: 14px !important; color: #000000 !important; line-height: 1.6 !important; flex-shrink: 0;">{{ item.display_number }}.</span>
+                                    <div class="prose prose-slate max-w-none prose-p:my-0 text-gray-800 text-base leading-relaxed" style="font-size: 14px; line-height: 1.6; color: #111827;" v-html="item.processedHtml"></div>
                                 </div>
                                 <div v-else class="prose prose-slate max-w-none prose-p:my-0 text-gray-800 text-base leading-relaxed" style="margin-bottom: 8px; font-size: 14px; line-height: 1.6; color: #111827;" v-html="item.processedHtml"></div>
 

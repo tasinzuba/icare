@@ -70,7 +70,8 @@
                                         <option value="fill_blanks" {{ old('question_type', $question->question_type) == 'fill_blanks' ? 'selected' : '' }}>Fill in the Blanks</option>
                                         <option value="single_choice" {{ old('question_type', $question->question_type) == 'single_choice' ? 'selected' : '' }}>Single Choice (Radio)</option>
                                         <option value="multiple_choice" {{ old('question_type', $question->question_type) == 'multiple_choice' ? 'selected' : '' }}>Multiple Choice (Checkbox)</option>
-                                        <option value="dropdown_selection" {{ old('question_type', $question->question_type) == 'dropdown_selection' ? 'selected' : '' }}>Matching Letters</option>
+                                        <option value="dropdown_selection" {{ old('question_type', $question->question_type) == 'dropdown_selection' ? 'selected' : '' }}>Dropdown / Summary (Inline)</option>
+                                        <option value="matching_grid" {{ old('question_type', $question->question_type) == 'matching_grid' ? 'selected' : '' }}>Matching Grid (Radio)</option>
                                         <option value="drag_drop" {{ old('question_type', $question->question_type) == 'drag_drop' ? 'selected' : '' }}>Drag & Drop</option>
                                     </select>
                                 </div>
@@ -354,7 +355,7 @@
                         if (window.ListeningQuestionTypes) {
                             window.ListeningQuestionTypes.updateBlanks();
                         }
-                    } else if (['dropdown_selection', 'form_completion'].includes(questionType)) {
+                    } else if (['dropdown_selection', 'matching_grid', 'form_completion'].includes(questionType)) {
                         if (window.ListeningQuestionTypes) {
                             window.ListeningQuestionTypes.updateDropdowns();
                         }
@@ -391,7 +392,7 @@
 
                 if (selectedType === 'fill_blanks' && blankButtons) {
                     blankButtons.style.display = 'flex';
-                } else if (selectedType === 'dropdown_selection' && dropdownButtons) {
+                } else if ((selectedType === 'dropdown_selection' || selectedType === 'matching_grid') && dropdownButtons) {
                     dropdownButtons.style.display = 'flex';
                 } else if (selectedType === 'drag_drop' && dragZoneButtons) {
                     dragZoneButtons.style.display = 'flex';
@@ -453,7 +454,7 @@
                     insertListeningBlank();
                 }
                 
-                if (questionType === 'dropdown_selection' && (e.key === 'd' || e.key === 'D')) {
+                if ((questionType === 'dropdown_selection' || questionType === 'matching_grid') && (e.key === 'd' || e.key === 'D')) {
                     e.preventDefault();
                     insertListeningDropdown();
                 }

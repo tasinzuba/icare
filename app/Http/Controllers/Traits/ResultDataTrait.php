@@ -120,7 +120,7 @@ trait ResultDataTrait
                     ];
                     $currentNumber++;
                 }
-            } elseif ($question->question_type === 'dropdown_selection') {
+            } elseif (in_array($question->question_type, ['dropdown_selection', 'matching_grid'])) {
                 $answer = $attempt->answers->where('question_id', $question->id)->first();
                 preg_match_all('/\[DROPDOWN_(\d+)\]/', $question->content, $matches, PREG_SET_ORDER);
                 if (count($matches) > 0) {
@@ -389,7 +389,7 @@ trait ResultDataTrait
                     $blankCount = max($blankCount, $fillBlankCount);
                 }
 
-                if ($question->question_type === 'dropdown_selection') {
+                if (in_array($question->question_type, ['dropdown_selection', 'matching_grid'])) {
                     preg_match_all('/\[DROPDOWN_\d+\]/', $content, $dropdownSelectionMatches);
                     $dropdownSelectionCount = count($dropdownSelectionMatches[0]);
                     $blankCount = max($blankCount, $dropdownSelectionCount);
@@ -504,14 +504,24 @@ trait ResultDataTrait
                 }
                 $selectedOptionIds = array_values(array_unique($selectedOptionIds));
 
-                foreach ($selectedOptionIds as $i => $optionId) {
-                    if ($i >= $correctCount) break;
-                    $answeredQuestions++;
+                // H18: net-floor scoring — each wrong tick cancels a correct tick (floored at 0),
+                // so selecting every option can never yield full marks. Keeps this shared recompute
+                // (used by BandScoreRecalculator + results) consistent with submit-time scoring.
+                $correctSelected = 0;
+                $incorrectSelected = 0;
+                foreach ($selectedOptionIds as $optionId) {
                     $selectedOption = $question->options->firstWhere('id', $optionId);
-                    if ($selectedOption && $selectedOption->is_correct) {
-                        $correctAnswers++;
+                    if (!$selectedOption) {
+                        continue;
+                    }
+                    if ($selectedOption->is_correct) {
+                        $correctSelected++;
+                    } else {
+                        $incorrectSelected++;
                     }
                 }
+                $correctAnswers += max(0, $correctSelected - $incorrectSelected);
+                $answeredQuestions += min(count($selectedOptionIds), max($correctCount, 1));
             } elseif ($question->question_type === 'fill_blanks') {
                 $answer = $questionAnswers->first();
                 if ($answer && $answer->answer) {
@@ -540,7 +550,7 @@ trait ResultDataTrait
                         }
                     }
                 }
-            } elseif ($question->question_type === 'dropdown_selection') {
+            } elseif (in_array($question->question_type, ['dropdown_selection', 'matching_grid'])) {
                 $answer = $questionAnswers->first();
                 if ($answer && $answer->answer) {
                     if ($this->traitIsJson($answer->answer)) {

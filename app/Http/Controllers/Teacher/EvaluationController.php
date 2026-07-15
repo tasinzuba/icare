@@ -110,6 +110,14 @@ class EvaluationController extends Controller
             $unassignedOfflineQuery->whereHas('studentAttempt.testSet.section', fn($q) => $q->where('name', $request->section));
         }
 
+        // #3: search the offline queue by student name/email
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $unassignedOfflineQuery->whereHas('student', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
         // Sort — default newest first
         $sortField = $request->input('sort', 'requested_at');
         $sortDir = $request->input('dir', 'desc');
@@ -140,6 +148,14 @@ class EvaluationController extends Controller
                 $specializations = $teacher->specialization ?? [];
                 $q->whereIn('name', $specializations);
             });
+
+        // #3: apply the same student search to the online queue.
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $unassignedOnlineQuery->whereHas('student', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%");
+            });
+        }
 
         $unassignedOnlineEvaluations = $unassignedOnlineQuery->orderBy('requested_at', 'desc')->get();
 
@@ -228,10 +244,10 @@ class EvaluationController extends Controller
                 'task_scores.*.coherence_cohesion' => 'required|numeric|min:0|max:9',
                 'task_scores.*.lexical_resource' => 'required|numeric|min:0|max:9',
                 'task_scores.*.grammar' => 'required|numeric|min:0|max:9',
-                'task_scores.*.feedback' => 'required|string',
+                'task_scores.*.feedback' => 'nullable|string',
                 'overall_band_score' => 'required|numeric|min:0|max:9',
-                'strengths' => 'required|array',
-                'improvements' => 'required|array',
+                'strengths' => 'nullable|array',
+                'improvements' => 'nullable|array',
                 'error_markings' => 'nullable|json'
             ]);
         } else { // speaking
@@ -242,10 +258,10 @@ class EvaluationController extends Controller
                 'task_scores.*.lexical_resource' => 'required|numeric|min:0|max:9',
                 'task_scores.*.grammar' => 'required|numeric|min:0|max:9',
                 'task_scores.*.pronunciation' => 'required|numeric|min:0|max:9',
-                'task_scores.*.feedback' => 'required|string',
+                'task_scores.*.feedback' => 'nullable|string',
                 'overall_band_score' => 'required|numeric|min:0|max:9',
-                'strengths' => 'required|array',
-                'improvements' => 'required|array'
+                'strengths' => 'nullable|array',
+                'improvements' => 'nullable|array'
             ]);
         }
         

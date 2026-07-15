@@ -7,12 +7,14 @@ use App\Events\TestCompleted;
 use App\Exceptions\InvalidAttemptException;
 use App\Exceptions\TestAccessDeniedException;
 use App\Exceptions\InsufficientQuestionsException;
+use App\Exceptions\TestTimeExceededException;
 use App\Models\Question;
 use App\Models\StudentAttempt;
 use App\Models\StudentAnswer;
 use App\Models\TestSet;
 use App\Models\HumanEvaluationRequest;
 use App\Services\TestAccessService;
+use App\Traits\EnforcesTestTimeLimit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +23,8 @@ use Illuminate\View\View;
 
 class WritingTestController extends Controller
 {
+    use EnforcesTestTimeLimit;
+
     protected TestAccessService $testAccess;
 
     public function __construct(TestAccessService $testAccess)
@@ -310,7 +314,12 @@ class WritingTestController extends Controller
         if ($attempt->user_id !== auth()->id() || $attempt->status === 'completed') {
             return response()->json(['success' => false, 'message' => 'Invalid attempt'], 403);
         }
-        
+
+        // H17: reject late writes so the graded student_answers are frozen at the deadline.
+        if ($this->isTimeExceeded($attempt, 'writing')) {
+            throw TestTimeExceededException::exceeded('writing', $this->resolveAllowedMinutes($attempt) ?? 0, $this->elapsedMinutes($attempt));
+        }
+
         $request->validate([
             'answers' => 'required|array',
             'answers.*' => 'nullable|string',
@@ -355,19 +364,34 @@ class WritingTestController extends Controller
         $fullTestSectionAttempt = \App\Models\FullTestSectionAttempt::where('student_attempt_id', $attempt->id)->first();
         $isPartOfFullTest = $fullTestSectionAttempt !== null;
         
-        // Validate the submission
-        $request->validate([
-            'answers' => 'required|array',
-            'answers.*' => 'nullable|string',
-            'auto_submit' => 'nullable|boolean',
-        ]);
-        
-        DB::transaction(function () use ($request, $attempt, $isPartOfFullTest, $fullTestSectionAttempt) {
+        // H17: server-side overtime decision + non-negative time tracking (these columns were
+        // previously null for writing). When overtime, the late payload is ignored and the
+        // already-saved student_answers are scored instead.
+        $isOvertime = $this->isTimeExceeded($attempt, 'writing');
+        $elapsedMinutes = $this->elapsedMinutes($attempt);
+        $allowedMinutes = $this->resolveAllowedMinutes($attempt);
+
+        // Validate the submission (only when on time — an overtime submit ignores the payload).
+        if (!$isOvertime) {
+            $request->validate([
+                'answers' => 'required|array',
+                'answers.*' => 'nullable|string',
+                'auto_submit' => 'nullable|boolean',
+            ]);
+        }
+
+        DB::transaction(function () use ($request, $attempt, $isPartOfFullTest, $fullTestSectionAttempt, $isOvertime, $elapsedMinutes, $allowedMinutes) {
             $totalQuestions = 0;
             $answeredQuestions = 0;
-            
+
+            // H17: on overtime, score the answers already saved on the server (via autosave), not the
+            // possibly-late submit payload.
+            $answersToSave = $isOvertime
+                ? $attempt->answers()->pluck('answer', 'question_id')->toArray()
+                : ($request->answers ?? []);
+
             // Save answers
-            foreach ($request->answers as $questionId => $content) {
+            foreach ($answersToSave as $questionId => $content) {
                 $totalQuestions++;
                 
                 // Find existing answer
@@ -402,6 +426,9 @@ class WritingTestController extends Controller
                 'total_questions' => $totalQuestions,
                 'answered_questions' => $answeredQuestions,
                 'is_complete_attempt' => ($completionRate >= 80), // Consider 80%+ as complete
+                'is_overtime' => $isOvertime,
+                'time_taken_minutes' => $elapsedMinutes,
+                'allowed_minutes' => $allowedMinutes,
             ]);
 
             // Dispatch TestCompleted event - handles all side effects
@@ -506,6 +533,11 @@ class WritingTestController extends Controller
 
         if ($attempt->status !== 'in_progress') {
             return response()->json(['error' => 'Attempt already completed'], 400);
+        }
+
+        // H17: freeze drafts at the deadline (consistent with autosave()).
+        if ($this->isTimeExceeded($attempt, 'writing')) {
+            throw TestTimeExceededException::exceeded('writing', $this->resolveAllowedMinutes($attempt) ?? 0, $this->elapsedMinutes($attempt));
         }
 
         $request->validate([

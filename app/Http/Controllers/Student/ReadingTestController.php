@@ -13,6 +13,7 @@ use App\Models\TestSet;
 use App\Helpers\ScoreCalculator;
 use App\Services\AnswerValidator;
 use App\Services\TestAccessService;
+use App\Traits\EnforcesTestTimeLimit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,8 @@ use Illuminate\View\View;
 
 class ReadingTestController extends Controller
 {
+    use EnforcesTestTimeLimit;
+
     protected AnswerValidator $answerValidator;
     protected TestAccessService $testAccess;
 
@@ -226,6 +229,10 @@ class ReadingTestController extends Controller
         $testSet->questions->each(function ($q) {
             $q->setAttribute('max_selections', (int) $q->options->where('is_correct', true)->count());
             $q->options->each(fn ($opt) => $opt->makeHidden(['is_correct', 'metadata']));
+            // Also strip correct-answer fields from section_specific_data (dropdown_correct,
+            // blank_answers, mappings.correct, sentence correctAnswer, drop_zone answers) — the
+            // whole section_specific_data was being shipped to the student, leaking the answer key.
+            $q->setAttribute('section_specific_data', \App\Models\Question::sanitizeSectionDataForStudent($q->section_specific_data));
         });
 
         return \Inertia\Inertia::render('Test/Reading/Show', [
@@ -234,7 +241,7 @@ class ReadingTestController extends Controller
             'initialAnswers' => $attempt->draft_answers ?? [],
             'timeLimitSeconds' => ($testSet->time_limit_minutes ?? $testSet->section?->time_limit ?? 60) * 60,
             'serverTime' => now()->toIso8601String(),
-            'attemptStartTime' => $attempt->created_at->toIso8601String(),
+            'attemptStartTime' => ($attempt->start_time ?? $attempt->created_at)->toIso8601String(),
         ]);
     }
 
@@ -252,10 +259,13 @@ class ReadingTestController extends Controller
             throw InvalidAttemptException::alreadyCompleted();
         }
 
-        // Get time limit from test section (not hardcoded)
-        $allowedMinutes = $attempt->testSet->section->time_limit ?? 60;
+        // H17/M36: resolve the real allowed duration (respects the per-test-set override, fixing the
+        // old bug where allowed_minutes stored only the section default), compute a NON-NEGATIVE
+        // elapsed time, and decide overtime server-side.
+        $allowedMinutes = $this->resolveAllowedMinutes($attempt);
         $startTime = $attempt->start_time;
-        $actualMinutes = $startTime ? (int) now()->diffInMinutes($startTime) : 0;
+        $actualMinutes = $this->elapsedMinutes($attempt);
+        $isOvertime = $this->isTimeExceeded($attempt, 'reading');
 
         // Log all incoming data
         \Log::info('=== READING TEST SUBMISSION START ===', [
@@ -282,13 +292,20 @@ class ReadingTestController extends Controller
         $fullTestSectionAttempt = \App\Models\FullTestSectionAttempt::where('student_attempt_id', $attempt->id)->first();
         $isPartOfFullTest = $fullTestSectionAttempt !== null;
         
+        // H17: once past the deadline, ignore whatever the (possibly timer-bypassed) client posts and
+        // score ONLY the work saved on the server as of the deadline (draft_answers were frozen by the
+        // autosave / emergency-save guards). Never discard already-saved work.
+        if ($isOvertime) {
+            $request->merge(['answers' => $attempt->draft_answers ?: ['__empty' => true]]);
+        }
+
         // Validate the submission
         $request->validate([
             'answers' => 'required|array',
             'auto_submit' => 'nullable|boolean',
         ]);
-        
-        DB::transaction(function () use ($request, $attempt, $isPartOfFullTest, $fullTestSectionAttempt, $actualMinutes, $allowedMinutes) {
+
+        DB::transaction(function () use ($request, $attempt, $isPartOfFullTest, $fullTestSectionAttempt, $actualMinutes, $allowedMinutes, $isOvertime) {
             // Get all questions with options (excluding passages) - eager loaded
             $questions = $attempt->testSet->questions()
                 ->with('options')
@@ -572,7 +589,8 @@ class ReadingTestController extends Controller
                         );
                         
                         // Check each blank/dropdown separately for IELTS scoring
-                        if ($question->question_type === 'dropdown_selection') {
+                        // (matching_grid stores + scores identically to dropdown_selection — #4)
+                        if (in_array($question->question_type, ['dropdown_selection', 'matching_grid'])) {
                             $sectionData = $question->section_specific_data;
                             
                             // For dropdown_selection, each dropdown counts as a separate question
@@ -681,11 +699,15 @@ class ReadingTestController extends Controller
                                                     // - Each correct selection gets a mark
                                                     // - Each question with multiple answers counts as multiple questions for IELTS
                                                     // - Cap answered count to correctCount to prevent answered > total
-                                                    $correctAnswers += $correctSelections;
+                                                    // H18: net-floor — every wrong tick cancels a correct tick (floored
+                                                    // at 0), so ticking all options can never score full marks. Honest
+                                                    // test-takers (UI-capped at max_selections) are unaffected.
+                                                    $correctAnswers += max(0, $correctSelections - max(0, $savedCount - $correctSelections));
                                                     $answeredCount += min(count($answer), $totalCorrectOptions);
                                                 } else {
                                                     // Single correct answer - traditional scoring
-                                                    if ($correctSelections > 0) {
+                                                    // H18: net-floor — a wrong tick cancels the correct one.
+                                                    if (max(0, $correctSelections - max(0, $savedCount - $correctSelections)) > 0) {
                                                         $correctAnswers++;
                                                     }
                                                     $answeredCount++;
@@ -753,6 +775,7 @@ class ReadingTestController extends Controller
                 'status' => 'completed',
                 'time_taken_minutes' => $actualMinutes,
                 'allowed_minutes' => $allowedMinutes,
+                'is_overtime' => $isOvertime,
                 'draft_answers' => null,      // Clear draft after submission
                 'draft_saved_at' => null,     // Clear timestamp too
             ]);
@@ -944,6 +967,12 @@ class ReadingTestController extends Controller
         // Only allow auto-save for in_progress attempts
         if ($attempt->status !== 'in_progress') {
             return response()->json(['error' => 'Attempt already completed'], 400);
+        }
+
+        // H17: reject late draft writes so the graded draft_answers is frozen at the deadline.
+        // (Renders as JSON 422 for this XHR call; already-saved draft is untouched.)
+        if ($this->isTimeExceeded($attempt, 'reading')) {
+            throw TestTimeExceededException::exceeded('reading', $this->resolveAllowedMinutes($attempt) ?? 0, $this->elapsedMinutes($attempt));
         }
 
         $request->validate([

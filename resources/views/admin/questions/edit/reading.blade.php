@@ -142,7 +142,8 @@
                                 'summary_completion' => 'Summary Completion',
                                 'short_answer' => 'Short Answer',
                                 'fill_blanks' => 'Fill in the Blanks',
-                                'dropdown_selection' => 'Matching Letters'
+                                'dropdown_selection' => 'Dropdown / Summary (Inline)',
+                                'matching_grid' => 'Matching Grid (Radio)'
                             ],
                             'question' => $question
                         ])
@@ -456,7 +457,7 @@
 
                     // Check for fill blanks or dropdown selection
                     const questionType = document.getElementById('question_type')?.value;
-                    if (fillBlanksMode || questionType === 'dropdown_selection') {
+                    if (fillBlanksMode || questionType === 'dropdown_selection' || questionType === 'matching_grid') {
                         updateBlanks();
                     }
                 });
@@ -477,7 +478,7 @@
         // Initialize TinyMCE for content
         const questionType = document.getElementById('question_type');
         const isFillBlanks = questionType && questionType.value === 'fill_blanks';
-        const isDropdownSelection = questionType && questionType.value === 'dropdown_selection';
+        const isDropdownSelection = questionType && (questionType.value === 'dropdown_selection' || questionType.value === 'matching_grid');
 
         initTinyMCE('#content', isFillBlanks || isDropdownSelection);
 
@@ -510,14 +511,14 @@
                     insertBlank();
                 }
 
-                if (questionType === 'dropdown_selection' && (e.key === 'd' || e.key === 'D')) {
+                if ((questionType === 'dropdown_selection' || questionType === 'matching_grid') && (e.key === 'd' || e.key === 'D')) {
                     e.preventDefault();
                     insertDropdown();
                 }
 
-                if (questionType === 'dropdown_selection' && (e.key === 'b' || e.key === 'B')) {
+                if ((questionType === 'dropdown_selection' || questionType === 'matching_grid') && (e.key === 'b' || e.key === 'B')) {
                     e.preventDefault();
-                    insertDropdown(); // For dropdown_selection, Alt+B also inserts dropdown
+                    insertDropdown(); // For dropdown/matching-grid, Alt+B also inserts dropdown
                 }
             }
         });
@@ -900,8 +901,8 @@
             if (orderInput) orderInput.value = '0';
             if (marksInput) marksInput.value = '0';
 
-        } else if (type === 'dropdown_selection') {
-            // Show dropdown buttons and manager
+        } else if (type === 'dropdown_selection' || type === 'matching_grid') {
+            // Show dropdown buttons and manager (matching_grid authors identically to dropdown_selection)
             if (dropdownButtons) dropdownButtons.style.display = 'flex';
             blanksManager?.classList.remove('hidden');
 
@@ -1488,6 +1489,29 @@
     // Make add option available globally
     window.addOption = addOption;
 
+    // #5: "Add Bulk Options" for single/multiple choice — handlers were referenced by the button
+    // but never defined on this page (lived in an unloaded JS file), so the button did nothing.
+    window.showBulkOptions = function () {
+        const modal = document.getElementById('bulk-modal');
+        if (modal) modal.classList.remove('hidden');
+    };
+    window.closeBulkOptions = function () {
+        const modal = document.getElementById('bulk-modal');
+        if (modal) modal.classList.add('hidden');
+        const bulkText = document.getElementById('bulk-text');
+        if (bulkText) bulkText.value = '';
+    };
+    window.addBulkOptions = function () {
+        const bulkText = document.getElementById('bulk-text');
+        const container = document.getElementById('options-container');
+        if (!bulkText || !container) return;
+        const options = bulkText.value.split('\n').map(o => o.trim()).filter(o => o.length);
+        if (options.length === 0) return;
+        container.innerHTML = '';
+        options.forEach((opt, index) => addOption(opt, index === 0));
+        closeBulkOptions();
+    };
+
     // Enhanced Matching Headings Implementation
     const MatchingHeadingsManager = {
         headingCount: 0,
@@ -1813,7 +1837,7 @@
         }
 
         // Load existing dropdown data
-        if (existingType === 'dropdown_selection' && window.questionData.section_specific_data) {
+        if ((existingType === 'dropdown_selection' || existingType === 'matching_grid') && window.questionData.section_specific_data) {
             const dropdownOptions = window.questionData.section_specific_data.dropdown_options || {};
             const dropdownCorrect = window.questionData.section_specific_data.dropdown_correct || {};
 

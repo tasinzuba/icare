@@ -208,7 +208,18 @@ class ResultController extends Controller
         if ($attempt->user_id !== auth()->id()) {
             abort(403);
         }
-        
+
+        // H19: never expose the answer key / explanations for an attempt that is not finished.
+        // Without this, a student could open this results URL for an in-progress attempt mid-test,
+        // read the correct answers, then go back and fill them in. Only a submitted ('completed')
+        // attempt may reveal correct answers; everything else (in_progress/assigned/not_started/
+        // abandoned) is sent back to the results list.
+        if ($attempt->status !== 'completed') {
+            return redirect()
+                ->route('student.results')
+                ->with('error', 'Results are available only after you submit the test.');
+        }
+
         // Eager load all necessary relationships to avoid N+1 queries
         $attempt->load([
             'testSet.section',
@@ -378,7 +389,13 @@ class ResultController extends Controller
         if ($attempt->user_id !== auth()->id()) {
             abort(403);
         }
-        
+
+        // H19: this endpoint returns correct answers + explanations, so it must never run for an
+        // unfinished attempt. (Currently unrouted/dead, but gated defensively in case it is wired up.)
+        if ($attempt->status !== 'completed') {
+            abort(403, 'Results are available only after you submit the test.');
+        }
+
         $attempt->load([
             'answers.question.options',
             'answers.selectedOption',

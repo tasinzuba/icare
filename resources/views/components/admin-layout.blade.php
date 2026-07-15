@@ -517,7 +517,9 @@
                 <div class="mb-6">
                     <h3 class="sidebar-section-title">User Management</h3>
 
-                    @if($user->is_admin)
+                    {{-- Roles & Permissions hidden: unused in current flow (0 users assigned to roles;
+                         admin access is governed by is_admin). Re-enable by restoring `$user->is_admin`. --}}
+                    @if(false)
                     <a href="{{ route('admin.roles.index') }}"
                        class="sidebar-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
                         <span class="sidebar-link-icon">

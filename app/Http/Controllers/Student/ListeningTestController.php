@@ -243,9 +243,12 @@ class ListeningTestController extends Controller
                 // Strip correct-answer fields (dropdown_correct/blank_answers/mappings.correct/etc.)
                 // so the student cannot read the answer key from section_specific_data.
                 'section_specific_data' => \App\Models\Question::sanitizeSectionDataForStudent($q->section_specific_data),
-                'matching_pairs' => $q->matching_pairs,
-                'form_structure' => $q->form_structure,
-                'diagram_hotspots' => $q->diagram_hotspots,
+                // H19: these sibling columns ARE the answer key (scoring reads matching_pairs.right,
+                // form_structure.fields.answer, diagram_hotspots.answer) — strip the answers before
+                // sending to the student. Scoring reads them from the DB model, not this payload.
+                'matching_pairs' => \App\Models\Question::sanitizeMatchingPairsForStudent($q->matching_pairs),
+                'form_structure' => \App\Models\Question::sanitizeFormStructureForStudent($q->form_structure),
+                'diagram_hotspots' => \App\Models\Question::sanitizeDiagramHotspotsForStudent($q->diagram_hotspots),
             ];
         });
 
@@ -496,30 +499,34 @@ class ListeningTestController extends Controller
                                     ->where('question_id', $questionId)
                                     ->delete();
 
-                        // Save each selection as a separate record (same as reading controller)
+                        // H18 (audit fix): de-duplicate the selected option ids so a client cannot
+                        // POST the same correct id repeatedly to inflate the count / bypass the cap.
+                        $uniqueSelections = array_values(array_unique(array_filter($answer, 'is_numeric')));
+
                         $correctSelections = 0;
                         $savedSelections = 0;
-                        foreach ($answer as $selectedOptionId) {
-                            if (is_numeric($selectedOptionId)) {
-                                StudentAnswer::create([
-                                    'attempt_id' => $attempt->id,
-                                    'question_id' => $questionId,
-                                    'selected_option_id' => $selectedOptionId,
-                                    'answer' => null,
-                                ]);
+                        foreach ($uniqueSelections as $selectedOptionId) {
+                            StudentAnswer::create([
+                                'attempt_id' => $attempt->id,
+                                'question_id' => $questionId,
+                                'selected_option_id' => $selectedOptionId,
+                                'answer' => null,
+                            ]);
 
-                                $savedSelections++;
-                                $answeredCount++;
-                                $option = $question->options->firstWhere('id', $selectedOptionId);
-                                if ($option && $option->is_correct) {
-                                    $correctSelections++;
-                                }
+                            $savedSelections++;
+                            $option = $question->options->firstWhere('id', $selectedOptionId);
+                            if ($option && $option->is_correct) {
+                                $correctSelections++;
                             }
                         }
-                        // H18: net-floor — every wrong tick cancels a correct tick (floored at 0),
-                        // so ticking all options can never score full marks.
-                        $incorrectSelections = max(0, $savedSelections - $correctSelections);
-                        $correctAnswers += max(0, $correctSelections - $incorrectSelections);
+
+                        // H18 (audit fix): dedup + selection-cap scoring — IELTS partial credit with
+                        // anti-gaming. Over-selecting (more distinct options than allowed) scores 0;
+                        // otherwise award one mark per correct option actually selected.
+                        $totalCorrectOptions = $question->options->where('is_correct', true)->count();
+                        $awarded = ($savedSelections > $totalCorrectOptions) ? 0 : $correctSelections;
+                        $correctAnswers += $awarded;
+                        $answeredCount += min($savedSelections, max($totalCorrectOptions, 1));
                     } else {
                         // Single answer (option or text)
                         StudentAnswer::updateOrCreate(

@@ -639,82 +639,66 @@ class ReadingTestController extends Controller
                         StudentAnswer::where('attempt_id', $attempt->id)
                                     ->where('question_id', $questionId)
                                     ->delete();
-                        
-                        // Check if this is actually saving to database
+
+                        // H18 (audit fix): de-duplicate the selected option ids before saving/scoring.
+                        // A client could otherwise POST the same correct option id multiple times to
+                        // inflate the correct count and slip past the selection cap.
+                        $uniqueSelections = array_values(array_unique(array_filter(
+                            is_array($answer) ? $answer : [$answer],
+                            'is_numeric'
+                        )));
+
                         $savedCount = 0;
                         $correctSelections = 0;
-                        
-                        foreach ($answer as $key => $value) {
-                            \Log::info('Individual selection', [
-                                'key' => $key,
-                                'value' => $value,
-                                'is_numeric' => is_numeric($value)
+
+                        foreach ($uniqueSelections as $value) {
+                            $saved = StudentAnswer::create([
+                                'attempt_id' => $attempt->id,
+                                'question_id' => $questionId,
+                                'selected_option_id' => $value,
+                                'answer' => null,
                             ]);
-                            
-                            if (is_numeric($value)) {
-                                $saved = StudentAnswer::create([
-                                    'attempt_id' => $attempt->id,
-                                    'question_id' => $questionId,
-                                    'selected_option_id' => $value,
-                                    'answer' => null,
-                                ]);
-                                
-                                if ($saved && $saved->id) {
-                                    $savedCount++;
-                                    \Log::info('SAVED TO DATABASE', [
-                                        'student_answer_id' => $saved->id,
-                                        'question_id' => $questionId,
-                                        'selected_option_id' => $value
-                                    ]);
-                                    
-                                    // Check if this option is correct
-                                    $option = $question->options->find($value);
-                                    if ($option && $option->is_correct) {
-                                        $correctSelections++;
-                                    }
-                                } else {
-                                    \Log::error('FAILED TO SAVE TO DATABASE', [
-                                        'question_id' => $questionId,
-                                        'value' => $value
-                                    ]);
+
+                            if ($saved && $saved->id) {
+                                $savedCount++;
+                                $option = $question->options->find($value);
+                                if ($option && $option->is_correct) {
+                                    $correctSelections++;
                                 }
                             }
                         }
-                        
-                        \Log::info('Total saved for this question', [
+
+                        \Log::info('Multi-select saved', [
                             'question_id' => $questionId,
                             'saved_count' => $savedCount,
-                            'total_answers' => count($answer),
-                            'correct_selections' => $correctSelections
+                            'correct_selections' => $correctSelections,
                         ]);
-                        
+
                         // For multiple choice questions with multiple correct answers
                         if ($question->question_type === 'multiple_choice') {
-                        // Get total expected correct answers
-                        $totalCorrectOptions = $question->options->where('is_correct', true)->count();
-                            
-                        // User gets marks based on how many they got right
+                            $totalCorrectOptions = $question->options->where('is_correct', true)->count();
+
+                            // H18 (audit fix): dedup + selection-cap scoring — proper IELTS partial
+                            // credit with anti-gaming. Selecting MORE than the allowed number of
+                            // options scores 0 for the group (IELTS over-selection rule); otherwise
+                            // award one mark per correct option actually selected. Defeats the
+                            // "tick every option" and "duplicate a known correct id" exploits AND no
+                            // longer penalizes an honest student who picks the right count with one
+                            // wrong choice.
+                            $awarded = ($savedCount > $totalCorrectOptions) ? 0 : $correctSelections;
+
                             if ($totalCorrectOptions > 1) {
-                                                    // For questions with multiple correct answers:
-                                                    // - Each correct selection gets a mark
-                                                    // - Each question with multiple answers counts as multiple questions for IELTS
-                                                    // - Cap answered count to correctCount to prevent answered > total
-                                                    // H18: net-floor — every wrong tick cancels a correct tick (floored
-                                                    // at 0), so ticking all options can never score full marks. Honest
-                                                    // test-takers (UI-capped at max_selections) are unaffected.
-                                                    $correctAnswers += max(0, $correctSelections - max(0, $savedCount - $correctSelections));
-                                                    $answeredCount += min(count($answer), $totalCorrectOptions);
-                                                } else {
-                                                    // Single correct answer - traditional scoring
-                                                    // H18: net-floor — a wrong tick cancels the correct one.
-                                                    if (max(0, $correctSelections - max(0, $savedCount - $correctSelections)) > 0) {
-                                                        $correctAnswers++;
-                                                    }
-                                                    $answeredCount++;
-                                                }
-                                            } else {
-                                                $answeredCount++;
-                                            }
+                                $correctAnswers += $awarded;
+                                $answeredCount += min($savedCount, $totalCorrectOptions);
+                            } else {
+                                if ($awarded > 0) {
+                                    $correctAnswers++;
+                                }
+                                $answeredCount++;
+                            }
+                        } else {
+                            $answeredCount++;
+                        }
                     }
                 } else {
                     // Single answer

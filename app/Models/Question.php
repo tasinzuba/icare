@@ -438,6 +438,65 @@ public static function sanitizeSectionDataForStudent(?array $ssd): ?array
     return $ssd;
 }
 
+/**
+ * H19: strip answer keys from the matching_pairs column for the student payload.
+ * Keeps each pair's prompt ('left'); drops the correct value ('right'). Scoring reads
+ * matching_pairs from the DB model, never from this payload, so this is scoring-safe.
+ */
+public static function sanitizeMatchingPairsForStudent($pairs)
+{
+    if (!is_array($pairs)) {
+        return $pairs;
+    }
+
+    return array_map(function ($p) {
+        if (is_array($p)) {
+            unset($p['right'], $p['correct'], $p['answer']);
+        }
+        return $p;
+    }, $pairs);
+}
+
+/**
+ * H19: strip answer keys from the form_structure column. Keeps field labels/blank ids;
+ * drops each field's correct 'answer'.
+ */
+public static function sanitizeFormStructureForStudent($form)
+{
+    if (!is_array($form)) {
+        return $form;
+    }
+
+    if (!empty($form['fields']) && is_array($form['fields'])) {
+        $form['fields'] = array_map(function ($f) {
+            if (is_array($f)) {
+                unset($f['answer'], $f['correct'], $f['correct_answer']);
+            }
+            return $f;
+        }, $form['fields']);
+    }
+
+    return $form;
+}
+
+/**
+ * H19: strip answer keys from the diagram_hotspots column. Keeps hotspot positions;
+ * drops the correct 'answer'/'label'.
+ */
+public static function sanitizeDiagramHotspotsForStudent($hotspots)
+{
+    if (!is_array($hotspots)) {
+        return $hotspots;
+    }
+
+    return array_map(function ($h) {
+        if (is_array($h)) {
+            unset($h['answer'], $h['label'], $h['correct'], $h['correct_answer']);
+        }
+        return $h;
+    }, $hotspots);
+}
+
 
 public function checkBlankAnswer($blankNumber, $studentAnswer): bool
 {

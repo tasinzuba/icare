@@ -265,78 +265,81 @@ class FullTestController extends Controller
             }
         }
         
-        // H17: keep the original per-section start_time across re-entry (default null = fresh clock).
-        $preservedStartTime = null;
-
-        // Check if section is TRULY completed (StudentAttempt status = completed)
+        // Is there an existing attempt for this section, and in what state?
         $sectionAttempt = $fullTestAttempt->sectionAttempts()
             ->where('section_type', $section)
             ->with('studentAttempt')
             ->first();
 
-        if ($sectionAttempt) {
-            $studentAttemptStatus = $sectionAttempt->studentAttempt->status ?? null;
-
-            if ($studentAttemptStatus === 'completed') {
-                // Section genuinely completed — skip to next
-                $nextSection = $fullTestAttempt->getNextSection();
-
-                if ($nextSection) {
-                    return redirect()->route('student.full-test.section', [
-                        'fullTestAttempt' => $fullTestAttempt->id,
-                        'section' => $nextSection
-                    ]);
-                } else {
-                    return redirect()->route('student.full-test.results', $fullTestAttempt);
-                }
-            }
-
-            // Section was started but NOT completed (page reload, tab close, network drop).
-            // H17: preserve the ORIGINAL start_time so re-entering the section does NOT reset the
-            // per-section deadline (otherwise a student could get unlimited time by leaving and
-            // returning). cleanupStaleSectionAttempt() abandons the old row, so capture it first.
-            $preservedStartTime = $sectionAttempt->studentAttempt->start_time ?? null;
-
-            // Clean up the stale FullTestSectionAttempt so a fresh attempt can be created.
-            $fullTestAttempt->cleanupStaleSectionAttempt($section);
-        }
-
-        // Update current section
-        $fullTestAttempt->update(['current_section' => $section]);
-
-        // Get test set for this section
+        // Test set for this section (needed for both resume and fresh-create).
         $testSet = $fullTestAttempt->fullTest->{$section . 'TestSet'}();
-
         if (!$testSet) {
             return redirect()->route('student.full-test.index')
                 ->with('error', 'Test section not configured properly.');
         }
 
-        // Abandon any existing in-progress attempts for this test_set_id
-        // This prevents the section controller from finding an old attempt with stale start_time
+        if ($sectionAttempt) {
+            $studentAttempt = $sectionAttempt->studentAttempt;
+            $studentAttemptStatus = $studentAttempt->status ?? null;
+
+            if ($studentAttemptStatus === 'completed') {
+                // Section genuinely completed — skip to next / results.
+                $nextSection = $fullTestAttempt->getNextSection();
+                if ($nextSection) {
+                    return redirect()->route('student.full-test.section', [
+                        'fullTestAttempt' => $fullTestAttempt->id,
+                        'section' => $nextSection,
+                    ]);
+                }
+                return redirect()->route('student.full-test.results', $fullTestAttempt);
+            }
+
+            if ($studentAttempt && $studentAttemptStatus === 'in_progress') {
+                // RESUME the existing in-progress attempt on re-entry (page reload, tab close, network
+                // drop). It holds BOTH the original start_time (so the per-section deadline can't be
+                // reset by leaving and returning) AND the student's autosaved draft_answers. The old
+                // code abandoned + recreated the attempt with an EMPTY draft which, combined with the
+                // preserved start_time, made the section controller's expiry auto-finalize an empty
+                // attempt to ZERO — losing all on-time work. start() reuses this same in-progress
+                // attempt, restoring drafts and continuing the original countdown.
+                $fullTestAttempt->update(['current_section' => $section]);
+                return $this->redirectToSectionStart($section, $testSet);
+            }
+
+            // Attempt is abandoned/missing — stale link. Clean it up and start fresh below.
+            $fullTestAttempt->cleanupStaleSectionAttempt($section);
+        }
+
+        // No valid in-progress attempt — start a fresh section attempt with a fresh clock.
+        $fullTestAttempt->update(['current_section' => $section]);
+
         StudentAttempt::where('user_id', auth()->id())
             ->where('test_set_id', $testSet->id)
             ->where('status', 'in_progress')
             ->update(['status' => 'abandoned']);
 
-        // Create student attempt for this section.
-        // H17: reuse the original start_time on re-entry so the per-section deadline can't be reset.
         $studentAttempt = StudentAttempt::create([
             'user_id' => auth()->id(),
             'test_set_id' => $testSet->id,
-            'start_time' => $preservedStartTime ?? now(),
+            'start_time' => now(),
             'status' => 'in_progress',
             'is_complete_attempt' => true,
-            'total_questions' => $testSet->questions()->count()
+            'total_questions' => $testSet->questions()->count(),
         ]);
 
-        // Link to full test attempt
         $fullTestAttempt->sectionAttempts()->create([
             'student_attempt_id' => $studentAttempt->id,
-            'section_type' => $section
+            'section_type' => $section,
         ]);
 
-        // Redirect to appropriate section controller
+        return $this->redirectToSectionStart($section, $testSet);
+    }
+
+    /**
+     * Redirect into the per-section test controller's start route.
+     */
+    private function redirectToSectionStart(string $section, $testSet)
+    {
         switch ($section) {
             case 'listening':
                 return redirect()->route('student.listening.start', $testSet);
@@ -347,6 +350,8 @@ class FullTestController extends Controller
             case 'speaking':
                 return redirect()->route('student.speaking.start', $testSet);
         }
+
+        return redirect()->route('student.full-test.index');
     }
 
     /**

@@ -504,23 +504,19 @@ trait ResultDataTrait
                 }
                 $selectedOptionIds = array_values(array_unique($selectedOptionIds));
 
-                // H18: net-floor scoring — each wrong tick cancels a correct tick (floored at 0),
-                // so selecting every option can never yield full marks. Keeps this shared recompute
-                // (used by BandScoreRecalculator + results) consistent with submit-time scoring.
+                // H18 (audit fix): dedup + selection-cap scoring — matches submit-time scoring.
+                // Over-selecting (more distinct options than allowed) scores 0; otherwise award one
+                // mark per correct option actually selected. Keeps this recompute (BandScoreRecalculator
+                // + results) consistent with the submit path.
                 $correctSelected = 0;
-                $incorrectSelected = 0;
                 foreach ($selectedOptionIds as $optionId) {
                     $selectedOption = $question->options->firstWhere('id', $optionId);
-                    if (!$selectedOption) {
-                        continue;
-                    }
-                    if ($selectedOption->is_correct) {
+                    if ($selectedOption && $selectedOption->is_correct) {
                         $correctSelected++;
-                    } else {
-                        $incorrectSelected++;
                     }
                 }
-                $correctAnswers += max(0, $correctSelected - $incorrectSelected);
+                $awarded = (count($selectedOptionIds) > $correctCount) ? 0 : $correctSelected;
+                $correctAnswers += $awarded;
                 $answeredQuestions += min(count($selectedOptionIds), max($correctCount, 1));
             } elseif ($question->question_type === 'fill_blanks') {
                 $answer = $questionAnswers->first();

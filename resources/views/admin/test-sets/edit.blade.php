@@ -84,6 +84,18 @@
                             </div>
                         </div>
 
+                        <!-- Reading Module (Reading Only) -->
+                        <div id="reading-module-section" class="mb-6 {{ $testSet->section && $testSet->section->name === 'reading' ? '' : 'hidden' }}">
+                            <label for="test_type" class="block mb-2 text-sm font-medium text-gray-900">Reading Module</label>
+                            <select id="test_type"
+                                    name="test_type"
+                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5">
+                                <option value="academic" {{ old('test_type', $testSet->test_type ?? 'academic') === 'academic' ? 'selected' : '' }}>Academic</option>
+                                <option value="general" {{ old('test_type', $testSet->test_type) === 'general' ? 'selected' : '' }}>General Training</option>
+                            </select>
+                            <p class="mt-2 text-sm text-gray-500">Choose the IELTS Reading module. Academic and General Training convert the same number of correct answers to different band scores.</p>
+                        </div>
+
                         <!-- Avatar Teacher Selection (Speaking Only) -->
                         @if(isset($avatarTeachers) && $avatarTeachers->count() > 0)
                         <div id="avatar-teacher-section" class="mb-6 {{ $testSet->section && $testSet->section->name === 'speaking' ? '' : 'hidden' }}">
@@ -186,6 +198,7 @@
             const sectionSelect = document.getElementById('section_id');
             const avatarSection = document.getElementById('avatar-teacher-section');
             const writingSection = document.getElementById('writing-task-section');
+            const readingSection = document.getElementById('reading-module-section');
 
             if (sectionSelect) {
                 sectionSelect.addEventListener('change', function() {
@@ -205,6 +218,14 @@
                             writingSection.classList.remove('hidden');
                         } else {
                             writingSection.classList.add('hidden');
+                        }
+                    }
+
+                    if (readingSection) {
+                        if (sectionName.toLowerCase() === 'reading') {
+                            readingSection.classList.remove('hidden');
+                        } else {
+                            readingSection.classList.add('hidden');
                         }
                     }
                 });

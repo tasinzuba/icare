@@ -78,7 +78,8 @@ class FixBuggyBandScores extends Command
 
                 // Calculate correct band score
                 if ($section === 'reading') {
-                    $correctBand = ScoreCalculator::calculateReadingBandScore($correctAnswers, $totalQuestions);
+                    $readingType = $attempt->testSet->test_type ?? 'academic';
+                    $correctBand = ScoreCalculator::calculateReadingBandScore($correctAnswers, $totalQuestions, $readingType);
                 } else {
                     $correctBand = ScoreCalculator::calculateListeningBandScore($correctAnswers, $totalQuestions);
                 }

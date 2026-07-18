@@ -58,6 +58,7 @@ class TestSetController extends Controller
             'avatar_teacher_id' => 'nullable|exists:avatar_teachers,id',
             'writing_task_type' => 'nullable|in:task1,task2',
             'writing_category' => 'nullable|string|in:' . implode(',', array_keys(config('writing_categories', []))),
+            'test_type' => 'nullable|in:academic,general',
             'time_limit_minutes' => 'nullable|integer|min:5|max:120',
         ]);
 
@@ -67,6 +68,9 @@ class TestSetController extends Controller
                 'is_for_offline' => 'Please make this test available to your branch/offline students.'
             ]);
         }
+
+        // Reading module type (academic/general) is only meaningful for Reading sets.
+        $isReading = \App\Models\TestSection::whereKey($request->section_id)->value('name') === 'reading';
 
         TestSet::create([
             'title' => $request->title,
@@ -79,6 +83,7 @@ class TestSetController extends Controller
             'writing_task_type' => $request->writing_task_type ?: null,
             'writing_category' => $request->writing_category ?: null,
             'time_limit_minutes' => $request->time_limit_minutes ?: null,
+            'test_type' => $isReading ? ($request->input('test_type') ?: 'academic') : null,
         ]);
 
         return redirect()->route('admin.test-sets.index')
@@ -146,6 +151,7 @@ class TestSetController extends Controller
             'avatar_teacher_id' => 'nullable|exists:avatar_teachers,id',
             'writing_task_type' => 'nullable|in:task1,task2',
             'writing_category' => 'nullable|string|in:' . implode(',', array_keys(config('writing_categories', []))),
+            'test_type' => 'nullable|in:academic,general',
             'time_limit_minutes' => 'nullable|integer|min:5|max:120',
         ]);
 
@@ -158,6 +164,8 @@ class TestSetController extends Controller
 
         $newAvatarTeacherId = $request->avatar_teacher_id ?: null;
         $oldAvatarTeacherId = $testSet->avatar_teacher_id;
+        // Reading module type (academic/general) is only meaningful for Reading sets.
+        $isReading = \App\Models\TestSection::whereKey($request->section_id)->value('name') === 'reading';
 
         $testSet->update([
             'title' => $request->title,
@@ -170,6 +178,7 @@ class TestSetController extends Controller
             'writing_task_type' => $request->writing_task_type ?: null,
             'writing_category' => $request->writing_category ?: null,
             'time_limit_minutes' => $request->time_limit_minutes ?: null,
+            'test_type' => $isReading ? ($request->input('test_type') ?: 'academic') : null,
         ]);
 
         // Auto-assign avatar teacher to all questions in this test set (Speaking only)

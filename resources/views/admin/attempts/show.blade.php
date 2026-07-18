@@ -457,7 +457,7 @@
                                 if ($attempt->testSet->section->name === 'listening') {
                                     $estimatedScore = App\Helpers\ScoreCalculator::calculateListeningBandScore($correctAnswers, $totalQuestions);
                                 } else {
-                                    $estimatedScore = App\Helpers\ScoreCalculator::calculateReadingBandScore($correctAnswers, $totalQuestions);
+                                    $estimatedScore = App\Helpers\ScoreCalculator::calculateReadingBandScore($correctAnswers, $totalQuestions, $attempt->testSet->test_type ?? 'academic');
                                 }
                             @endphp
                             <div class="text-lg font-bold text-blue-600">{{ $estimatedScore }}</div>

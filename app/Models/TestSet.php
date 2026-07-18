@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class TestSet extends Model
 {
-    protected $fillable = ['title', 'section_id', 'active', 'is_premium', 'is_for_offline', 'is_for_online', 'avatar_teacher_id', 'writing_task_type', 'writing_category', 'time_limit_minutes'];
+    protected $fillable = ['title', 'section_id', 'active', 'is_premium', 'is_for_offline', 'is_for_online', 'avatar_teacher_id', 'writing_task_type', 'writing_category', 'time_limit_minutes', 'test_type'];
 
     protected $casts = [
         'active' => 'boolean',

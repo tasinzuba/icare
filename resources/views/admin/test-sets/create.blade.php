@@ -173,6 +173,27 @@
                 </div>
             </div>
 
+            <!-- Reading Module (Reading Only) -->
+            <div id="reading-module-section" class="hidden">
+                <label for="test_type" class="block text-sm font-medium text-gray-700 mb-2">
+                    <span class="flex items-center">
+                        <svg class="mr-2 h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        Reading Module
+                    </span>
+                </label>
+                <select id="test_type"
+                        name="test_type"
+                        class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm">
+                    <option value="academic" {{ old('test_type', 'academic') === 'academic' ? 'selected' : '' }}>Academic</option>
+                    <option value="general" {{ old('test_type') === 'general' ? 'selected' : '' }}>General Training</option>
+                </select>
+                <p class="mt-2 text-sm text-gray-500">
+                    Choose the IELTS Reading module. This decides the marking table — Academic and General Training convert the same number of correct answers to different band scores.
+                </p>
+            </div>
+
             <!-- Avatar Teacher Selection (Speaking Only) -->
             @if(isset($avatarTeachers) && $avatarTeachers->count() > 0)
             <div id="avatar-teacher-section" class="hidden">
@@ -337,6 +358,7 @@
         const avatarSection = document.getElementById('avatar-teacher-section');
 
         const writingSection = document.getElementById('writing-task-section');
+        const readingSection = document.getElementById('reading-module-section');
 
         sectionSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
@@ -363,6 +385,13 @@
                 } else if (writingSection) {
                     writingSection.classList.add('hidden');
                 }
+
+                // Show reading module (academic/general) for Reading section
+                if (readingSection && sectionNameData.toLowerCase() === 'reading') {
+                    readingSection.classList.remove('hidden');
+                } else if (readingSection) {
+                    readingSection.classList.add('hidden');
+                }
             } else {
                 sectionInfo.classList.add('hidden');
                 if (avatarSection) {
@@ -370,6 +399,9 @@
                 }
                 if (writingSection) {
                     writingSection.classList.add('hidden');
+                }
+                if (readingSection) {
+                    readingSection.classList.add('hidden');
                 }
             }
         });

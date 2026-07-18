@@ -237,9 +237,9 @@
                 <label class="block text-sm font-medium text-gray-700 mb-3">
                     Student Visibility <span class="text-red-500">*</span>
                 </label>
-                <p class="text-xs text-gray-500 mb-3">Select which student types can access this test (at least one required)</p>
+                <p class="text-xs text-gray-500 mb-3">Keep this enabled so the test is available to your branch/offline students.</p>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4">
                     <!-- For Offline/Branch Students -->
                     <div class="rounded-lg border-2 border-gray-200 p-4 hover:border-orange-300 transition-colors" id="offline-checkbox-container">
                         <label class="flex items-start cursor-pointer">
@@ -248,7 +248,7 @@
                                        id="is_for_offline"
                                        name="is_for_offline"
                                        value="1"
-                                       {{ old('is_for_offline', false) ? 'checked' : '' }}
+                                       {{ old('is_for_offline', true) ? 'checked' : '' }}
                                        class="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                                        onchange="validateVisibility()">
                             </div>
@@ -261,32 +261,6 @@
                                 </span>
                                 <p class="text-xs text-gray-500 mt-1">
                                     Students enrolled in physical branches
-                                </p>
-                            </div>
-                        </label>
-                    </div>
-
-                    <!-- For Online Students -->
-                    <div class="rounded-lg border-2 border-gray-200 p-4 hover:border-emerald-300 transition-colors" id="online-checkbox-container">
-                        <label class="flex items-start cursor-pointer">
-                            <div class="flex h-5 items-center">
-                                <input type="checkbox"
-                                       id="is_for_online"
-                                       name="is_for_online"
-                                       value="1"
-                                       {{ old('is_for_online', true) ? 'checked' : '' }}
-                                       class="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                                       onchange="validateVisibility()">
-                            </div>
-                            <div class="ml-3">
-                                <span class="flex items-center text-sm font-medium text-gray-700">
-                                    <svg class="mr-2 h-5 w-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                                    </svg>
-                                    Online Students
-                                </span>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    Students registered online
                                 </p>
                             </div>
                         </label>
@@ -339,25 +313,19 @@
     <script>
     function validateVisibility() {
         const offlineChecked = document.getElementById('is_for_offline').checked;
-        const onlineChecked = document.getElementById('is_for_online').checked;
         const errorMsg = document.getElementById('visibility-error');
         const offlineContainer = document.getElementById('offline-checkbox-container');
-        const onlineContainer = document.getElementById('online-checkbox-container');
 
-        if (!offlineChecked && !onlineChecked) {
+        if (!offlineChecked) {
             errorMsg.classList.remove('hidden');
             offlineContainer.classList.add('border-red-300');
-            onlineContainer.classList.add('border-red-300');
         } else {
             errorMsg.classList.add('hidden');
             offlineContainer.classList.remove('border-red-300');
-            onlineContainer.classList.remove('border-red-300');
 
-            // Highlight selected options
+            // Highlight selected option
             offlineContainer.classList.toggle('border-orange-400', offlineChecked);
             offlineContainer.classList.toggle('bg-orange-50', offlineChecked);
-            onlineContainer.classList.toggle('border-emerald-400', onlineChecked);
-            onlineContainer.classList.toggle('bg-emerald-50', onlineChecked);
         }
     }
 
@@ -417,9 +385,8 @@
         // Form submission validation
         document.querySelector('form').addEventListener('submit', function(e) {
             const offlineChecked = document.getElementById('is_for_offline').checked;
-            const onlineChecked = document.getElementById('is_for_online').checked;
 
-            if (!offlineChecked && !onlineChecked) {
+            if (!offlineChecked) {
                 e.preventDefault();
                 validateVisibility();
                 document.getElementById('visibility-error').scrollIntoView({ behavior: 'smooth', block: 'center' });

@@ -64,7 +64,7 @@ class TestSetController extends Controller
         // Ensure at least one visibility option is selected
         if (!$request->has('is_for_offline') && !$request->has('is_for_online')) {
             return back()->withInput()->withErrors([
-                'is_for_offline' => 'Please select at least one student type (Offline or Online).'
+                'is_for_offline' => 'Please make this test available to your branch/offline students.'
             ]);
         }
 
@@ -152,7 +152,7 @@ class TestSetController extends Controller
         // Ensure at least one visibility option is selected
         if (!$request->has('is_for_offline') && !$request->has('is_for_online')) {
             return back()->withInput()->withErrors([
-                'is_for_offline' => 'Please select at least one student type (Offline or Online).'
+                'is_for_offline' => 'Please make this test available to your branch/offline students.'
             ]);
         }
 

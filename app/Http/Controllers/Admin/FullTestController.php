@@ -58,7 +58,7 @@ class FullTestController extends Controller
         if (!$request->has('is_for_offline') && !$request->has('is_for_online')) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Please select at least one student type (Offline or Online).');
+                ->with('error', 'Please make this test available to your branch/offline students.');
         }
 
         // Validate minimum 3 sections
@@ -168,7 +168,7 @@ class FullTestController extends Controller
         if (!$request->has('is_for_offline') && !$request->has('is_for_online')) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Please select at least one student type (Offline or Online).');
+                ->with('error', 'Please make this test available to your branch/offline students.');
         }
 
         // Validate minimum 3 sections

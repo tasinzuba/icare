@@ -201,6 +201,25 @@ const displayQuestions = computed(() => {
                 });
                 currentQuestionNumber++;
             }
+        } else if (question.question_type === 'drag_drop') {
+            const zones = question.section_specific_data?.drop_zones || [];
+            if (zones.length > 0) {
+                const blankNumbers = {};
+                for (let i = 1; i <= zones.length; i++) {
+                    blankNumbers[i] = currentQuestionNumber;
+                    currentQuestionNumber++;
+                }
+                results.push({
+                    question: question,
+                    has_blanks: true,
+                    is_drag_drop: true,
+                    blank_numbers: blankNumbers,
+                    first_number: blankNumbers[1]
+                });
+            } else {
+                results.push({ question: question, has_blanks: false, display_number: currentQuestionNumber });
+                currentQuestionNumber++;
+            }
         } else {
             const blankMatches = question.content?.match(/\[BLANK_\d+\]|\[____\d+____\]/g) || [];
             const dropdownMatches = question.content?.match(/\[DROPDOWN_\d+\]/g) || [];
@@ -360,9 +379,34 @@ const groupedQuestionsData = computed(() => {
             // Generate content
             let finalContent = question.content || '';
 
-            if (dItem.has_blanks && dItem.blank_numbers) {
+            if (dItem.is_drag_drop) {
+                // Drag & Drop: replace each [DRAG_n] with a drop-zone span (keyed by 0-based index to
+                // match the answers[qid].zone_N scoring contract) and append the draggable word box.
+                const zones = question.section_specific_data?.drop_zones || [];
+                const dOpts = question.section_specific_data?.draggable_options || [];
+                const allowReuse = !!question.section_specific_data?.allow_reuse;
+                const escAttr = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+                const escHtml = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const zoneStyle = 'display:inline-block;min-width:72px;padding:2px 8px;margin:0 3px;border-bottom:2px dashed #6366f1;text-align:center;color:#111827;background:#eef2ff;border-radius:4px;cursor:pointer;vertical-align:middle;';
+                const wordStyle = 'display:inline-block;padding:4px 10px;margin:4px;border:1px solid #c7d2fe;border-radius:6px;background:#ffffff;color:#3730a3;cursor:grab;font-size:14px;font-weight:600;user-select:none;';
+                const boxStyle = 'margin-top:14px;padding-top:10px;border-top:1px dashed #c7d2fe;display:flex;flex-wrap:wrap;';
+
+                let seq = 0;
+                finalContent = finalContent.replace(/\[DRAG_(\d+)\]/g, (match, num) => {
+                    let zoneIndex = zones.findIndex(z => String(z.zone_number) === String(num));
+                    if (zoneIndex < 0) zoneIndex = seq;
+                    seq++;
+                    const displayNum = dItem.blank_numbers[zoneIndex + 1] || '';
+                    return `<span class="dd-drop-zone" style="${zoneStyle}" data-qid="${question.id}" data-zone="zone_${zoneIndex}" data-ph="${displayNum}"><span class="dd-ph" style="color:#6b7280;font-weight:700;">${displayNum}</span></span>`;
+                });
+
+                const wordItems = dOpts.map(o =>
+                    `<span class="dd-word" draggable="true" style="${wordStyle}" data-qid="${question.id}" data-word="${escAttr(o)}" data-reuse="${allowReuse ? '1' : '0'}">${escHtml(o)}</span>`
+                ).join('');
+                finalContent = `<div class="dd-wrap" data-qid="${question.id}">${finalContent}<div class="dd-box" style="${boxStyle}" data-qid="${question.id}">${wordItems}</div></div>`;
+            } else if (dItem.has_blanks && dItem.blank_numbers) {
                 let blankCounter = 0;
-                
+
                 // Replace Blanks with Inputs
                 finalContent = finalContent.replace(/\[BLANK_(\d+)\]|\[____(\d+)____\]/g, (match, p1, p2) => {
                     blankCounter++;
@@ -724,10 +768,69 @@ const initializeDragula = () => {
 
 const annotatorRef = ref(null);
 
+// ---- Drag & Drop (native HTML5 DnD) for the reading `drag_drop` question type ----
+// Delegated document listeners (survive v-html re-render); writes the shared contract
+// answers[qid].zone_N = <dragged word>. Scoring reads the same shape server-side.
+function ddZoneFrom(el) { return el && el.closest ? el.closest('.dd-drop-zone') : null; }
+function ddOnDragStart(e) {
+    const item = e.target && e.target.closest ? e.target.closest('.dd-word') : null;
+    if (!item) return;
+    try {
+        e.dataTransfer.setData('text/plain', JSON.stringify({ qid: item.dataset.qid, word: item.dataset.word }));
+        e.dataTransfer.effectAllowed = 'copy';
+    } catch (_) {}
+}
+function ddOnDragOver(e) { if (ddZoneFrom(e.target)) e.preventDefault(); }
+function ddPlaceZone(zone, word) {
+    if (!zone) return;
+    zone.textContent = word;
+    zone.classList.add('dd-filled');
+    zone.style.background = '#dcfce7';
+    zone.style.color = '#166534';
+    zone.style.fontWeight = '600';
+    const qid = zone.dataset.qid, key = zone.dataset.zone;
+    if (!answers.value[qid]) answers.value[qid] = {};
+    answers.value[qid][key] = word;
+}
+function ddClearZone(zone) {
+    if (!zone) return;
+    zone.innerHTML = '<span class="dd-ph" style="color:#6b7280;font-weight:700;">' + (zone.dataset.ph || '') + '</span>';
+    zone.classList.remove('dd-filled');
+    zone.style.background = '#eef2ff';
+    zone.style.color = '#111827';
+    zone.style.fontWeight = 'normal';
+    const qid = zone.dataset.qid, key = zone.dataset.zone;
+    if (answers.value[qid]) delete answers.value[qid][key];
+}
+function ddOnDrop(e) {
+    const zone = ddZoneFrom(e.target);
+    if (!zone) return;
+    e.preventDefault();
+    let data;
+    try { data = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (_) { return; }
+    if (!data || String(data.qid) !== String(zone.dataset.qid)) return;
+    ddPlaceZone(zone, data.word);
+}
+function ddOnClick(e) {
+    const zone = e.target && e.target.closest ? e.target.closest('.dd-drop-zone.dd-filled') : null;
+    if (zone) ddClearZone(zone); // click a filled gap to clear it
+}
+function ddRestore() {
+    document.querySelectorAll('.dd-drop-zone').forEach(zone => {
+        const qid = zone.dataset.qid, key = zone.dataset.zone;
+        const val = answers.value[qid] ? answers.value[qid][key] : null;
+        if (val != null && val !== '') ddPlaceZone(zone, val);
+    });
+}
+
 let readingStyles = null;
 
 onMounted(() => {
     document.body.classList.add('ielts-test-mode');
+    document.addEventListener('dragstart', ddOnDragStart);
+    document.addEventListener('dragover', ddOnDragOver);
+    document.addEventListener('drop', ddOnDrop);
+    document.addEventListener('click', ddOnClick);
     readingStyles = document.createElement('link');
     readingStyles.rel = 'stylesheet';
     readingStyles.href = '/css/reading-test.css';
@@ -750,6 +853,7 @@ onMounted(() => {
         setupInputListeners();
         nextTick(() => {
             initializeDragula();
+            ddRestore();
         });
     });
 
@@ -768,12 +872,17 @@ watch(activePart, () => {
         setupInputListeners();
         nextTick(() => {
             initializeDragula();
+            ddRestore();
         });
     });
 });
 
 onUnmounted(() => {
     document.body.classList.remove('ielts-test-mode');
+    document.removeEventListener('dragstart', ddOnDragStart);
+    document.removeEventListener('dragover', ddOnDragOver);
+    document.removeEventListener('drop', ddOnDrop);
+    document.removeEventListener('click', ddOnClick);
     if (readingStyles) readingStyles.remove();
 
     autoSave.cancel();

@@ -574,7 +574,31 @@ class ReadingTestController extends Controller
                     $hasBlankKeys = collect(array_keys($answer))->contains(fn($k) => str_starts_with((string)$k, 'blank_'));
                     $hasDropdownKeys = collect(array_keys($answer))->contains(fn($k) => str_starts_with((string)$k, 'dropdown_'));
                     $hasHeadingKeys = collect(array_keys($answer))->contains(fn($k) => str_starts_with((string)$k, 'heading_'));
-                    if ($hasBlankKeys || $hasDropdownKeys || $hasHeadingKeys) {
+
+                    if ($question->question_type === 'drag_drop') {
+                        // Drag & Drop: answer is { zone_0: "text", zone_1: "text", ... }. Store the whole
+                        // object and score each zone against drop_zones[i].answer — mirrors the shared
+                        // recompute in ResultDataTrait so submit + BandScoreRecalculator agree. Without
+                        // this branch the zone_ payload falls through to the multi-select handler and is
+                        // silently discarded (array_filter is_numeric drops the option text).
+                        StudentAnswer::updateOrCreate(
+                            ['attempt_id' => $attempt->id, 'question_id' => $questionId],
+                            ['selected_option_id' => null, 'answer' => json_encode($answer)]
+                        );
+
+                        $dropZones = $question->section_specific_data['drop_zones'] ?? [];
+                        foreach ($dropZones as $zoneIndex => $zone) {
+                            $studentAnswer = $answer['zone_' . $zoneIndex]
+                                ?? ($answer['zone_' . ($zoneIndex + 1)] ?? null);
+                            if ($studentAnswer !== null && $studentAnswer !== '') {
+                                $answeredCount++;
+                                $correctAnswer = $zone['correct_answer'] ?? ($zone['answer'] ?? null);
+                                if ($correctAnswer && $this->compareAnswers($studentAnswer, $correctAnswer)) {
+                                    $correctAnswers++;
+                                }
+                            }
+                        }
+                    } elseif ($hasBlankKeys || $hasDropdownKeys || $hasHeadingKeys) {
                         // Fill-in-the-blanks with multiple blanks OR inline heading/dropdowns
                         $combinedAnswer = json_encode($answer);
                         StudentAnswer::updateOrCreate(

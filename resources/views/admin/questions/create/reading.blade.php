@@ -71,11 +71,47 @@
                                                 <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded">Alt+D</kbd>
                                             </span>
                                         </div>
-                                        
-                                        
+
+                                        <div class="mb-3 flex flex-wrap gap-2" id="drag-buttons" style="display: none;">
+                                            <button type="button" onclick="readingInsertDragZone()" class="px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700 transition-colors">
+                                                Insert Drag Gap
+                                            </button>
+                                            <button type="button" onclick="readingRefreshDragZones()" class="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300 transition-colors">
+                                                Scan gaps from text
+                                            </button>
+                                            <span class="text-xs text-gray-500 flex items-center">
+                                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded">Alt+G</kbd>
+                                            </span>
+                                        </div>
+
+
                                         <textarea id="content" name="content" class="tinymce-editor">{{ old('content') }}</textarea>
                                     </div>
-                                    
+
+                                    <!-- Drag & Drop authoring panel -->
+                                    <div id="reading-drag-drop-panel" class="mb-4 border border-indigo-200 rounded-lg bg-indigo-50 p-4" style="display: none;">
+                                        <h3 class="text-sm font-semibold text-gray-900 mb-1">Drag &amp; Drop setup</h3>
+                                        <p class="text-xs text-gray-600 mb-3">In the Question box above, insert <code>[DRAG_1]</code>, <code>[DRAG_2]</code>… gaps (use "Insert Drag Gap" / Alt+G). Add the word options students drag from, then pick the correct word for each gap.</p>
+
+                                        <div class="mb-4">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <label class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Word options (the box students drag from)</label>
+                                                <button type="button" onclick="readingAddDragOption()" class="px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">+ Add word</button>
+                                            </div>
+                                            <div id="reading-drag-options" class="space-y-2"></div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Correct word for each gap</label>
+                                            <div id="reading-drag-zones" class="space-y-2 mt-2"></div>
+                                        </div>
+
+                                        <label class="flex items-center text-sm text-gray-700">
+                                            <input type="checkbox" name="drag_drop_allow_reuse" value="1" class="h-4 w-4 text-indigo-600 rounded mr-2" checked>
+                                            Allow a word to be used in more than one gap
+                                        </label>
+                                    </div>
+
                                     <!-- Blanks Manager -->
                                     <div id="blanks-manager" class="hidden">
                                         <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
@@ -122,7 +158,8 @@
                                             'short_answer' => 'Short Answer',
                                             'fill_blanks' => 'Fill in the Blanks',
                                             'dropdown_selection' => 'Dropdown / Summary (Inline)',
-                                            'matching_grid' => 'Matching Grid (Radio)'
+                                            'matching_grid' => 'Matching Grid (Radio)',
+                                            'drag_drop' => 'Drag & Drop'
                                         ]
                                     ])
                                     
@@ -783,6 +820,10 @@
         blanksManager?.classList.add('hidden');
         if (blankButtons) blankButtons.style.display = 'none';
         if (dropdownButtons) dropdownButtons.style.display = 'none';
+        const dragButtons = document.getElementById('drag-buttons');
+        const dragPanel = document.getElementById('reading-drag-drop-panel');
+        if (dragButtons) dragButtons.style.display = 'none';
+        if (dragPanel) dragPanel.style.display = 'none';
 
         if (orderNumberWrapper) orderNumberWrapper.style.display = 'block';
         if (matchingHeadingsCard) matchingHeadingsCard.style.display = 'none';
@@ -926,6 +967,14 @@
             if (orderInput) orderInput.value = '0';
             if (marksInput) marksInput.value = '0';
 
+        } else if (type === 'drag_drop') {
+            if (dragButtons) dragButtons.style.display = 'flex';
+            if (dragPanel) dragPanel.style.display = 'block';
+            if (document.querySelectorAll('.reading-drag-opt-input').length === 0) {
+                readingAddDragOption();
+                readingAddDragOption();
+            }
+            setTimeout(readingRefreshDragZones, 300);
         } else if (type === 'dropdown_selection' || type === 'matching_grid') {
             // Show dropdown buttons and manager (matching_grid authors identically to dropdown_selection)
             if (dropdownButtons) dropdownButtons.style.display = 'flex';
@@ -1156,6 +1205,83 @@
         showNotification(`Dropdown ${dropdownCounter} added`, 'success');
         
         setTimeout(updateBlanks, 100);
+    };
+
+    // ---- Reading Drag & Drop authoring ----
+    // Mirrors the listening [DRAG_N] model but uses plain form fields (drag_zones[N][answer] +
+    // drag_drop_options[]) that QuestionController::store already parses — no JSON blob needed.
+    function readingDragEscape(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function readingGetDragContent() {
+        if (contentEditor) {
+            return (contentEditor.getContent({ format: 'text' }) || contentEditor.getContent() || '');
+        }
+        const el = document.getElementById('content');
+        return el ? el.value : '';
+    }
+    function readingGetDragOptions() {
+        return Array.prototype.slice.call(document.querySelectorAll('.reading-drag-opt-input'))
+            .map(function (i) { return (i.value || '').trim(); })
+            .filter(function (v) { return v.length > 0; });
+    }
+    window.readingAddDragOption = function (value) {
+        const c = document.getElementById('reading-drag-options');
+        if (!c) return;
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2';
+        row.innerHTML =
+            '<input type="text" name="drag_drop_options[]" class="reading-drag-opt-input flex-1 rounded-md border-gray-300 text-sm" placeholder="word or phrase" value="' + readingDragEscape(value || '') + '">' +
+            '<button type="button" class="text-red-500 hover:text-red-700" title="Remove" onclick="this.closest(\'div\').remove(); window.readingRefreshDragZones();">&times;</button>';
+        c.appendChild(row);
+        const inp = row.querySelector('input');
+        if (inp) inp.addEventListener('input', function () { window.readingRefreshDragZones(); });
+        window.readingRefreshDragZones();
+    };
+    window.readingRefreshDragZones = function () {
+        const zonesEl = document.getElementById('reading-drag-zones');
+        if (!zonesEl) return;
+        const content = readingGetDragContent();
+        const nums = [];
+        const re = /\[DRAG_(\d+)\]/g;
+        let m;
+        while ((m = re.exec(content)) !== null) { nums.push(parseInt(m[1], 10)); }
+        const uniqueNums = Array.from(new Set(nums)).sort(function (a, b) { return a - b; });
+        const options = readingGetDragOptions();
+        // preserve current per-zone selections across a rebuild
+        const prev = {};
+        zonesEl.querySelectorAll('select[data-zone]').forEach(function (s) { prev[s.getAttribute('data-zone')] = s.value; });
+        if (!uniqueNums.length) {
+            zonesEl.innerHTML = '<p class="text-xs text-gray-500">No <code>[DRAG_n]</code> gaps found in the text yet — add gaps with "Insert Drag Gap".</p>';
+            return;
+        }
+        zonesEl.innerHTML = uniqueNums.map(function (n) {
+            const sel = prev[n] || '';
+            const opts = ['<option value="">-- pick correct word --</option>'].concat(options.map(function (o) {
+                return '<option value="' + readingDragEscape(o) + '"' + (o === sel ? ' selected' : '') + '>' + readingDragEscape(o) + '</option>';
+            })).join('');
+            return '<div class="flex items-center gap-2">' +
+                '<span class="text-xs font-semibold text-indigo-700 w-16 shrink-0">[DRAG_' + n + ']</span>' +
+                '<select name="drag_zones[' + n + '][answer]" data-zone="' + n + '" class="flex-1 rounded-md border-gray-300 text-sm">' + opts + '</select>' +
+                '</div>';
+        }).join('');
+    };
+    window.readingInsertDragZone = function () {
+        const content = readingGetDragContent();
+        const nums = [];
+        const re = /\[DRAG_(\d+)\]/g;
+        let m;
+        while ((m = re.exec(content)) !== null) { nums.push(parseInt(m[1], 10)); }
+        const next = (nums.length ? Math.max.apply(null, nums) : 0) + 1;
+        const token = '[DRAG_' + next + ']';
+        if (contentEditor) {
+            contentEditor.insertContent(token);
+        } else {
+            const el = document.getElementById('content');
+            if (el) el.value += ' ' + token;
+        }
+        setTimeout(window.readingRefreshDragZones, 60);
     };
 
     // Professional notification function

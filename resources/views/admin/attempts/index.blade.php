@@ -361,7 +361,8 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            @if ($attempt->band_score)
+                                            {{-- 0.0 is a real band but falsy in PHP --}}
+                                            @if (!is_null($attempt->band_score))
                                                 <div class="flex items-center">
                                                     <div class="text-sm font-semibold text-gray-900">
                                                         Band {{ $attempt->band_score }}

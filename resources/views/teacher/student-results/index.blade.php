@@ -99,33 +99,7 @@
                         </select>
                     </div>
 
-                    <!-- Test Type Filter -->
-                    <div>
-                        <label for="test_type" class="block text-sm font-medium text-gray-700">Test Type</label>
-                        <select id="test_type" name="test_type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md">
-                            <option value="">All Types</option>
-                            <option value="free" {{ request('test_type') == 'free' ? 'selected' : '' }}>
-                                Free Tests
-                            </option>
-                            <option value="premium" {{ request('test_type') == 'premium' ? 'selected' : '' }}>
-                                Premium Tests
-                            </option>
-                        </select>
-                    </div>
-
-                    <!-- Student Type Filter -->
-                    <div>
-                        <label for="student_type" class="block text-sm font-medium text-gray-700">Student Type</label>
-                        <select id="student_type" name="student_type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md">
-                            <option value="">All Students</option>
-                            <option value="online" {{ request('student_type') == 'online' ? 'selected' : '' }}>
-                                Online Students
-                            </option>
-                            <option value="offline" {{ request('student_type') == 'offline' ? 'selected' : '' }}>
-                                Branch Students
-                            </option>
-                        </select>
-                    </div>
+                 
 
                     <!-- Branch Filter -->
                     <div>
@@ -172,12 +146,27 @@
             </div>
         </div>
 
+        <!-- Per-student section result cards (respects the filters above) -->
+        @include('partials.student-section-results', [
+            'studentResults' => $studentResults,
+            'title' => 'Results by Student',
+            'showBranch' => true,
+        ])
+
         <!-- Results Table -->
         <div class="bg-white shadow overflow-hidden sm:rounded-lg">
             <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg leading-6 font-medium text-gray-900">Student Test Results</h3>
-                    <span class="text-sm text-gray-500">{{ $attempts->total() }} results found</span>
+                    <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2">
+    <span class="flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-semibold text-white">
+        {{ $attempts->total() }}
+    </span>
+
+    <span class="text-sm font-medium text-blue-700">
+        Results Found
+    </span>
+</div>
                 </div>
             </div>
 
@@ -287,7 +276,9 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if ($attempt->band_score)
+                                    {{-- A band of 0.0 is a real score, but 0.0 is falsy in PHP, so a
+                                         truthy check hid it behind "-" as if the test was unscored. --}}
+                                    @if (!is_null($attempt->band_score))
                                         <div class="flex items-center">
                                             <span class="text-lg font-bold text-gray-900">
                                                 {{ number_format($attempt->band_score, 1) }}

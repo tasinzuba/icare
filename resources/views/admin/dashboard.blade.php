@@ -110,7 +110,8 @@
                             </p>
                         </div>
                         <div class="ml-4">
-                            @if($attempt->band_score)
+                            {{-- 0.0 is a real band but falsy in PHP --}}
+                            @if(!is_null($attempt->band_score))
                                 <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
                                     Band {{ $attempt->band_score }}
                                 </span>

@@ -36,7 +36,8 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        @if($studentAttempt->band_score)
+                        {{-- 0.0 is a real band but falsy in PHP --}}
+                        @if(!is_null($studentAttempt->band_score))
                             <div class="text-3xl font-bold text-gray-900">{{ number_format($studentAttempt->band_score, 1) }}</div>
                             <p class="text-sm text-gray-500">Band Score</p>
                         @else

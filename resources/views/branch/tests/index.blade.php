@@ -286,7 +286,8 @@
                         <p class="text-[11px] text-gray-500">{{ $attempt->created_at->format('h:i A') }}</p>
                     </td>
                     <td class="px-5 py-3.5 text-center">
-                        @if($attempt->band_score)
+                        {{-- 0.0 is a real band but falsy in PHP --}}
+                        @if(!is_null($attempt->band_score))
                             <span class="text-lg font-bold {{ $t['text'] }}">{{ $attempt->band_score }}</span>
                         @else
                             <span class="text-gray-300">—</span>

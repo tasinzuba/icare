@@ -192,7 +192,8 @@
                     </div>
                 </div>
                 <div class="text-right">
-                    @if($test->band_score)
+                    {{-- 0.0 is a real band but falsy in PHP, so a truthy check hid it as "unscored" --}}
+                    @if(!is_null($test->band_score))
                     <span class="text-sm font-bold text-blue-700">{{ $test->band_score }}</span>
                     @else
                     <span class="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full bg-amber-50 text-amber-600">In Progress</span>

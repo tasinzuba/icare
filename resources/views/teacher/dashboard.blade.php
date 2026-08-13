@@ -140,6 +140,14 @@
         </div>
     </div>
 
+    <!-- Student Results (Reading / Listening / Writing per student) -->
+    @include('partials.student-section-results', [
+        'studentResults' => $studentResults,
+        'title' => 'Student Results',
+        'viewAllUrl' => route('teacher.student-results.index'),
+        'showBranch' => true,
+    ])
+
     <!-- Recent Evaluations -->
     <div class="bg-white rounded-lg shadow">
         <div class="px-6 py-4 border-b border-gray-200">

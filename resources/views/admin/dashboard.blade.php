@@ -69,6 +69,14 @@
         @endforeach
     </div>
 
+    <!-- Student Results (Reading / Listening / Writing per student) -->
+    @include('partials.student-section-results', [
+        'studentResults' => $studentResults,
+        'title' => 'Student Results',
+        'viewAllUrl' => route('admin.attempts.index'),
+        'showBranch' => true,
+    ])
+
     <!-- Activity Feed & Quick Actions -->
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <!-- Recent Activity -->

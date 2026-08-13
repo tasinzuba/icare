@@ -97,13 +97,20 @@ class DashboardController extends Controller
         $creditService = new BranchCreditService();
         $creditSummary = $creditService->getCreditSummary($branch->id);
 
+        // Per-student section result cards — scoped to THIS branch's students only.
+        $studentResults = app(\App\Services\StudentSectionResultService::class)->recentStudents(
+            fn ($query) => $query->whereHas('user', fn ($q) => $q->where('branch_id', $branch->id)),
+            6
+        );
+
         return view('branch.dashboard.index', compact(
             'branch',
             'stats',
             'recentEnrollments',
             'todayTests',
             'recentActivities',
-            'creditSummary'
+            'creditSummary',
+            'studentResults'
         ));
     }
 

@@ -62,7 +62,12 @@ class EvaluationController extends Controller
             ->take(10)
             ->get();
 
-        return view('teacher.dashboard', compact('teacher', 'stats', 'recentEvaluations'));
+        // Per-student section result cards. Scope matches the existing teacher Student Results
+        // screen (StudentResultController@index), which already lists all completed attempts —
+        // so this exposes nothing new to a teacher.
+        $studentResults = app(\App\Services\StudentSectionResultService::class)->recentStudents(null, 6);
+
+        return view('teacher.dashboard', compact('teacher', 'stats', 'recentEvaluations', 'studentResults'));
     }
     
     /**

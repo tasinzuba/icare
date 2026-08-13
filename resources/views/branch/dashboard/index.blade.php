@@ -210,6 +210,13 @@
     </div>
 </div>
 
+<!-- Student Results (Reading / Listening / Writing per student) -->
+@include('partials.student-section-results', [
+    'studentResults' => $studentResults,
+    'title' => 'Student Results',
+    'viewAllUrl' => route('branch.tests.index'),
+])
+
 <!-- Quick Actions -->
 <div class="bg-white border border-gray-200 rounded-xl p-5">
     <h2 class="text-sm font-semibold text-gray-800 mb-4">Quick Actions</h2>

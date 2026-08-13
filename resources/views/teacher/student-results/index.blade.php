@@ -148,9 +148,10 @@
 
         <!-- Per-student section result cards (respects the filters above) -->
         @include('partials.student-section-results', [
-            'studentResults' => $studentResults,
-            'title' => 'Results by Student',
+            'testGroups' => $testGroups,
+            'title' => 'Results',
             'showBranch' => true,
+            'studentUrl' => fn ($student) => route('teacher.student-results.index', ['search' => $student->email]),
         ])
 
         <!-- Results Table -->

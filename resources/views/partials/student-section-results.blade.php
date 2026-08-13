@@ -1,19 +1,25 @@
 {{--
-    Per-student section result cards (Reading / Listening / Writing).
+    Result cards, grouped per TEST ATTEMPT.
 
-    Shared by the branch, teacher and admin dashboards so results look identical everywhere.
+      - Full test        -> one block with a card per section of that sitting
+      - Single section   -> one block with that single card
+      - Several attempts -> a separate block each, newest first
+
+    Shared by the branch, teacher and admin panels so results look identical everywhere.
     Colours are inline styles on purpose: the branch panel uses the Tailwind CDN while the
     teacher/admin panels use a built (purged) stylesheet, so dynamic colour utilities are not safe.
 
     Expects:
-      $studentResults  Collection from StudentSectionResultService::recentStudents()
-      $viewAllUrl      (optional) URL for the "View all" link
-      $title           (optional) panel heading
-      $showBranch      (optional) show the student's branch under their name
+      $testGroups   Collection from StudentSectionResultService::recentTestGroups()
+      $studentUrl   (optional) fn(User $student): string — link to all of that student's tests
+      $viewAllUrl   (optional) URL for the panel's "View all" link
+      $title        (optional) panel heading
+      $showBranch   (optional) show the student's branch under their name
 --}}
 @php
-    $title = $title ?? 'Student Results';
+    $title = $title ?? 'Results';
     $showBranch = $showBranch ?? false;
+    $studentUrl = $studentUrl ?? null;
 
     $sectionMeta = [
         'reading'   => ['label' => 'Reading',   'icon' => 'fa-book-open',  'color' => '#2563eb', 'bg' => '#eff6ff', 'border' => '#bfdbfe'],
@@ -34,7 +40,7 @@
     <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
         <div>
             <h2 class="text-sm font-semibold text-gray-800">{{ $title }}</h2>
-            <p class="text-[11px] text-gray-400 mt-0.5">Latest Reading, Listening and Writing result for each student</p>
+            <p class="text-[11px] text-gray-400 mt-0.5">Each test a student sat, newest first &mdash; click a student to see all of their tests</p>
         </div>
         @isset($viewAllUrl)
             <a href="{{ $viewAllUrl }}" class="text-xs text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap">
@@ -44,34 +50,57 @@
     </div>
 
     <div class="divide-y divide-gray-100">
-        @forelse($studentResults as $row)
-            @php $student = $row['student']; @endphp
+        @forelse($testGroups as $group)
+            @php
+                $student = $group['student'];
+                $sections = \App\Services\StudentSectionResultService::orderSections($group['sections']);
+                $link = $studentUrl ? $studentUrl($student) : null;
+            @endphp
             <article class="p-5">
-                {{-- Student identity --}}
-                <div class="flex items-center justify-between mb-3 gap-3">
+                {{-- Student + which test this block is --}}
+                <div class="flex items-start justify-between mb-3 gap-3 flex-wrap">
                     <div class="flex items-center min-w-0">
                         <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mr-3"
                              style="background:#f3f4f6;color:#4b5563;font-weight:700;font-size:12px;">
                             {{ strtoupper(mb_substr($student->name ?? '?', 0, 1)) }}
                         </div>
                         <div class="min-w-0">
-                            <p class="text-sm font-semibold text-gray-900 truncate">{{ $student->name ?? 'Unknown student' }}</p>
+                            @if($link)
+                                <a href="{{ $link }}" class="text-sm font-semibold text-gray-900 hover:text-blue-700 truncate block">
+                                    {{ $student->name ?? 'Unknown student' }}
+                                </a>
+                            @else
+                                <p class="text-sm font-semibold text-gray-900 truncate">{{ $student->name ?? 'Unknown student' }}</p>
+                            @endif
                             <p class="text-[11px] text-gray-400 truncate">
                                 {{ $student->email }}@if($showBranch && $student->branch) &middot; {{ $student->branch->name }}@endif
                             </p>
                         </div>
                     </div>
-                    @if(!empty($row['last_activity']))
-                        <span class="text-[11px] text-gray-400 whitespace-nowrap">{{ $row['last_activity']->diffForHumans() }}</span>
-                    @endif
+
+                    <div class="text-right shrink-0">
+                        <div class="flex items-center justify-end gap-2 flex-wrap">
+                            <span class="text-[10px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5"
+                                  style="{{ $group['kind'] === 'full' ? 'background:#ecfdf5;color:#047857;' : 'background:#f1f5f9;color:#475569;' }}">
+                                {{ $group['kind_label'] }}
+                            </span>
+                            <span class="text-xs font-medium text-gray-700 truncate" style="max-width:220px;">{{ $group['title'] }}</span>
+                        </div>
+                        <p class="text-[11px] text-gray-400 mt-0.5">
+                            {{ optional($group['taken_at'])->format('M d, Y') }}
+                            @if($group['overall'] !== null)
+                                &middot; <span class="font-semibold" style="color:{{ $bandColor($group['overall']) }};">Overall {{ number_format($group['overall'], 1) }}</span>
+                            @endif
+                        </p>
+                    </div>
                 </div>
 
-                {{-- One card per section --}}
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    @foreach(\App\Services\StudentSectionResultService::SECTIONS as $sectionName)
+                {{-- One card per section in this sitting --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    @foreach($sections as $sectionName => $sectionAttempt)
                         @php
-                            $meta = $sectionMeta[$sectionName];
-                            $card = \App\Services\StudentSectionResultService::cardData($row['sections'][$sectionName] ?? null, $sectionName);
+                            $meta = $sectionMeta[$sectionName] ?? $sectionMeta['reading'];
+                            $card = \App\Services\StudentSectionResultService::cardData($sectionAttempt, $sectionName);
                         @endphp
                         <div class="rounded-lg p-3"
                              style="background:{{ $meta['bg'] }};border:1px solid {{ $meta['border'] }};">
@@ -112,7 +141,7 @@
 
                             @elseif($card['state'] === 'pending')
                                 <p style="font-size:15px;font-weight:700;color:#b45309;line-height:1.4;">Awaiting evaluation</p>
-                                <p class="text-[10px] text-gray-500 mt-0.5">Submitted {{ optional($card['attempt']->created_at)->diffForHumans() }}</p>
+                                <p class="text-[10px] text-gray-500 mt-0.5">Submitted {{ optional(optional($card['attempt'] ?? null)->created_at)->diffForHumans() }}</p>
 
                             @else
                                 <p style="font-size:15px;font-weight:700;color:#9ca3af;line-height:1.4;">Not attempted</p>
@@ -121,10 +150,18 @@
                         </div>
                     @endforeach
                 </div>
+
+                @if($link)
+                    <div class="mt-2.5 text-right">
+                        <a href="{{ $link }}" class="text-[11px] text-blue-600 hover:text-blue-800 font-medium">
+                            All tests by this student <i class="fas fa-arrow-right ml-1 text-[9px]"></i>
+                        </a>
+                    </div>
+                @endif
             </article>
         @empty
             <div class="px-5 py-8 text-center">
-                <p class="text-sm text-gray-400">No student results yet</p>
+                <p class="text-sm text-gray-400">No results yet</p>
             </div>
         @endforelse
     </div>

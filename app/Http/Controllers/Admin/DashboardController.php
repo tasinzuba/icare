@@ -80,14 +80,14 @@ class DashboardController extends Controller
         }
 
         // Per-student section result cards (all branches — admin sees everything).
-        $studentResults = app(\App\Services\StudentSectionResultService::class)->recentStudents(null, 6);
+        $testGroups = app(\App\Services\StudentSectionResultService::class)->recentTestGroups(null, 8);
 
         return view('admin.dashboard', compact(
             'stats',
             'recent_attempts',
             'section_stats',
             'chart_data',
-            'studentResults'
+            'testGroups'
         ));
     }
 

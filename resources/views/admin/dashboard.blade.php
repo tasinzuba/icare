@@ -71,10 +71,11 @@
 
     <!-- Student Results (Reading / Listening / Writing per student) -->
     @include('partials.student-section-results', [
-        'studentResults' => $studentResults,
-        'title' => 'Student Results',
+        'testGroups' => $testGroups,
+        'title' => 'Results',
         'viewAllUrl' => route('admin.attempts.index'),
         'showBranch' => true,
+        'studentUrl' => fn ($student) => route('admin.attempts.index', ['user' => $student->id]),
     ])
 
     <!-- Activity Feed & Quick Actions -->

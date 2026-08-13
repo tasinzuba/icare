@@ -213,9 +213,10 @@
 
 <!-- Student Results (Reading / Listening / Writing per student) -->
 @include('partials.student-section-results', [
-    'studentResults' => $studentResults,
-    'title' => 'Student Results',
+    'testGroups' => $testGroups,
+    'title' => 'Results',
     'viewAllUrl' => route('branch.tests.index'),
+    'studentUrl' => fn ($student) => route('branch.tests.index', ['search' => $student->email]),
 ])
 
 <!-- Quick Actions -->

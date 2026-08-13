@@ -142,10 +142,11 @@
 
     <!-- Student Results (Reading / Listening / Writing per student) -->
     @include('partials.student-section-results', [
-        'studentResults' => $studentResults,
-        'title' => 'Student Results',
+        'testGroups' => $testGroups,
+        'title' => 'Results',
         'viewAllUrl' => route('teacher.student-results.index'),
         'showBranch' => true,
+        'studentUrl' => fn ($student) => route('teacher.student-results.index', ['search' => $student->email]),
     ])
 
     <!-- Recent Evaluations -->

@@ -83,9 +83,9 @@ class StudentResultController extends Controller
         // Per-student section result cards, built from the SAME filtered query so searching or
         // filtering narrows the cards too (not just the table below them).
         $filteredUserIds = (clone $query)->distinct()->pluck('user_id');
-        $studentResults = app(\App\Services\StudentSectionResultService::class)->recentStudents(
+        $testGroups = app(\App\Services\StudentSectionResultService::class)->recentTestGroups(
             fn ($q) => $q->whereIn('user_id', $filteredUserIds),
-            8
+            10
         );
 
         $attempts = $query->latest()->paginate(20)->withQueryString();
@@ -98,7 +98,7 @@ class StudentResultController extends Controller
             'evaluatedCount',
             'pendingCount',
             'branches',
-            'studentResults'
+            'testGroups'
         ));
     }
 

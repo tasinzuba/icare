@@ -6,12 +6,13 @@ use App\Models\StudentAttempt;
 use Illuminate\Support\Collection;
 
 /**
- * Builds the per-student, per-section result cards shown on the branch, teacher
- * and admin dashboards.
+ * Builds the result cards shown on the branch, teacher and admin panels.
  *
- * Each entry is one student together with their LATEST completed attempt per
- * section, so staff can read a student's Reading / Listening / Writing results
- * at a glance instead of scanning a flat list of attempts.
+ * Results are grouped per TEST ATTEMPT, not per student:
+ *   - a full test  -> one block holding a card for each of its sections
+ *   - a single-section test -> one block holding that single card
+ * A student who attempted several tests therefore gets a separate block per
+ * attempt, newest first, so staff can see each sitting on its own.
  */
 class StudentSectionResultService
 {
@@ -22,69 +23,108 @@ class StudentSectionResultService
     public const OBJECTIVE_SECTIONS = ['reading', 'listening'];
 
     /**
-     * Most recently active students with their latest completed attempt per section.
+     * Most recent test attempts, grouped into blocks.
      *
      * @param  callable|null  $scope  Optional extra constraint on the attempt query
      *                                (e.g. limit to one branch's students).
-     * @param  int  $limit  How many students to return.
+     * @param  int  $limit  How many test blocks to return.
      * @return Collection<int, array<string, mixed>>
      */
-    public function recentStudents(?callable $scope = null, int $limit = 6): Collection
+    public function recentTestGroups(?callable $scope = null, int $limit = 8): Collection
     {
-        // 1) Find the most recently active students (one row per student, newest first).
-        $recent = StudentAttempt::query()
+        $query = StudentAttempt::query()
+            ->with([
+                'user',
+                'testSet.section',
+                'humanEvaluationRequest.humanEvaluation',
+                'fullTestSectionAttempt.fullTestAttempt.fullTest',
+            ])
             ->where('status', 'completed')
             ->examOnly()
             ->whereHas('testSet.section', fn ($q) => $q->whereIn('name', self::SECTIONS));
 
         if ($scope) {
-            $scope($recent);
+            $scope($query);
         }
 
-        $userIds = $recent
-            ->selectRaw('user_id, MAX(created_at) as last_activity')
-            ->groupBy('user_id')
-            ->orderByDesc('last_activity')
-            ->limit($limit)
-            ->pluck('user_id');
+        // Pull a generous window of recent attempts, then fold them into blocks. A full test
+        // contributes several attempts, so the window is a multiple of the block limit.
+        $attempts = $query->latest()->take(max($limit * 8, 40))->get();
 
-        if ($userIds->isEmpty()) {
-            return collect();
+        $groups = [];
+
+        foreach ($attempts as $attempt) {
+            $section = optional(optional($attempt->testSet)->section)->name;
+
+            if (!$section || !$attempt->user) {
+                continue;
+            }
+
+            $fullTestAttempt = optional($attempt->fullTestSectionAttempt)->fullTestAttempt;
+
+            if ($fullTestAttempt) {
+                // All sections of one full-test sitting belong to a single block.
+                $key = 'full-' . $fullTestAttempt->id;
+
+                if (!isset($groups[$key])) {
+                    $groups[$key] = [
+                        'key' => $key,
+                        'kind' => 'full',
+                        'kind_label' => 'Full Test',
+                        'student' => $attempt->user,
+                        'title' => optional($fullTestAttempt->fullTest)->title ?: 'Full Test',
+                        'taken_at' => $attempt->created_at,
+                        'overall' => $fullTestAttempt->overall_band_score,
+                        'sections' => [],
+                    ];
+                }
+
+                // $attempts is newest-first, so the first hit per section is the newest.
+                if (!isset($groups[$key]['sections'][$section])) {
+                    $groups[$key]['sections'][$section] = $attempt;
+                }
+
+                if ($attempt->created_at > $groups[$key]['taken_at']) {
+                    $groups[$key]['taken_at'] = $attempt->created_at;
+                }
+            } else {
+                // A standalone single-section attempt is its own block.
+                $groups['single-' . $attempt->id] = [
+                    'key' => 'single-' . $attempt->id,
+                    'kind' => 'single',
+                    'kind_label' => 'Single Section',
+                    'student' => $attempt->user,
+                    'title' => optional($attempt->testSet)->title ?: 'Test',
+                    'taken_at' => $attempt->created_at,
+                    'overall' => null,
+                    'sections' => [$section => $attempt],
+                ];
+            }
         }
 
-        // 2) Pull every completed section attempt for just those students, newest first.
-        $attempts = StudentAttempt::query()
-            ->with(['user', 'testSet.section', 'humanEvaluationRequest.humanEvaluation'])
-            ->whereIn('user_id', $userIds)
-            ->where('status', 'completed')
-            ->examOnly()
-            ->whereHas('testSet.section', fn ($q) => $q->whereIn('name', self::SECTIONS))
-            ->latest()
-            ->get();
+        return collect($groups)
+            ->sortByDesc('taken_at')
+            ->take($limit)
+            ->values();
+    }
 
-        // 3) Keep the latest attempt per (student, section). Student order comes from step 1.
-        return $userIds->map(function ($userId) use ($attempts) {
-            $forUser = $attempts->where('user_id', $userId);
-            $newest = $forUser->first();
+    /**
+     * Order a block's sections for display (reading, listening, writing).
+     *
+     * @param  array<string, StudentAttempt>  $sections
+     * @return array<string, StudentAttempt>
+     */
+    public static function orderSections(array $sections): array
+    {
+        $ordered = [];
 
-            if (!$newest || !$newest->user) {
-                return null;
+        foreach (self::SECTIONS as $section) {
+            if (isset($sections[$section])) {
+                $ordered[$section] = $sections[$section];
             }
+        }
 
-            $sections = [];
-            foreach (self::SECTIONS as $section) {
-                // $forUser is ordered newest-first, so first() is the latest for that section.
-                $sections[$section] = $forUser->first(
-                    fn ($attempt) => optional(optional($attempt->testSet)->section)->name === $section
-                );
-            }
-
-            return [
-                'student' => $newest->user,
-                'sections' => $sections,
-                'last_activity' => $newest->created_at,
-            ];
-        })->filter()->values();
+        return $ordered;
     }
 
     /**

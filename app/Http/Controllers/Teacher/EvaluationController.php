@@ -65,9 +65,9 @@ class EvaluationController extends Controller
         // Per-student section result cards. Scope matches the existing teacher Student Results
         // screen (StudentResultController@index), which already lists all completed attempts —
         // so this exposes nothing new to a teacher.
-        $studentResults = app(\App\Services\StudentSectionResultService::class)->recentStudents(null, 6);
+        $testGroups = app(\App\Services\StudentSectionResultService::class)->recentTestGroups(null, 8);
 
-        return view('teacher.dashboard', compact('teacher', 'stats', 'recentEvaluations', 'studentResults'));
+        return view('teacher.dashboard', compact('teacher', 'stats', 'recentEvaluations', 'testGroups'));
     }
     
     /**

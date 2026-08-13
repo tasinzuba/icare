@@ -173,8 +173,13 @@
                                                         .filter(select => select.value !== '').length;
                                                 ">
                                             <option value="">-- Select Test Set --</option>
-                                            @if(isset($testSets[$section['title']]))
-                                                @foreach($testSets[$section['title']] as $testSet)
+                                            {{-- $testSets is keyed by the lowercase section name
+                                                 ('listening'), so look it up with $key, not
+                                                 $section['title'] ('Listening') — array keys are
+                                                 case-sensitive, so that always missed and left
+                                                 every dropdown empty. --}}
+                                            @if(isset($testSets[$key]))
+                                                @foreach($testSets[$key] as $testSet)
                                                     <option value="{{ $testSet->id }}"
                                                         {{ old($key.'_test_set_id', $currentTestSets->get($key)?->id) == $testSet->id ? 'selected' : '' }}>
                                                         {{ $testSet->title }} ({{ $testSet->questions()->count() }} questions)

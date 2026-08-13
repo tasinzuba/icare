@@ -222,6 +222,14 @@
                 </div>
             </div>
 
+            <!-- Result cards, grouped per test (full test = one block with all its sections) -->
+            @include('partials.student-section-results', [
+                'testGroups' => $testGroups,
+                'title' => 'Results',
+                'showBranch' => true,
+                'studentUrl' => fn ($student) => route('admin.attempts.index', ['user' => $student->id]),
+            ])
+
             <!-- Attempts Table -->
             <div class="bg-white shadow overflow-hidden sm:rounded-lg">
                 <div class="px-4 py-5 sm:px-6 border-b border-gray-200">

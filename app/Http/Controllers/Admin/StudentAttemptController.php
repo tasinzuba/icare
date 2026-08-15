@@ -74,6 +74,18 @@ class StudentAttemptController extends Controller
             })
             ->count();
         
+        // Two tabs: finished sittings (which have a result) vs sittings still open or given up on.
+        // Counts use every other filter but not the tab itself, so each tab shows what it holds.
+        $activeTab = $request->input('view') === 'attempts' ? 'attempts' : 'results';
+        $resultsCount = (clone $query)->where('status', 'completed')->count();
+        $attemptsCount = (clone $query)->where('status', '!=', 'completed')->count();
+
+        if ($activeTab === 'attempts') {
+            $query->where('status', '!=', 'completed');
+        } else {
+            $query->where('status', 'completed');
+        }
+
         $attempts = $query->latest()->paginate(15)->withQueryString();
 
         // Get users for filtering
@@ -87,7 +99,10 @@ class StudentAttemptController extends Controller
             'totalAttempts',
             'completedCount',
             'inProgressCount',
-            'needsEvaluationCount'
+            'needsEvaluationCount',
+            'activeTab',
+            'resultsCount',
+            'attemptsCount'
         ));
     }
 

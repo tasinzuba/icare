@@ -226,7 +226,7 @@
             <div class="bg-white shadow overflow-hidden sm:rounded-lg">
                 <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex items-center justify-between gap-3">
                     <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        Recent Attempts
+                        {{ $activeTab === 'attempts' ? 'Recent Attempts' : 'Recent Results' }}
                     </h3>
                     {{-- Select-all moved here from the old table header --}}
                     <label class="flex items-center gap-2 text-xs text-gray-500 whitespace-nowrap cursor-pointer">
@@ -237,6 +237,28 @@
                         Select all
                     </label>
                 </div>
+                {{-- Recent Results = finished sittings; Recent Attempts = still open or abandoned.
+                     The other filters ride along in the query string when switching tab. --}}
+                @php $tabParams = request()->except(['view', 'page']); @endphp
+                <div class="border-b border-gray-200 px-4 sm:px-6">
+                    <nav class="-mb-px flex gap-6" aria-label="Attempt view">
+                        <a href="{{ route('admin.attempts.index', array_merge($tabParams, ['view' => 'results'])) }}"
+                           class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium {{ $activeTab === 'results' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }}">
+                            <i class="fas fa-award mr-1.5"></i>Recent Results
+                            <span class="ml-1.5 rounded-full px-2 py-0.5 text-xs {{ $activeTab === 'results' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600' }}">
+                                {{ $resultsCount }}
+                            </span>
+                        </a>
+                        <a href="{{ route('admin.attempts.index', array_merge($tabParams, ['view' => 'attempts'])) }}"
+                           class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium {{ $activeTab === 'attempts' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }}">
+                            <i class="fas fa-hourglass-half mr-1.5"></i>Recent Attempts
+                            <span class="ml-1.5 rounded-full px-2 py-0.5 text-xs {{ $activeTab === 'attempts' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600' }}">
+                                {{ $attemptsCount }}
+                            </span>
+                        </a>
+                    </nav>
+                </div>
+
                 <form id="bulkDeleteForm" method="POST" action="{{ route('admin.attempts.bulk-destroy') }}">
                     @csrf
                     @method('DELETE')

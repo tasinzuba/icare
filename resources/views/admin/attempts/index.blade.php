@@ -232,207 +232,137 @@
 
             <!-- Attempts Table -->
             <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-                <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex items-center justify-between gap-3">
                     <h3 class="text-lg leading-6 font-medium text-gray-900">
                         Recent Attempts
                     </h3>
+                    {{-- Select-all moved here from the old table header --}}
+                    <label class="flex items-center gap-2 text-xs text-gray-500 whitespace-nowrap cursor-pointer">
+                        <input type="checkbox"
+                               id="selectAll"
+                               class="rounded border-gray-300 text-indigo-600 focus:border-indigo-500 focus:ring-indigo-500"
+                               onchange="toggleSelectAll()">
+                        Select all
+                    </label>
                 </div>
                 <form id="bulkDeleteForm" method="POST" action="{{ route('admin.attempts.bulk-destroy') }}">
                     @csrf
                     @method('DELETE')
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="w-4 px-6 py-3">
-                                        <input type="checkbox" 
-                                               id="selectAll" 
-                                               class="rounded border-gray-300 text-indigo-600 focus:border-indigo-500 focus:ring-indigo-500"
-                                               onchange="toggleSelectAll()">
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Student Info
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Test Details
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Test Type
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Date & Time
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Performance
-                                    </th>
-                                    <th scope="col" class="relative px-6 py-3">
-                                        <span class="sr-only">Actions</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse ($attempts as $attempt)
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="w-4 px-6 py-4">
-                                            <input type="checkbox" 
-                                                   name="attempt_ids[]" 
-                                                   value="{{ $attempt->id }}" 
-                                                   class="attempt-checkbox rounded border-gray-300 text-indigo-600 focus:border-indigo-500 focus:ring-indigo-500"
-                                                   onchange="updateSelectedCount()">
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="flex-shrink-0 h-10 w-10">
-                                                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                                        <span class="text-xs font-medium text-gray-600">
-                                                            {{ strtoupper(substr($attempt->user->name, 0, 2)) }}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div class="ml-4">
-                                                    <div class="flex items-center gap-2">
-                                                        <div class="text-sm font-medium text-gray-900">
-                                                            {{ $attempt->user->name }}
-                                                        </div>
-                                                    </div>
-                                                    <div class="text-sm text-gray-500">
-                                                        {{ $attempt->user->email }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm text-gray-900">{{ $attempt->testSet->title }}</div>
-                                            <div class="text-sm text-gray-500">
-                                                @php
-                                                    $sectionIcons = [
-                                                        'listening' => '🎧',
-                                                        'reading' => '📖',
-                                                        'writing' => '✍️',
-                                                        'speaking' => '🎤'
-                                                    ];
-                                                    $sectionName = $attempt->testSet->section->name;
-                                                @endphp
-                                                {{ $sectionIcons[$sectionName] ?? '' }} {{ ucfirst($sectionName) }}
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($attempt->testSet->is_premium)
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-amber-500 to-yellow-500 text-white">
-                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                                    </svg>
-                                                    Premium
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/>
-                                                    </svg>
-                                                    Free
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">
-                                                {{ $attempt->created_at->format('M d, Y') }}
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                {{ $attempt->created_at->format('g:i A') }}
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if ($attempt->status === 'completed')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    <svg class="mr-1.5 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    Completed
-                                                </span>
-                                            @elseif ($attempt->status === 'in_progress')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                    <svg class="mr-1.5 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    In Progress
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                    <svg class="mr-1.5 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    Abandoned
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            {{-- 0.0 is a real band but falsy in PHP --}}
-                                            @if (!is_null($attempt->band_score))
-                                                <div class="flex items-center">
-                                                    <div class="text-sm font-semibold text-gray-900">
-                                                        Band {{ $attempt->band_score }}
-                                                    </div>
-                                                    @if($attempt->band_score >= 7)
-                                                        <svg class="ml-1.5 h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                                        </svg>
-                                                    @endif
-                                                </div>
-                                                @if($attempt->answered_questions && $attempt->total_questions)
-                                                    <div class="text-xs text-gray-500 mt-1">
-                                                        {{ $attempt->correct_answers ?? 0 }}/{{ $attempt->total_questions }} correct
-                                                    </div>
-                                                @endif
-                                            @else
-                                                @if ($attempt->status === 'completed' && in_array($attempt->testSet->section->name, ['writing', 'speaking']))
-                                                    <span class="inline-flex items-center text-xs text-purple-600">
-                                                        <svg class="mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                        </svg>
-                                                        Needs Evaluation
+                    <div class="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        @forelse ($attempts as $attempt)
+                            @php
+                                $sName = optional(optional($attempt->testSet)->section)->name ?? '';
+                                $sMetaMap = [
+                                    'reading'   => ['label' => 'Reading',   'icon' => 'fa-book-open',  'color' => '#2563eb', 'bg' => '#eff6ff', 'border' => '#bfdbfe'],
+                                    'listening' => ['label' => 'Listening', 'icon' => 'fa-headphones', 'color' => '#7c3aed', 'bg' => '#f5f3ff', 'border' => '#ddd6fe'],
+                                    'writing'   => ['label' => 'Writing',   'icon' => 'fa-pen-fancy',  'color' => '#b45309', 'bg' => '#fffbeb', 'border' => '#fde68a'],
+                                    'speaking'  => ['label' => 'Speaking',  'icon' => 'fa-microphone', 'color' => '#be123c', 'bg' => '#fff1f2', 'border' => '#fecdd3'],
+                                ];
+                                $sMeta = $sMetaMap[$sName] ?? ['label' => ucfirst($sName ?: 'Test'), 'icon' => 'fa-file-lines', 'color' => '#475569', 'bg' => '#f8fafc', 'border' => '#e2e8f0'];
+
+                                if ($attempt->status === 'completed') {
+                                    $statusLabel = 'Completed'; $statusStyle = 'background:#dcfce7;color:#166534;';
+                                } elseif ($attempt->status === 'in_progress') {
+                                    $statusLabel = 'In Progress'; $statusStyle = 'background:#fef9c3;color:#854d0e;';
+                                } else {
+                                    $statusLabel = 'Abandoned'; $statusStyle = 'background:#fee2e2;color:#991b1b;';
+                                }
+
+                                // 0.0 is a real band but falsy in PHP, so compare against null explicitly.
+                                $hasBand = !is_null($attempt->band_score);
+                                $needsEval = $attempt->status === 'completed' && !$hasBand
+                                    && in_array($sName, ['writing', 'speaking'], true);
+
+                                $bandTone = !$hasBand ? '#6b7280'
+                                    : ($attempt->band_score >= 7 ? '#15803d'
+                                    : ($attempt->band_score >= 6 ? '#1d4ed8'
+                                    : ($attempt->band_score >= 5 ? '#b45309' : '#b91c1c')));
+                            @endphp
+
+                            <div class="rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition p-4">
+                                <div class="flex items-start gap-3">
+                                    <input type="checkbox"
+                                           name="attempt_ids[]"
+                                           value="{{ $attempt->id }}"
+                                           class="attempt-checkbox mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                           onchange="updateSelectedCount()">
+
+                                    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                                         style="background:#f3f4f6;color:#4b5563;font-weight:700;font-size:12px;">
+                                        {{ strtoupper(mb_substr(optional($attempt->user)->name ?? '?', 0, 2)) }}
+                                    </div>
+
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-semibold text-gray-900 truncate">
+                                            {{ optional($attempt->user)->name ?? 'Unknown student' }}
+                                        </p>
+                                        <p class="text-[11px] text-gray-400 truncate">{{ optional($attempt->user)->email }}</p>
+                                    </div>
+
+                                    <span class="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 shrink-0"
+                                          style="{{ $statusStyle }}">{{ $statusLabel }}</span>
+                                </div>
+
+                                <div class="mt-3 rounded-lg p-3"
+                                     style="background:{{ $sMeta['bg'] }};border:1px solid {{ $sMeta['border'] }};">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-[11px] font-bold uppercase tracking-wide" style="color:{{ $sMeta['color'] }};">
+                                            <i class="fas {{ $sMeta['icon'] }} mr-1"></i>{{ $sMeta['label'] }}
+                                        </span>
+                                        <span class="text-[11px] text-gray-500 truncate" style="max-width:55%;">
+                                            {{ optional($attempt->testSet)->title }}
+                                        </span>
+                                    </div>
+
+                                    <div class="mt-2 flex items-end justify-between gap-2">
+                                        <div class="min-w-0">
+                                            @if($hasBand)
+                                                <div class="flex items-baseline gap-1.5">
+                                                    <span style="font-size:22px;font-weight:800;line-height:1.1;color:{{ $bandTone }};">
+                                                        {{ number_format($attempt->band_score, 1) }}
                                                     </span>
-                                                @else
-                                                    <span class="text-sm text-gray-500">-</span>
+                                                    <span class="text-[11px] text-gray-500">band</span>
+                                                </div>
+                                                @if($attempt->total_questions)
+                                                    <p class="text-[10px] text-gray-500 mt-0.5">
+                                                        {{ $attempt->correct_answers ?? 0 }}/{{ $attempt->total_questions }} correct
+                                                    </p>
                                                 @endif
+                                            @elseif($needsEval)
+                                                <p style="font-size:14px;font-weight:700;color:#7e22ce;line-height:1.4;">Needs evaluation</p>
+                                            @elseif($attempt->status === 'completed')
+                                                <p style="font-size:14px;font-weight:700;color:#b45309;line-height:1.4;">Awaiting result</p>
+                                            @else
+                                                <p style="font-size:14px;font-weight:700;color:#9ca3af;line-height:1.4;">Not finished</p>
                                             @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div class="flex items-center justify-end space-x-2">
-                                                <a href="{{ route('admin.attempts.show', $attempt) }}" class="text-indigo-600 hover:text-indigo-900">
-                                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                    </svg>
-                                                </a>
-                                                
-                                                @if ($attempt->status === 'completed' && in_array($attempt->testSet->section->name, ['writing', 'speaking']) && !$attempt->band_score)
-                                                    <a href="{{ route('admin.attempts.evaluate-form', $attempt) }}" class="text-green-600 hover:text-green-900">
-                                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                        </svg>
-                                                    </a>
-                                                @endif
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="8" class="px-6 py-12 text-center">
-                                            <div class="flex flex-col items-center justify-center">
-                                                <svg class="h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                <p class="text-sm text-gray-500">No student attempts found</p>
-                                                <p class="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                        </div>
+
+                                        <div class="text-right shrink-0">
+                                            <p class="text-[11px] text-gray-500">{{ $attempt->created_at->format('M d, Y') }}</p>
+                                            <p class="text-[10px] text-gray-400">{{ $attempt->created_at->format('g:i A') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 flex items-center justify-end gap-4">
+                                    <a href="{{ route('admin.attempts.show', $attempt) }}"
+                                       class="text-xs font-medium text-indigo-600 hover:text-indigo-800">
+                                        <i class="fas fa-eye mr-1"></i>View
+                                    </a>
+                                    @if($needsEval)
+                                        <a href="{{ route('admin.attempts.evaluate-form', $attempt) }}"
+                                           class="text-xs font-medium text-green-600 hover:text-green-800">
+                                            <i class="fas fa-pen-to-square mr-1"></i>Evaluate
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <div class="lg:col-span-2 py-12 text-center">
+                                <p class="text-sm text-gray-500">No student attempts found</p>
+                                <p class="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
+                            </div>
+                        @endforelse
                     </div>
                 </form>
                 

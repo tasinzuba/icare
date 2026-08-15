@@ -120,7 +120,9 @@ class Branch extends Model
      */
     public function activeEnrollments(): HasMany
     {
-        return $this->enrollments()->where('status', 'active');
+        // Status alone over-counts: lapsed rows stay 'active' until the nightly
+        // enrollments:expire command runs, so require the date too.
+        return $this->enrollments()->currentlyActive();
     }
 
     // =====================

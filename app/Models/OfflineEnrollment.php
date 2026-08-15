@@ -383,6 +383,19 @@ class OfflineEnrollment extends Model
     }
 
     /**
+     * Enrollments that actually grant access right now: active status AND still within validity.
+     *
+     * scopeActive() alone is not enough - nothing marked lapsed rows as expired, so "active"
+     * counters reported every enrollment ever created (110) while only 15 could really take a test.
+     * Use this wherever a count is meant to mean "students who can use the platform today".
+     */
+    public function scopeCurrentlyActive($query)
+    {
+        return $query->where('status', self::STATUS_ACTIVE)
+            ->whereDate('valid_until', '>=', now()->toDateString());
+    }
+
+    /**
      * With remaining tests
      */
     public function scopeWithRemainingTests($query)
@@ -1099,11 +1112,29 @@ class OfflineEnrollment extends Model
         $newFullTestsAllowed = $this->full_tests_allowed + $newTestsCount;
         $newSectionTestsAllowed = $this->section_tests_allowed + ($renewalData['section_tests_allowed'] ?? 0);
 
+        // Per-section limits must grow too. canTakeSectionTestOfType() checks section_test_limits
+        // whenever the enrollment has any (90 of 110 do) and ignores section_tests_allowed entirely,
+        // so topping up only the total left the added section tests unreachable - the student was
+        // sold quota they could never spend.
+        $existingLimits = $this->section_test_limits ?? [];
+        $incomingLimits = $renewalData['section_test_limits'] ?? [];
+        $mergedLimits = $existingLimits;
+
+        if (!empty($incomingLimits)) {
+            foreach ($incomingLimits as $sectionType => $limit) {
+                $mergedLimits[$sectionType] = ($existingLimits[$sectionType] ?? 0) + (int) $limit;
+            }
+
+            // Keep the headline total consistent with the per-section limits it summarises.
+            $newSectionTestsAllowed = array_sum($mergedLimits);
+        }
+
         // Update enrollment
         $this->update([
             // Add only new tests count to existing allowances
             'full_tests_allowed' => $newFullTestsAllowed,
             'section_tests_allowed' => $newSectionTestsAllowed,
+            'section_test_limits' => !empty($mergedLimits) ? $mergedLimits : $this->section_test_limits,
 
             // NOTE: We do NOT reset taken counts - they remain
             // This way student keeps their progress but gets more tests

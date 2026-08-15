@@ -61,6 +61,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->job(new \App\Jobs\CheckStaleAvatarTasksJob())
             ->everyFiveMinutes()
             ->withoutOverlapping();
+
+        // Mark lapsed offline enrollments as expired. Nothing did this before, so every row stayed
+        // 'active' and all status-only reports over-counted active students.
+        $schedule->command('enrollments:expire')
+            ->dailyAt('00:30')
+            ->withoutOverlapping();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Custom test exceptions are self-rendering (have render() method)

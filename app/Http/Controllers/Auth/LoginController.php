@@ -53,11 +53,32 @@ class LoginController extends Controller
                 ->withErrors(['email' => 'These credentials do not match our records.']);
         }
 
+        $user = Auth::user();
+
+        // Offline students must still hold a valid enrollment. OfflineStudentLoginController and the
+        // mobile API already enforce this, but this generic form did not - so the same credentials
+        // were refused at /offline/login and accepted here, which is where the app sends an offline
+        // student whose session lapses. 95 of 110 enrollments are past their validity.
+        if ($user->isOfflineStudent()) {
+            $hasActiveEnrollment = \App\Models\OfflineEnrollment::where('user_id', $user->id)
+                ->where('status', 'active')
+                ->where('valid_until', '>=', now()->toDateString())
+                ->exists();
+
+            if (!$hasActiveEnrollment) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()
+                    ->withInput($request->only('email'))
+                    ->withErrors(['email' => 'Your enrollment has expired or is inactive. Please contact your branch.']);
+            }
+        }
+
         // Clear rate limiters on successful login
         $this->clearRateLimiters($request);
 
-        $user = Auth::user();
-        
         // Update last login time
         $user->update(['last_login_at' => now()]);
 

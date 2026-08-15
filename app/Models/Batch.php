@@ -46,7 +46,8 @@ class Batch extends Model
 
     public function activeEnrollments(): HasMany
     {
-        return $this->enrollments()->where('status', 'active');
+        // Status alone over-counts lapsed enrollments - require the validity date too.
+        return $this->enrollments()->currentlyActive();
     }
 
     /**

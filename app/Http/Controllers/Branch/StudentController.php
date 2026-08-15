@@ -67,8 +67,10 @@ class StudentController extends Controller
         // Stats - single aggregated query instead of 4 separate COUNT queries
         $statsRaw = OfflineEnrollment::where('branch_id', $branch->id)
             ->selectRaw("COUNT(*) as total")
-            ->selectRaw("SUM(status = 'active') as active")
-            ->selectRaw("SUM(status = 'expired') as expired")
+            // Count by real state, not status alone: lapsed rows keep status='active' until the
+            // nightly enrollments:expire command runs, which reported every student as active.
+            ->selectRaw("SUM(status = 'active' AND valid_until >= CURDATE()) as active")
+            ->selectRaw("SUM(status = 'expired' OR valid_until < CURDATE()) as expired")
             ->selectRaw("SUM(payment_status = 'pending') as pending_payment")
             ->first();
 

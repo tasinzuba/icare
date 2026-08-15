@@ -768,8 +768,15 @@ class StudentController extends Controller
                 'status' => $enrollment->status,
             ];
 
-            // Extend validity
-            $enrollment->valid_until = $enrollment->valid_until->addDays($validated['extend_days']);
+            // Extend validity. Rebase on today when the enrollment has ALREADY lapsed — adding days
+            // to a date months in the past produced a "renewed" enrollment that was still expired,
+            // so the student stayed locked out while the branch believed it had been extended.
+            $today = now()->startOfDay();
+            $base = ($enrollment->valid_until && $enrollment->valid_until->greaterThanOrEqualTo($today))
+                ? $enrollment->valid_until->copy()
+                : $today->copy();
+
+            $enrollment->valid_until = $base->addDays($validated['extend_days']);
 
             // Add tests if specified
             if (!empty($validated['additional_tests'])) {
@@ -786,12 +793,19 @@ class StudentController extends Controller
                 $enrollment->recordPayment($validated['paid_amount'], 'cash', 'Extension payment');
             }
 
-            // Reactivate if was expired
-            if ($enrollment->status === 'expired') {
+            // Reactivate if it had lapsed (by status or simply by date).
+            if ($enrollment->status !== 'active') {
                 $enrollment->status = 'active';
             }
 
             $enrollment->save();
+
+            // Carry the new validity onto the student's test assignments. canAccessFullTest() treats
+            // assignments as the sole source of truth when any exist, so leaving them on the old
+            // date meant an extended enrollment still granted access to nothing.
+            $enrollment->testAssignments()
+                ->where('status', \App\Models\EnrollmentTestAssignment::STATUS_AVAILABLE)
+                ->update(['valid_until' => $enrollment->valid_until->toDateString()]);
 
             // Log activity
             $studentName = $enrollment->student->name ?? 'Unknown';

@@ -259,15 +259,14 @@ public function hasTrustedDevice(string $fingerprint): bool
      */
     public function incrementTestCount(): void
     {
-        // For offline students, increment their enrollment test count
-        if ($this->isOfflineStudent()) {
-            $enrollment = $this->getActiveEnrollment();
-            if ($enrollment) {
-                $enrollment->incrementFullTestCount();
-            }
-        }
-
-        // Also increment monthly counter for tracking
+        // Only the monthly tracking counter belongs here.
+        //
+        // This is called from UpdateUserTestStats, which fires ONLY for standalone SECTION test
+        // completions (full tests are counted when they start). It used to also call
+        // $enrollment->incrementFullTestCount(), so finishing a single listening or reading test
+        // consumed a FULL TEST from the offline student's package — a quota they never used. The
+        // real quotas are consumed at start by TestAccessService::consumeSectionTestQuota() and
+        // consumeFullTestQuota(), so nothing enrollment-related should be charged again here.
         $this->increment('tests_taken_this_month');
     }
 

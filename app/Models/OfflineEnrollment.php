@@ -1078,17 +1078,21 @@ class OfflineEnrollment extends Model
             $newValidUntil = max($this->valid_until, $newValidUntil);
         }
 
-        // Get current and new allowed tests
-        $currentAllowedTests = $this->allowed_full_tests ?? [];
+        // Get current and new allowed tests.
+        // NOTE: null and [] mean different things here (see canAccessFullTest): null = never
+        // configured, so every offline test is allowed; [] = explicitly emptied, so nothing is.
+        // Coalescing null to [] turned "all tests" into "no tests", locking the student out of every
+        // full test the moment a branch renewed without picking any — so keep null as null.
+        $currentAllowedTests = $this->allowed_full_tests;
         $newAllowedTests = $renewalData['allowed_full_tests'] ?? [];
 
         // Merge allowed tests arrays - only add truly NEW tests
         $mergedAllowedTests = !empty($newAllowedTests)
-            ? array_values(array_unique(array_merge($currentAllowedTests, $newAllowedTests)))
+            ? array_values(array_unique(array_merge($currentAllowedTests ?? [], $newAllowedTests)))
             : $currentAllowedTests;
 
         // Calculate how many NEW tests are being added (not already in the list)
-        $trulyNewTests = array_diff($newAllowedTests, $currentAllowedTests);
+        $trulyNewTests = array_diff($newAllowedTests, $currentAllowedTests ?? []);
         $newTestsCount = count($trulyNewTests);
 
         // Add only NEW tests count to existing (not the input value which might include existing)
@@ -1107,7 +1111,8 @@ class OfflineEnrollment extends Model
             // Update evaluation type if changed
             'evaluation_type' => $renewalData['evaluation_type'] ?? $this->evaluation_type,
 
-            // Merge allowed tests - keep array even if empty (don't set to null)
+            // Merge allowed tests. Stays null when it was null and nothing new was picked, so an
+            // "allow everything" enrollment is not silently downgraded to "allow nothing".
             'allowed_full_tests' => $mergedAllowedTests,
             'allowed_section_tests' => $renewalData['allowed_section_tests'] ?? $this->allowed_section_tests,
 

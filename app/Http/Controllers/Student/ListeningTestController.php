@@ -191,9 +191,15 @@ class ListeningTestController extends Controller
                 if (!$isPartOfFullTest) {
                     // Check if branch allows free retakes for offline students
                     $skipQuota = false;
-                    if ($isRetake && auth()->user()->isOfflineStudent()) {
+                    // A retake is free only when the student actually COMPLETED this test in the
+                    // current enrollment period. The old check used "any earlier attempt", so one
+                    // abandoned start made every later sitting free and the package never
+                    // depleted. Mirrors the full-test path (isFullTestRetake).
+                    if (auth()->user()->isOfflineStudent()) {
                         $enrollment = auth()->user()->getActiveEnrollment();
-                        $skipQuota = $enrollment && $enrollment->branchAllowsRetakes();
+                        $skipQuota = $enrollment
+                            && $enrollment->branchAllowsRetakes()
+                            && $enrollment->isSectionTestRetake($testSet->id);
                     }
                     app(TestAccessService::class)->consumeSectionTestQuota(auth()->user(), 'listening', $skipQuota);
                 }

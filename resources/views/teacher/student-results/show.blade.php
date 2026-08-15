@@ -55,15 +55,7 @@
             <div class="bg-white shadow rounded-lg p-6">
                 <h3 class="text-sm font-medium text-gray-500 mb-2">Test Set</h3>
                 <p class="text-lg font-semibold text-gray-900">{{ $studentAttempt->testSet->title }}</p>
-                @if($studentAttempt->testSet->is_premium)
-                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 mt-2 inline-block">
-                        <i class="fas fa-crown mr-1"></i>Premium
-                    </span>
-                @else
-                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600 mt-2 inline-block">
-                        Free Test
-                    </span>
-                @endif
+                {{-- Premium/Free badge removed: every test is free now --}}
             </div>
             <div class="bg-white shadow rounded-lg p-6">
                 <h3 class="text-sm font-medium text-gray-500 mb-2">Section</h3>
@@ -203,8 +195,15 @@
         <!-- Score Summary for Listening/Reading -->
         @if(in_array($studentAttempt->testSet->section->name, ['listening', 'reading']))
             @php
-                $correctCount = $studentAttempt->answers->where('is_correct', true)->count();
-                $totalQuestions = $studentAttempt->answers->count();
+                // StudentAnswer has no is_correct column, so the old filter always returned 0 and the
+                // summary read "0/7 - 0% Correct" for every attempt. Use the real breakdown instead.
+                if (!empty($responses)) {
+                    $correctCount = collect($responses)->where('is_correct', true)->count();
+                    $totalQuestions = count($responses);
+                } else {
+                    $correctCount = $studentAttempt->correct_answers ?? 0;
+                    $totalQuestions = $studentAttempt->total_questions ?? $studentAttempt->answers->count();
+                }
                 $percentage = $totalQuestions > 0 ? round(($correctCount / $totalQuestions) * 100) : 0;
             @endphp
             <div class="bg-white shadow rounded-lg mb-6">
@@ -236,13 +235,79 @@
                 <h3 class="text-lg font-semibold text-gray-900">Student Answers</h3>
             </div>
             <div class="p-6">
+                {{-- Reading/Listening: render the real per-question breakdown. The old markup below
+                     read StudentAnswer fields that do not exist (option_text, text_answer,
+                     is_correct, correct_answer), so it printed an empty answer for every question. --}}
+                @if(!empty($responses))
+                    <div class="flex flex-wrap items-center gap-3 mb-5 text-sm">
+                        <span class="px-3 py-1 rounded-full" style="background:#dcfce7;color:#166534;font-weight:600;">
+                            {{ collect($responses)->where('is_correct', true)->count() }} correct
+                        </span>
+                        <span class="px-3 py-1 rounded-full" style="background:#fee2e2;color:#991b1b;font-weight:600;">
+                            {{ collect($responses)->where('is_answered', true)->where('is_correct', false)->count() }} wrong
+                        </span>
+                        <span class="px-3 py-1 rounded-full" style="background:#f1f5f9;color:#475569;font-weight:600;">
+                            {{ collect($responses)->where('is_answered', false)->count() }} unanswered
+                        </span>
+                    </div>
+
+                    <div class="divide-y divide-gray-100">
+                        @foreach($responses as $item)
+                            <div class="py-3 flex items-start gap-4">
+                                <span class="w-8 shrink-0 text-sm font-bold text-gray-700">{{ $item['number'] }}</span>
+
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm text-gray-700">
+                                        {{ Str::limit(trim(strip_tags(html_entity_decode($item['content'] ?? ''))), 120) }}
+                                    </p>
+
+                                    <div class="mt-1.5 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+                                        <span>
+                                            <span class="text-gray-500">Answer:</span>
+                                            @if($item['is_answered'] && $item['student_answer'] !== 'No answer')
+                                                <span style="font-weight:600;color:{{ $item['is_correct'] ? '#166534' : '#991b1b' }};">
+                                                    {{ $item['student_answer'] }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400 italic">No answer</span>
+                                            @endif
+                                        </span>
+
+                                        @if(!$item['is_correct'] && $item['correct_answer'] !== '' && $item['correct_answer'] !== null)
+                                            <span>
+                                                <span class="text-gray-500">Correct:</span>
+                                                <span class="font-medium text-green-700">{{ $item['correct_answer'] }}</span>
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="shrink-0">
+                                    @if(!$item['is_answered'])
+                                        <span class="text-gray-400 text-sm">—</span>
+                                    @elseif($item['is_correct'])
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-check mr-1"></i>Correct
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            <i class="fas fa-times mr-1"></i>Incorrect
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
                 @forelse($studentAttempt->answers as $answer)
                     <div class="mb-6 pb-6 border-b border-gray-200 last:border-0 last:mb-0 last:pb-0">
                         <div class="flex items-start justify-between mb-3">
                             <h4 class="font-medium text-gray-900">
                                 Question {{ $loop->iteration }}
-                                @if($answer->question)
-                                    <span class="text-sm text-gray-500 ml-2">({{ ucfirst($answer->question->type) }})</span>
+                                @if($answer->question && $answer->question->question_type)
+                                    {{-- the column is question_type; ->type does not exist, so this
+                                         rendered as empty parentheses --}}
+                                    <span class="text-sm text-gray-500 ml-2">({{ ucfirst(str_replace('_', ' ', $answer->question->question_type)) }})</span>
                                 @endif
                             </h4>
                         </div>
@@ -343,6 +408,7 @@
                 @empty
                     <p class="text-gray-500 text-center py-8">No answers found for this attempt.</p>
                 @endforelse
+                @endif
             </div>
         </div>
 

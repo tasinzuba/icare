@@ -3,13 +3,26 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ResultDataTrait;
 use App\Models\StudentAttempt;
 use App\Models\Teacher;
+use App\Services\AnswerValidator;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class StudentResultController extends Controller
 {
+    use ResultDataTrait;
+
+    /**
+     * Required by ResultDataTrait, which reuses the same answer-checking rules the
+     * student result pages use.
+     */
+    protected function getAnswerValidator(): AnswerValidator
+    {
+        return app(AnswerValidator::class);
+    }
+
     /**
      * Display a listing of student results.
      */
@@ -116,6 +129,24 @@ class StudentResultController extends Controller
             'humanEvaluationRequest.humanEvaluation'
         ]);
 
-        return view('teacher.student-results.show', compact('studentAttempt'));
+        // Build the per-question breakdown for the auto-scored sections. The view previously read
+        // fields that do not exist on StudentAnswer (option_text, text_answer, is_correct), so every
+        // answer rendered blank and the score summary always said 0. This trait is the same one the
+        // student result pages use, so each blank/dropdown/drag zone becomes its own row.
+        $responses = null;
+        if (in_array(optional($studentAttempt->testSet->section)->name, ['reading', 'listening'], true)) {
+            $questions = $studentAttempt->testSet->questions()
+                ->with('options')
+                ->where('question_type', '!=', 'passage')
+                ->orderBy('part_number')
+                ->orderBy('order_number')
+                ->get();
+
+            $responses = $this->formatQuestionsForVue(
+                $this->buildQuestionsAnalysis($questions, $studentAttempt)
+            );
+        }
+
+        return view('teacher.student-results.show', compact('studentAttempt', 'responses'));
     }
 }

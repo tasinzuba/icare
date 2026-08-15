@@ -195,11 +195,27 @@
                             <dt>Time Spent</dt>
                             <dd>
                                 @php
+                                    // Prefer the value recorded at submit time. Fall back to the
+                                    // timestamps, but only when they are consistent: Carbon 3 returns a
+                                    // SIGNED float, so an attempt whose end_time precedes its start_time
+                                    // printed nonsense like "-3812.5166666667 minutes". Rather than
+                                    // invent a number from broken timestamps, say it is unavailable.
                                     $startTime = $attempt->start_time;
                                     $endTime = $attempt->end_time ?? $attempt->updated_at;
-                                    $timeSpent = $startTime->diffInMinutes($endTime);
+
+                                    if (!is_null($attempt->time_taken_minutes) && $attempt->time_taken_minutes >= 0) {
+                                        $timeSpent = (int) $attempt->time_taken_minutes;
+                                    } elseif ($startTime && $endTime && $endTime->greaterThanOrEqualTo($startTime)) {
+                                        $timeSpent = (int) round($startTime->diffInMinutes($endTime));
+                                    } else {
+                                        $timeSpent = null;
+                                    }
                                 @endphp
-                                {{ $timeSpent }} minutes
+                                @if($timeSpent !== null)
+                                    {{ $timeSpent }} {{ Str::plural('minute', $timeSpent) }}
+                                @else
+                                    <span class="text-gray-400" title="This attempt's start and end times are inconsistent, so the duration cannot be calculated.">Not available</span>
+                                @endif
                             </dd>
                         </div>
                     </dl>

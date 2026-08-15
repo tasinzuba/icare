@@ -71,14 +71,6 @@ class StudentAttemptController extends Controller
             })
             ->count();
         
-        // Per-test result cards, built from the SAME filtered query so the filters above narrow the
-        // cards too. A full test collapses into one block carrying a card per section.
-        $filteredUserIds = (clone $query)->distinct()->pluck('user_id');
-        $testGroups = app(\App\Services\StudentSectionResultService::class)->recentTestGroups(
-            fn ($q) => $q->whereIn('user_id', $filteredUserIds),
-            10
-        );
-
         $attempts = $query->latest()->paginate(15)->withQueryString();
 
         // Get users for filtering
@@ -92,8 +84,7 @@ class StudentAttemptController extends Controller
             'totalAttempts',
             'completedCount',
             'inProgressCount',
-            'needsEvaluationCount',
-            'testGroups'
+            'needsEvaluationCount'
         ));
     }
 

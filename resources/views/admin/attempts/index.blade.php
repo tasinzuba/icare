@@ -248,7 +248,7 @@
                 <form id="bulkDeleteForm" method="POST" action="{{ route('admin.attempts.bulk-destroy') }}">
                     @csrf
                     @method('DELETE')
-                    <div class="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         @forelse ($attempts as $attempt)
                             @php
                                 $sName = optional(optional($attempt->testSet)->section)->name ?? '';
@@ -303,8 +303,12 @@
                                           style="{{ $statusStyle }}">{{ $statusLabel }}</span>
                                 </div>
 
-                                <div class="mt-3 rounded-lg p-3"
-                                     style="background:{{ $sMeta['bg'] }};border:1px solid {{ $sMeta['border'] }};">
+                                {{-- The result block links to this attempt's full result page. It is a
+                                     link rather than the whole card so the bulk-select checkbox and the
+                                     footer actions stay clickable on their own. --}}
+                                <a href="{{ route('admin.attempts.show', $attempt) }}"
+                                   class="mt-3 rounded-lg p-3 block hover:brightness-95 transition"
+                                   style="background:{{ $sMeta['bg'] }};border:1px solid {{ $sMeta['border'] }};">
                                     <div class="flex items-center justify-between gap-2">
                                         <span class="text-[11px] font-bold uppercase tracking-wide" style="color:{{ $sMeta['color'] }};">
                                             <i class="fas {{ $sMeta['icon'] }} mr-1"></i>{{ $sMeta['label'] }}
@@ -342,7 +346,7 @@
                                             <p class="text-[10px] text-gray-400">{{ $attempt->created_at->format('g:i A') }}</p>
                                         </div>
                                     </div>
-                                </div>
+                                </a>
 
                                 <div class="mt-3 flex items-center justify-end gap-4">
                                     <a href="{{ route('admin.attempts.show', $attempt) }}"
@@ -358,7 +362,7 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="lg:col-span-2 py-12 text-center">
+                            <div class="sm:col-span-2 lg:col-span-3 py-12 text-center">
                                 <p class="text-sm text-gray-500">No student attempts found</p>
                                 <p class="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
                             </div>

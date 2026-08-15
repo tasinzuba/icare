@@ -387,58 +387,86 @@
                     @endforeach
                     
                 @else
-                    <!-- Multiple Choice Answers -->
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Question</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student's Answer</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Correct Answer</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Result</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach($attempt->answers->sortBy('question.order_number') as $answer)
+                    {{-- Readable per-question breakdown. $responses expands every blank, dropdown and
+                         drag zone into its own row (built by ResultDataTrait, the same logic the
+                         student result page uses) instead of printing the raw stored JSON. --}}
+                    @if(!empty($responses))
+                        @php
+                            $answeredCount = collect($responses)->where('is_answered', true)->count();
+                            $correctCount = collect($responses)->where('is_correct', true)->count();
+                        @endphp
+
+                        <div class="flex flex-wrap items-center gap-3 mb-4 text-sm">
+                            <span class="px-3 py-1 rounded-full" style="background:#dcfce7;color:#166534;font-weight:600;">
+                                {{ $correctCount }} correct
+                            </span>
+                            <span class="px-3 py-1 rounded-full" style="background:#fee2e2;color:#991b1b;font-weight:600;">
+                                {{ max(0, $answeredCount - $correctCount) }} wrong
+                            </span>
+                            <span class="px-3 py-1 rounded-full" style="background:#f1f5f9;color:#475569;font-weight:600;">
+                                {{ count($responses) - $answeredCount }} unanswered
+                            </span>
+                            <span class="text-gray-500">out of {{ count($responses) }} questions</span>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
                                     <tr>
-                                        <td class="px-6 py-4 text-sm">
-                                            <span class="font-medium">{{ $answer->question->order_number }}.</span> 
-                                            {{ Str::limit(strip_tags($answer->question->content), 60) }}
-                                        </td>
-                                        <td class="px-6 py-4 text-sm">
-                                            @if($answer->selectedOption)
-                                                {{ $answer->selectedOption->content }}
-                                            @elseif($answer->answer)
-                                                {{ $answer->answer }}
-                                            @else
-                                                <span class="text-gray-400">No answer</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 text-sm">
-                                            @if($answer->question->correctOption())
-                                                {{ $answer->question->correctOption()->content }}
-                                            @else
-                                                <span class="text-gray-400">N/A</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 text-sm">
-                                            @if($answer->selectedOption && $answer->selectedOption->is_correct)
-                                                <span class="text-green-600 font-semibold">✓</span>
-                                            @elseif($answer->selectedOption || $answer->answer)
-                                                <span class="text-red-600 font-semibold">✗</span>
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
-                                        </td>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-12">#</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Question</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student's Answer</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Correct Answer</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-20">Result</th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach($responses as $item)
+                                        <tr class="{{ $item['is_answered'] ? ($item['is_correct'] ? 'bg-green-50/40' : 'bg-red-50/30') : '' }}">
+                                            <td class="px-4 py-3 text-sm font-semibold text-gray-700">{{ $item['number'] }}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                                {{ Str::limit(trim(strip_tags(html_entity_decode($item['content'] ?? ''))), 90) }}
+                                            </td>
+                                            <td class="px-4 py-3 text-sm">
+                                                @if($item['is_answered'] && $item['student_answer'] !== 'No answer')
+                                                    <span style="font-weight:600;color:{{ $item['is_correct'] ? '#166534' : '#991b1b' }};">
+                                                        {{ $item['student_answer'] }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-gray-400">No answer</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                                {{ $item['correct_answer'] !== '' && $item['correct_answer'] !== null ? $item['correct_answer'] : '—' }}
+                                            </td>
+                                            <td class="px-4 py-3 text-sm">
+                                                @if(!$item['is_answered'])
+                                                    <span class="text-gray-400">—</span>
+                                                @elseif($item['is_correct'])
+                                                    <span class="text-green-600 font-semibold">✓ Correct</span>
+                                                @else
+                                                    <span class="text-red-600 font-semibold">✗ Wrong</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-500">No responses recorded for this attempt.</p>
+                    @endif
                     
                     @php
-                        $correctAnswers = $attempt->answers->filter(fn($a) => $a->selectedOption && $a->selectedOption->is_correct)->count();
-                        $totalQuestions = $attempt->answers->count();
+                        // Prefer the per-question breakdown: counting only selectedOption scored 0 for
+                        // blank/dropdown tests, which made Correct, Accuracy and Band all read wrong.
+                        if (!empty($responses)) {
+                            $correctAnswers = collect($responses)->where('is_correct', true)->count();
+                            $totalQuestions = count($responses);
+                        } else {
+                            $correctAnswers = $attempt->answers->filter(fn($a) => $a->selectedOption && $a->selectedOption->is_correct)->count();
+                            $totalQuestions = $attempt->answers->count();
+                        }
                         $accuracy = $totalQuestions > 0 ? ($correctAnswers / $totalQuestions) * 100 : 0;
                     @endphp
                     

@@ -3,14 +3,27 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ResultDataTrait;
 use App\Models\StudentAttempt;
 use App\Models\User;
+use App\Services\AnswerValidator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class StudentAttemptController extends Controller
 {
+    use ResultDataTrait;
+
+    /**
+     * Required by ResultDataTrait, which reuses the same answer-checking rules the
+     * student result pages use.
+     */
+    protected function getAnswerValidator(): AnswerValidator
+    {
+        return app(AnswerValidator::class);
+    }
+
     /**
      * Display a listing of the student attempts.
      */
@@ -93,7 +106,26 @@ class StudentAttemptController extends Controller
 
         $attempt->load(['user', 'testSet', 'testSet.section', 'answers', 'answers.question', 'answers.selectedOption', 'answers.speakingRecording']);
 
-        return view('admin.attempts.show', compact('attempt'));
+        // Build a readable per-question breakdown for the auto-scored sections. Without this the
+        // view printed the raw stored JSON (e.g. {"blank_1":"people","blank_2":"marine"}) for every
+        // multi-blank/dropdown question. The trait is the same one the student result pages use, so
+        // each blank, dropdown and drag zone becomes its own row with the correct answer and a
+        // right/wrong verdict.
+        $responses = null;
+        if (in_array(optional($attempt->testSet->section)->name, ['reading', 'listening'], true)) {
+            $questions = $attempt->testSet->questions()
+                ->with('options')
+                ->where('question_type', '!=', 'passage')
+                ->orderBy('part_number')
+                ->orderBy('order_number')
+                ->get();
+
+            $responses = $this->formatQuestionsForVue(
+                $this->buildQuestionsAnalysis($questions, $attempt)
+            );
+        }
+
+        return view('admin.attempts.show', compact('attempt', 'responses'));
     }
 
     /**

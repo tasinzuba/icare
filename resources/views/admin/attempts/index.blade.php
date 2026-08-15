@@ -173,16 +173,16 @@
                             </select>
                         </div>
 
-                        <!-- Test Type Filter -->
+                        <!-- Test Type Filter: full test vs standalone section -->
                         <div>
                             <label for="test_type" class="block text-sm font-medium text-gray-700">Test Type</label>
                             <select id="test_type" name="test_type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                                 <option value="">All Types</option>
-                                <option value="premium" {{ request('test_type') == 'premium' ? 'selected' : '' }}>
-                                    👑 Premium
+                                <option value="full" {{ request('test_type') == 'full' ? 'selected' : '' }}>
+                                    Full Test
                                 </option>
-                                <option value="free" {{ request('test_type') == 'free' ? 'selected' : '' }}>
-                                    🆓 Free
+                                <option value="single" {{ request('test_type') == 'single' ? 'selected' : '' }}>
+                                    Single Section
                                 </option>
                             </select>
                         </div>

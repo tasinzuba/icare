@@ -52,12 +52,15 @@ class StudentAttemptController extends Controller
             $query->where('user_id', $request->user);
         }
 
-        // Filter by test type (premium/free)
+        // Filter by test type: part of a full test vs a standalone single-section attempt.
+        // (Replaces the old premium/free filter, which no longer means anything now that
+        // every test is free.) A full-test section attempt is linked via fullTestSectionAttempt.
         if ($request->filled('test_type') && $request->test_type !== '') {
-            $isPremium = $request->test_type === 'premium';
-            $query->whereHas('testSet', function ($q) use ($isPremium) {
-                $q->where('is_premium', $isPremium);
-            });
+            if ($request->test_type === 'full') {
+                $query->whereHas('fullTestSectionAttempt');
+            } elseif ($request->test_type === 'single') {
+                $query->whereDoesntHave('fullTestSectionAttempt');
+            }
         }
 
         // Calculate statistics

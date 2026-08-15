@@ -146,13 +146,6 @@
             </div>
         </div>
 
-        <!-- Per-student section result cards (respects the filters above) -->
-        @include('partials.student-section-results', [
-            'testGroups' => $testGroups,
-            'title' => 'Results',
-            'showBranch' => true,
-            'studentUrl' => fn ($student) => route('teacher.student-results.index', ['search' => $student->email]),
-        ])
 
         <!-- Results Table -->
         <div class="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -171,163 +164,128 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Student
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Test Details
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Test Type
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Date
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Score
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Evaluation
-                            </th>
-                            <th scope="col" class="relative px-6 py-3">
-                                <span class="sr-only">Actions</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse ($attempts as $attempt)
-                            @php
-                                $isOffline = $attempt->user->branch_id !== null;
-                                $isFullTest = $attempt->fullTestSectionAttempt !== null;
-                                $hasEvaluation = $attempt->humanEvaluationRequest && $attempt->humanEvaluationRequest->status === 'completed';
-                            @endphp
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        <div class="flex-shrink-0 h-10 w-10">
-                                            <div class="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-                                                <span class="text-xs font-medium text-white">
-                                                    {{ strtoupper(substr($attempt->user->name, 0, 2)) }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-medium text-gray-900">
-                                                {{ $attempt->user->name }}
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                {{ $attempt->user->email }}
-                                            </div>
-                                            @if($isOffline && $attempt->user->branch)
-                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 mt-1 inline-block">
-                                                    <i class="fas fa-building mr-1"></i>{{ $attempt->user->branch->name }}
-                                                </span>
-                                            @else
-                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 mt-1 inline-block">
-                                                    <i class="fas fa-globe mr-1"></i>Online
-                                                </span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-900">{{ $attempt->testSet->title }}</div>
-                                    <div class="text-sm text-gray-500">
-                                        @php
-                                            $sectionIcons = [
-                                                'listening' => 'fa-headphones',
-                                                'reading' => 'fa-book-open',
-                                                'writing' => 'fa-pen-fancy',
-                                                'speaking' => 'fa-microphone'
-                                            ];
-                                            $sectionName = $attempt->testSet->section->name;
-                                        @endphp
-                                        <i class="fas {{ $sectionIcons[$sectionName] ?? 'fa-file' }} mr-1"></i>
-                                        {{ ucfirst($sectionName) }}
-                                    </div>
-                                    @if($attempt->testSet->is_premium)
-                                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 mt-1 inline-block">
-                                            <i class="fas fa-crown mr-1"></i>Premium
-                                        </span>
-                                    @else
-                                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600 mt-1 inline-block">
-                                            Free
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($isFullTest)
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                                            <i class="fas fa-clipboard-list mr-1"></i>Full Test
-                                        </span>
-                                    @else
-                                        <span class="text-sm text-gray-500">Single Section</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">
-                                        {{ $attempt->created_at->format('M d, Y') }}
-                                    </div>
-                                    <div class="text-sm text-gray-500">
-                                        {{ $attempt->created_at->format('g:i A') }}
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    {{-- A band of 0.0 is a real score, but 0.0 is falsy in PHP, so a
-                                         truthy check hid it behind "-" as if the test was unscored. --}}
-                                    @if (!is_null($attempt->band_score))
-                                        <div class="flex items-center">
-                                            <span class="text-lg font-bold text-gray-900">
+            <div class="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                @forelse ($attempts as $attempt)
+                    @php
+                        $isOffline = $attempt->user->branch_id !== null;
+                        $isFullTest = $attempt->fullTestSectionAttempt !== null;
+                        $hasEvaluation = $attempt->humanEvaluationRequest && $attempt->humanEvaluationRequest->status === 'completed';
+
+                        $sName = optional(optional($attempt->testSet)->section)->name ?? '';
+                        $sMetaMap = [
+                            'reading'   => ['label' => 'Reading',   'icon' => 'fa-book-open',  'color' => '#2563eb', 'bg' => '#eff6ff', 'border' => '#bfdbfe'],
+                            'listening' => ['label' => 'Listening', 'icon' => 'fa-headphones', 'color' => '#7c3aed', 'bg' => '#f5f3ff', 'border' => '#ddd6fe'],
+                            'writing'   => ['label' => 'Writing',   'icon' => 'fa-pen-fancy',  'color' => '#b45309', 'bg' => '#fffbeb', 'border' => '#fde68a'],
+                            'speaking'  => ['label' => 'Speaking',  'icon' => 'fa-microphone', 'color' => '#be123c', 'bg' => '#fff1f2', 'border' => '#fecdd3'],
+                        ];
+                        $sMeta = $sMetaMap[$sName] ?? ['label' => ucfirst($sName ?: 'Test'), 'icon' => 'fa-file-lines', 'color' => '#475569', 'bg' => '#f8fafc', 'border' => '#e2e8f0'];
+
+                        // 0.0 is a real band but falsy in PHP, so compare against null explicitly.
+                        $hasBand = !is_null($attempt->band_score);
+                        $bandTone = !$hasBand ? '#6b7280'
+                            : ($attempt->band_score >= 7 ? '#15803d'
+                            : ($attempt->band_score >= 6 ? '#1d4ed8'
+                            : ($attempt->band_score >= 5 ? '#b45309' : '#b91c1c')));
+                    @endphp
+
+                    <div class="rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition p-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0">
+                                <span class="text-xs font-medium text-white">
+                                    {{ strtoupper(mb_substr($attempt->user->name ?? '?', 0, 2)) }}
+                                </span>
+                            </div>
+
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-semibold text-gray-900 truncate">{{ $attempt->user->name }}</p>
+                                <p class="text-[11px] text-gray-400 truncate">{{ $attempt->user->email }}</p>
+                            </div>
+
+                            <span class="text-[10px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 shrink-0"
+                                  style="{{ $isFullTest ? 'background:#f3e8ff;color:#6b21a8;' : 'background:#f1f5f9;color:#475569;' }}">
+                                {{ $isFullTest ? 'Full Test' : 'Single Section' }}
+                            </span>
+                        </div>
+
+                        <div class="mt-2 flex items-center gap-2 flex-wrap">
+                            @if($isOffline)
+                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-orange-100 text-orange-800">
+                                    <i class="fas fa-building mr-1"></i>{{ optional($attempt->user->branch)->name ?? 'Branch' }}
+                                </span>
+                            @else
+                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                                    <i class="fas fa-globe mr-1"></i>Online
+                                </span>
+                            @endif
+
+                            @if($hasEvaluation)
+                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">
+                                    <i class="fas fa-check mr-1"></i>Evaluated
+                                </span>
+                            @elseif($attempt->humanEvaluationRequest)
+                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    <i class="fas fa-clock mr-1"></i>{{ ucfirst($attempt->humanEvaluationRequest->status) }}
+                                </span>
+                            @endif
+                        </div>
+
+                        <a href="{{ route('teacher.student-results.show', $attempt) }}"
+                           class="mt-3 rounded-lg p-3 block hover:brightness-95 transition"
+                           style="background:{{ $sMeta['bg'] }};border:1px solid {{ $sMeta['border'] }};">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[11px] font-bold uppercase tracking-wide" style="color:{{ $sMeta['color'] }};">
+                                    <i class="fas {{ $sMeta['icon'] }} mr-1"></i>{{ $sMeta['label'] }}
+                                </span>
+                                <span class="text-[11px] text-gray-500 truncate" style="max-width:55%;">
+                                    {{ optional($attempt->testSet)->title }}
+                                </span>
+                            </div>
+
+                            <div class="mt-2 flex items-end justify-between gap-2">
+                                <div class="min-w-0">
+                                    @if($hasBand)
+                                        <div class="flex items-baseline gap-1.5">
+                                            <span style="font-size:22px;font-weight:800;line-height:1.1;color:{{ $bandTone }};">
                                                 {{ number_format($attempt->band_score, 1) }}
                                             </span>
+                                            <span class="text-[11px] text-gray-500">band</span>
                                             @if($attempt->band_score >= 7)
-                                                <i class="fas fa-star text-yellow-500 ml-1"></i>
+                                                <i class="fas fa-star text-yellow-500 text-[11px]"></i>
                                             @endif
                                         </div>
+                                        @if($attempt->total_questions)
+                                            <p class="text-[10px] text-gray-500 mt-0.5">
+                                                {{ $attempt->correct_answers ?? 0 }}/{{ $attempt->total_questions }} correct
+                                            </p>
+                                        @endif
+                                    @elseif(in_array($sName, ['writing', 'speaking'], true))
+                                        <p style="font-size:14px;font-weight:700;color:#7e22ce;line-height:1.4;">Needs evaluation</p>
                                     @else
-                                        <span class="text-sm text-gray-400">-</span>
+                                        <p style="font-size:14px;font-weight:700;color:#9ca3af;line-height:1.4;">Not scored</p>
                                     @endif
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($hasEvaluation)
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            <i class="fas fa-check mr-1"></i>Evaluated
-                                        </span>
-                                    @elseif($attempt->humanEvaluationRequest)
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                            <i class="fas fa-clock mr-1"></i>{{ ucfirst($attempt->humanEvaluationRequest->status) }}
-                                        </span>
-                                    @else
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-600">
-                                            <i class="fas fa-minus mr-1"></i>No Request
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="{{ route('teacher.student-results.show', $attempt) }}"
-                                       class="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-emerald-700 bg-emerald-100 hover:bg-emerald-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-                                        <i class="fas fa-eye mr-1"></i>
-                                        View
-                                    </a>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="px-6 py-12 text-center">
-                                    <div class="flex flex-col items-center justify-center">
-                                        <i class="fas fa-clipboard-list text-4xl text-gray-300 mb-3"></i>
-                                        <p class="text-sm text-gray-500">No student results found</p>
-                                        <p class="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                </div>
+
+                                <div class="text-right shrink-0">
+                                    <p class="text-[11px] text-gray-500">{{ $attempt->created_at->format('M d, Y') }}</p>
+                                    <p class="text-[10px] text-gray-400">{{ $attempt->created_at->format('g:i A') }}</p>
+                                </div>
+                            </div>
+                        </a>
+
+                        <div class="mt-3 flex items-center justify-end">
+                            <a href="{{ route('teacher.student-results.show', $attempt) }}"
+                               class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-emerald-700 bg-emerald-100 hover:bg-emerald-200">
+                                <i class="fas fa-eye mr-1"></i>View
+                            </a>
+                        </div>
+                    </div>
+                @empty
+                    <div class="sm:col-span-2 lg:col-span-3 py-12 text-center">
+                        <i class="fas fa-clipboard-list text-4xl text-gray-300 mb-3"></i>
+                        <p class="text-sm text-gray-500">No student results found</p>
+                        <p class="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
+                    </div>
+                @endforelse
             </div>
 
             <!-- Pagination -->

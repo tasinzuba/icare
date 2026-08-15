@@ -154,7 +154,7 @@
                     <h3 class="text-lg leading-6 font-medium text-gray-900">Student Test Results</h3>
                     <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2">
     <span class="flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-semibold text-white">
-        {{ $attempts->total() }}
+        {{ $activeTab === 'full' ? $fullTestAttempts->total() : $attempts->total() }}
     </span>
 
     <span class="text-sm font-medium text-blue-700">
@@ -188,6 +188,102 @@
                 </nav>
             </div>
 
+            @if($activeTab === 'full')
+                {{-- A full test is ONE sitting: a single card per attempt showing the overall band,
+                     with its sections summarised. Opening it shows a tab per section. --}}
+                <div class="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @forelse($fullTestAttempts as $fta)
+                        @php
+                            $sectionOrder = ['listening', 'reading', 'writing', 'speaking'];
+                            $done = $fta->sectionAttempts
+                                ->filter(fn ($sa) => $sa->studentAttempt && $sa->studentAttempt->status === 'completed')
+                                ->keyBy('section_type');
+                            $overall = $fta->overall_band_score;
+                            $overallTone = $overall === null ? '#b45309'
+                                : ($overall >= 7 ? '#15803d' : ($overall >= 6 ? '#1d4ed8' : ($overall >= 5 ? '#b45309' : '#b91c1c')));
+                        @endphp
+
+                        <div class="rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition p-4">
+                            <div class="flex items-start gap-3">
+                                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0">
+                                    <span class="text-xs font-medium text-white">
+                                        {{ strtoupper(mb_substr(optional($fta->user)->name ?? '?', 0, 2)) }}
+                                    </span>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-semibold text-gray-900 truncate">{{ optional($fta->user)->name ?? 'Unknown student' }}</p>
+                                    <p class="text-[11px] text-gray-400 truncate">{{ optional($fta->user)->email }}</p>
+                                </div>
+                                <span class="text-[10px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5 shrink-0"
+                                      style="background:#f3e8ff;color:#6b21a8;">Full Test</span>
+                            </div>
+
+                            <a href="{{ route('teacher.student-results.full-test', $fta) }}"
+                               class="mt-3 rounded-lg p-3 block hover:brightness-95 transition"
+                               style="background:#f8fafc;border:1px solid #e2e8f0;">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[11px] font-bold uppercase tracking-wide text-gray-600">
+                                        <i class="fas fa-clipboard-list mr-1"></i>Overall
+                                    </span>
+                                    <span class="text-[11px] text-gray-500 truncate" style="max-width:55%;">
+                                        {{ optional($fta->fullTest)->title }}
+                                    </span>
+                                </div>
+
+                                <div class="mt-2 flex items-end justify-between gap-2">
+                                    <div>
+                                        @if($overall !== null)
+                                            <div class="flex items-baseline gap-1.5">
+                                                <span style="font-size:22px;font-weight:800;line-height:1.1;color:{{ $overallTone }};">
+                                                    {{ number_format($overall, 1) }}
+                                                </span>
+                                                <span class="text-[11px] text-gray-500">band</span>
+                                            </div>
+                                        @else
+                                            <p style="font-size:14px;font-weight:700;color:#b45309;line-height:1.4;">Pending</p>
+                                        @endif
+                                        <p class="text-[10px] text-gray-500 mt-0.5">{{ $done->count() }} of {{ count($sectionOrder) }} sections done</p>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <p class="text-[11px] text-gray-500">{{ $fta->created_at->format('M d, Y') }}</p>
+                                        <p class="text-[10px] text-gray-400">{{ $fta->created_at->format('g:i A') }}</p>
+                                    </div>
+                                </div>
+
+                                {{-- per-section bands --}}
+                                <div class="mt-2 flex flex-wrap gap-1.5">
+                                    @foreach($sectionOrder as $type)
+                                        @continue(!$done->has($type))
+                                        @php $b = $done[$type]->studentAttempt->band_score; @endphp
+                                        <span class="text-[10px] font-semibold rounded px-1.5 py-0.5" style="background:#eef2ff;color:#3730a3;">
+                                            {{ strtoupper(substr($type, 0, 1)) }} {{ $b !== null ? number_format($b, 1) : '—' }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </a>
+
+                            <div class="mt-3 flex items-center justify-end">
+                                <a href="{{ route('teacher.student-results.full-test', $fta) }}"
+                                   class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-emerald-700 bg-emerald-100 hover:bg-emerald-200">
+                                    <i class="fas fa-eye mr-1"></i>View
+                                </a>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="sm:col-span-2 lg:col-span-3 py-12 text-center">
+                            <i class="fas fa-clipboard-list text-4xl text-gray-300 mb-3"></i>
+                            <p class="text-sm text-gray-500">No full test results found</p>
+                            <p class="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                @if($fullTestAttempts->hasPages())
+                    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+                        {{ $fullTestAttempts->withQueryString()->links() }}
+                    </div>
+                @endif
+            @else
             <div class="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 @forelse ($attempts as $attempt)
                     @php
@@ -317,6 +413,7 @@
                 <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
                     {{ $attempts->withQueryString()->links() }}
                 </div>
+            @endif
             @endif
         </div>
     </div>

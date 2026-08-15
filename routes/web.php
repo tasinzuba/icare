@@ -379,6 +379,8 @@ Route::middleware(['auth', \App\Http\Middleware\CheckBanned::class])->group(func
         // Student Results
         Route::prefix('student-results')->name('student-results.')->group(function () {
             Route::get('/', [App\Http\Controllers\Teacher\StudentResultController::class, 'index'])->name('index');
+            // Declared before /{studentAttempt} so "full-test" is not swallowed by that wildcard.
+            Route::get('/full-test/{fullTestAttempt}', [App\Http\Controllers\Teacher\StudentResultController::class, 'showFullTest'])->name('full-test');
             Route::get('/{studentAttempt}', [App\Http\Controllers\Teacher\StudentResultController::class, 'show'])->name('show');
         });
 

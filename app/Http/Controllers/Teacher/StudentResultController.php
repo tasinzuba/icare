@@ -86,19 +86,40 @@ class StudentResultController extends Controller
                 $q->whereIn('name', ['writing', 'speaking']);
             })->count();
 
-        // Full Test / Section Test tabs. Counts are taken with every other filter applied but before
-        // the tab itself, so each tab shows how many results it holds for the current filters.
+        // Full Test / Section Test tabs.
+        // A full test is ONE sitting made of several section attempts, so that tab lists
+        // FullTestAttempt records (one card, overall band) rather than each section separately.
         $activeTab = $request->input('test_type') === 'full' ? 'full' : 'single';
-        $fullTestCount = (clone $query)->whereHas('fullTestSectionAttempt')->count();
-        $sectionTestCount = (clone $query)->whereDoesntHave('fullTestSectionAttempt')->count();
 
-        if ($activeTab === 'full') {
-            $query->whereHas('fullTestSectionAttempt');
-        } else {
-            $query->whereDoesntHave('fullTestSectionAttempt');
+        $fullTestQuery = \App\Models\FullTestAttempt::query()
+            ->with(['user.branch', 'fullTest', 'sectionAttempts.studentAttempt.testSet.section'])
+            ->whereHas('sectionAttempts.studentAttempt', fn ($q) => $q->where('status', 'completed'));
+
+        // Carry the student-level filters onto the full-test list (section / evaluation status are
+        // per-section concepts and do not apply to a whole sitting).
+        if ($request->filled('branch_id')) {
+            $fullTestQuery->whereHas('user', fn ($q) => $q->where('branch_id', $request->branch_id));
+        }
+        if ($request->filled('search') && $request->search !== '') {
+            $search = $request->search;
+            $fullTestQuery->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
         }
 
-        $attempts = $query->latest()->paginate(20)->withQueryString();
+        $sectionTestCount = (clone $query)->whereDoesntHave('fullTestSectionAttempt')->count();
+        $fullTestCount = (clone $fullTestQuery)->count();
+
+        $fullTestAttempts = null;
+        if ($activeTab === 'full') {
+            $fullTestAttempts = $fullTestQuery->latest()->paginate(12)->withQueryString();
+            // Keep an empty paginator so shared view code (counts, pagination) stays valid.
+            $attempts = $query->whereRaw('1 = 0')->paginate(20)->withQueryString();
+        } else {
+            $attempts = $query->whereDoesntHave('fullTestSectionAttempt')
+                ->latest()->paginate(20)->withQueryString();
+        }
 
         $branches = \App\Models\Branch::active()->ordered()->get(['id', 'name', 'code']);
 
@@ -110,7 +131,8 @@ class StudentResultController extends Controller
             'branches',
             'activeTab',
             'fullTestCount',
-            'sectionTestCount'
+            'sectionTestCount',
+            'fullTestAttempts'
         ));
     }
 
@@ -156,5 +178,63 @@ class StudentResultController extends Controller
         }
 
         return view('teacher.student-results.show', compact('studentAttempt', 'responses'));
+    }
+
+    /**
+     * One full-test sitting: overall band plus a tab per section.
+     *
+     * The section tabs are driven by ?section=, so no client-side state is needed and a tab can be
+     * linked to directly.
+     */
+    public function showFullTest(Request $request, \App\Models\FullTestAttempt $fullTestAttempt): View
+    {
+        $fullTestAttempt->load([
+            'user.branch',
+            'fullTest',
+            'sectionAttempts.studentAttempt.testSet.section',
+            'sectionAttempts.studentAttempt.answers.question',
+            'sectionAttempts.studentAttempt.answers.selectedOption',
+            'sectionAttempts.studentAttempt.answers.speakingRecording',
+            'sectionAttempts.studentAttempt.humanEvaluationRequest.humanEvaluation',
+        ]);
+
+        // Sections that actually have a completed attempt, in IELTS order.
+        $order = ['listening', 'reading', 'writing', 'speaking'];
+        $sections = $fullTestAttempt->sectionAttempts
+            ->filter(fn ($sa) => $sa->studentAttempt && $sa->studentAttempt->status === 'completed')
+            ->keyBy('section_type')
+            ->sortBy(fn ($sa, $type) => array_search($type, $order));
+
+        abort_if($sections->isEmpty(), 404);
+
+        $activeSection = $request->input('section');
+        if (!$activeSection || !$sections->has($activeSection)) {
+            $activeSection = $sections->keys()->first();
+        }
+
+        $studentAttempt = $sections[$activeSection]->studentAttempt;
+
+        // Per-question breakdown for the auto-scored sections (same logic as the single-section page).
+        $responses = null;
+        if (in_array($activeSection, ['reading', 'listening'], true)) {
+            $questions = $studentAttempt->testSet->questions()
+                ->with('options')
+                ->where('question_type', '!=', 'passage')
+                ->orderBy('part_number')
+                ->orderBy('order_number')
+                ->get();
+
+            $responses = $this->formatQuestionsForVue(
+                $this->buildQuestionsAnalysis($questions, $studentAttempt)
+            );
+        }
+
+        return view('teacher.student-results.full-test', compact(
+            'fullTestAttempt',
+            'sections',
+            'activeSection',
+            'studentAttempt',
+            'responses'
+        ));
     }
 }

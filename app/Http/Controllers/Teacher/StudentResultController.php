@@ -40,13 +40,6 @@ class StudentResultController extends Controller
             });
         }
 
-        // Filter by test type (premium/free)
-        if ($request->filled('test_type') && $request->test_type !== '') {
-            $isPremium = $request->test_type === 'premium';
-            $query->whereHas('testSet', function ($q) use ($isPremium) {
-                $q->where('is_premium', $isPremium);
-            });
-        }
 
         // Filter by student type (offline/online)
         if ($request->filled('student_type') && $request->student_type !== '') {
@@ -93,6 +86,18 @@ class StudentResultController extends Controller
                 $q->whereIn('name', ['writing', 'speaking']);
             })->count();
 
+        // Full Test / Section Test tabs. Counts are taken with every other filter applied but before
+        // the tab itself, so each tab shows how many results it holds for the current filters.
+        $activeTab = $request->input('test_type') === 'full' ? 'full' : 'single';
+        $fullTestCount = (clone $query)->whereHas('fullTestSectionAttempt')->count();
+        $sectionTestCount = (clone $query)->whereDoesntHave('fullTestSectionAttempt')->count();
+
+        if ($activeTab === 'full') {
+            $query->whereHas('fullTestSectionAttempt');
+        } else {
+            $query->whereDoesntHave('fullTestSectionAttempt');
+        }
+
         $attempts = $query->latest()->paginate(20)->withQueryString();
 
         $branches = \App\Models\Branch::active()->ordered()->get(['id', 'name', 'code']);
@@ -102,7 +107,10 @@ class StudentResultController extends Controller
             'totalAttempts',
             'evaluatedCount',
             'pendingCount',
-            'branches'
+            'branches',
+            'activeTab',
+            'fullTestCount',
+            'sectionTestCount'
         ));
     }
 

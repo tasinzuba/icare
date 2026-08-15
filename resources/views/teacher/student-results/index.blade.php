@@ -164,6 +164,30 @@
                 </div>
             </div>
 
+            {{-- Full Test / Section Test tabs. Every other filter is carried across via the query
+                 string, so switching tab keeps the current search/section/branch selection. --}}
+            @php
+                $tabParams = request()->except(['test_type', 'page']);
+            @endphp
+            <div class="border-b border-gray-200 px-4 sm:px-6">
+                <nav class="-mb-px flex gap-6" aria-label="Result type">
+                    <a href="{{ route('teacher.student-results.index', array_merge($tabParams, ['test_type' => 'single'])) }}"
+                       class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium {{ $activeTab === 'single' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }}">
+                        <i class="fas fa-file-lines mr-1.5"></i>Section Test
+                        <span class="ml-1.5 rounded-full px-2 py-0.5 text-xs {{ $activeTab === 'single' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
+                            {{ $sectionTestCount }}
+                        </span>
+                    </a>
+                    <a href="{{ route('teacher.student-results.index', array_merge($tabParams, ['test_type' => 'full'])) }}"
+                       class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium {{ $activeTab === 'full' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }}">
+                        <i class="fas fa-clipboard-list mr-1.5"></i>Full Test
+                        <span class="ml-1.5 rounded-full px-2 py-0.5 text-xs {{ $activeTab === 'full' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
+                            {{ $fullTestCount }}
+                        </span>
+                    </a>
+                </nav>
+            </div>
+
             <div class="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 @forelse ($attempts as $attempt)
                     @php

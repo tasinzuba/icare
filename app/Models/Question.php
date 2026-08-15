@@ -12,6 +12,26 @@ class Question extends Model
 {
     use ManagesBlanks;
 
+    /**
+     * Author-supplied rich text is scrubbed of scripting on the way in, whichever code path writes
+     * it (admin forms, bulk create, imports, seeders). Content that is already clean is stored
+     * byte-for-byte unchanged - see sanitizeAuthorHtml().
+     */
+    public function setContentAttribute($value): void
+    {
+        $this->attributes['content'] = self::sanitizeAuthorHtml($value);
+    }
+
+    public function setInstructionsAttribute($value): void
+    {
+        $this->attributes['instructions'] = self::sanitizeAuthorHtml($value);
+    }
+
+    public function setPassageTextAttribute($value): void
+    {
+        $this->attributes['passage_text'] = self::sanitizeAuthorHtml($value);
+    }
+
     protected $fillable = [
     'test_set_id',
     'question_type',
@@ -436,6 +456,113 @@ public static function sanitizeSectionDataForStudent(?array $ssd): ?array
     }
 
     return $ssd;
+}
+
+/**
+ * Strip scripting from author-supplied rich text before it is stored.
+ *
+ * Question content, instructions and passage text are authored in TinyMCE and rendered with v-html
+ * on the student test pages, so anything stored here executes in the student's browser during an
+ * exam. Validation only checked "string", and the CSP allows 'unsafe-inline', so a crafted payload
+ * (or an API POST that bypasses the editor) could exfiltrate answers or the session.
+ *
+ * This keeps ordinary formatting - and data:image sources, which the editor produces - while
+ * removing script-bearing elements, every on* handler and javascript:/non-image data: URLs.
+ * It deliberately fails open (returns the input unchanged) rather than destroying content.
+ */
+public static function sanitizeAuthorHtml(?string $html): ?string
+{
+    if ($html === null || trim($html) === '' || !class_exists(\DOMDocument::class)) {
+        return $html;
+    }
+
+    // Only rewrite content that actually looks dangerous. Re-serialising through DOMDocument
+    // normalises entities (&bull; becomes a literal bullet), which would silently rewrite most of
+    // the existing question bank and risk disturbing the [____1____] / [DROPDOWN_n] / [DRAG_n]
+    // markers that scoring parses. Clean content is therefore returned untouched.
+    $suspicious = '/<\s*(script|style|iframe|object|embed|form|input|button|link|meta|base|svg|math|applet)\b'
+        . '|\son[a-z]+\s*=' // inline event handler
+        . '|javascript\s*:|vbscript\s*:'
+        . '|data\s*:(?!image\/)' // data: URL that is not an image
+        . '|expression\s*\(/i';
+
+    if (!preg_match($suspicious, $html)) {
+        return $html;
+    }
+
+    $blockedTags = ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'link', 'meta', 'base', 'svg', 'math', 'applet'];
+    $urlAttributes = ['href', 'src', 'action', 'formaction', 'xlink:href', 'poster', 'background'];
+
+    $previous = libxml_use_internal_errors(true);
+
+    try {
+        $doc = new \DOMDocument();
+        $loaded = $doc->loadHTML(
+            '<?xml encoding="UTF-8"?><body>' . $html . '</body>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        );
+
+        if (!$loaded) {
+            return $html;
+        }
+
+        foreach ($blockedTags as $tag) {
+            foreach (iterator_to_array($doc->getElementsByTagName($tag)) as $node) {
+                if ($node->parentNode) {
+                    $node->parentNode->removeChild($node);
+                }
+            }
+        }
+
+        $xpath = new \DOMXPath($doc);
+        foreach ($xpath->query('//*') as $element) {
+            if (!$element->attributes) {
+                continue;
+            }
+
+            foreach (iterator_to_array($element->attributes) as $attribute) {
+                $name = strtolower($attribute->name);
+                $value = (string) $attribute->value;
+                $compact = strtolower(preg_replace('/[\s\x00-\x1F]+/', '', $value));
+
+                if (str_starts_with($name, 'on')) {
+                    $element->removeAttribute($attribute->name);
+                    continue;
+                }
+
+                if (in_array($name, $urlAttributes, true)) {
+                    $isScriptUrl = str_starts_with($compact, 'javascript:') || str_starts_with($compact, 'vbscript:');
+                    $isNonImageData = str_starts_with($compact, 'data:') && !str_starts_with($compact, 'data:image/');
+
+                    if ($isScriptUrl || $isNonImageData) {
+                        $element->removeAttribute($attribute->name);
+                        continue;
+                    }
+                }
+
+                if ($name === 'style' && preg_match('/expression\s*\(|javascript:|behaviou?r\s*:/i', $value)) {
+                    $element->removeAttribute($attribute->name);
+                }
+            }
+        }
+
+        $body = $doc->getElementsByTagName('body')->item(0);
+        if (!$body) {
+            return $html;
+        }
+
+        $clean = '';
+        foreach ($body->childNodes as $child) {
+            $clean .= $doc->saveHTML($child);
+        }
+
+        return $clean;
+    } catch (\Throwable $e) {
+        return $html;
+    } finally {
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+    }
 }
 
 /**

@@ -100,7 +100,7 @@ class DashboardController extends Controller
         // Per-student section result cards — scoped to THIS branch's students only.
         $testGroups = app(\App\Services\StudentSectionResultService::class)->recentTestGroups(
             fn ($query) => $query->whereHas('user', fn ($q) => $q->where('branch_id', $branch->id)),
-            8
+            10
         );
 
         return view('branch.dashboard.index', compact(

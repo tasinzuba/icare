@@ -167,22 +167,7 @@
                                             Inactive
                                         </span>
                                     @endif
-                                    @if ($fullTest->is_for_offline && $fullTest->is_for_online)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                            <i class="fas fa-users mr-1 text-purple-500"></i>
-                                            Both
-                                        </span>
-                                    @elseif ($fullTest->is_for_offline)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                            <i class="fas fa-building mr-1 text-orange-500"></i>
-                                            Branch Only
-                                        </span>
-                                    @elseif ($fullTest->is_for_online)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                                            <i class="fas fa-globe mr-1 text-emerald-500"></i>
-                                            Online Only
-                                        </span>
-                                    @endif
+                                    {{-- Audience badge removed: every test is branch/offline only. --}}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

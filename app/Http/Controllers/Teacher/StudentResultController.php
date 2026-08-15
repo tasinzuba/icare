@@ -92,7 +92,7 @@ class StudentResultController extends Controller
         $activeTab = $request->input('test_type') === 'full' ? 'full' : 'single';
 
         $fullTestQuery = \App\Models\FullTestAttempt::query()
-            ->with(['user.branch', 'fullTest', 'sectionAttempts.studentAttempt.testSet.section'])
+            ->with(['user.branch', 'fullTest.testSets', 'sectionAttempts.studentAttempt.testSet.section'])
             ->whereHas('sectionAttempts.studentAttempt', fn ($q) => $q->where('status', 'completed'));
 
         // Carry the student-level filters onto the full-test list (section / evaluation status are

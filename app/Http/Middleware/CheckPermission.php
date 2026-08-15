@@ -33,11 +33,60 @@ class CheckPermission
             abort(403, 'You do not have permission to access this resource.');
         }
 
-        // Check if user has any of the required permissions
-        if (!empty($permissions) && !$user->hasAnyPermission($permissions)) {
+        if (empty($permissions)) {
+            return $next($request);
+        }
+
+        // SECURITY: route groups list every verb at once, e.g.
+        //   permission:questions.view,questions.create,questions.edit,questions.delete
+        // and this used to pass on hasAnyPermission(), so a read-only role holding just
+        // questions.view could also create, edit and delete — the group's write routes were
+        // effectively unguarded. Pick the permission that matches the request method instead, so
+        // .view only ever grants reads.
+        $required = $this->permissionForMethod($request->method(), $permissions);
+
+        if ($required !== null) {
+            if (!$user->hasPermission($required)) {
+                abort(403, 'You do not have permission to perform this action.');
+            }
+
+            return $next($request);
+        }
+
+        // No verb-specific permission is listed for this group (for example the attempts group has
+        // no *.create), so fall back to the original any-of check rather than locking staff out.
+        if (!$user->hasAnyPermission($permissions)) {
             abort(403, 'You do not have permission to perform this action.');
         }
 
         return $next($request);
+    }
+
+    /**
+     * The listed permission that matches this HTTP method, or null when the group does not list one.
+     *
+     * @param  array<int, string>  $permissions
+     */
+    private function permissionForMethod(string $method, array $permissions): ?string
+    {
+        // POST covers both creating and updating (e.g. settings are saved with POST), so accept a
+        // create permission first and fall back to edit before giving up.
+        $suffixes = match (strtoupper($method)) {
+            'GET', 'HEAD' => ['view'],
+            'POST' => ['create', 'edit'],
+            'PUT', 'PATCH' => ['edit'],
+            'DELETE' => ['delete'],
+            default => [],
+        };
+
+        foreach ($suffixes as $suffix) {
+            foreach ($permissions as $permission) {
+                if (str_ends_with($permission, '.' . $suffix)) {
+                    return $permission;
+                }
+            }
+        }
+
+        return null;
     }
 }

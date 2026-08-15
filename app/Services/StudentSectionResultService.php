@@ -37,7 +37,8 @@ class StudentSectionResultService
                 'user',
                 'testSet.section',
                 'humanEvaluationRequest.humanEvaluation',
-                'fullTestSectionAttempt.fullTestAttempt.fullTest',
+                'fullTestSectionAttempt.fullTestAttempt.fullTest.testSets',
+                'fullTestSectionAttempt.fullTestAttempt.sectionAttempts.studentAttempt',
             ])
             ->where('status', 'completed')
             ->examOnly()
@@ -74,7 +75,7 @@ class StudentSectionResultService
                         'student' => $attempt->user,
                         'title' => optional($fullTestAttempt->fullTest)->title ?: 'Full Test',
                         'taken_at' => $attempt->created_at,
-                        'overall' => $fullTestAttempt->overall_band_score,
+                        'overall' => self::effectiveOverall($fullTestAttempt),
                         'sections' => [],
                     ];
                 }
@@ -106,6 +107,66 @@ class StudentSectionResultService
             ->sortByDesc('taken_at')
             ->take($limit)
             ->values();
+    }
+
+    /**
+     * The overall band for a full-test sitting, recomputed from effective section scores.
+     *
+     * The stored overall_band_score column cannot be trusted: markAsCompleted() only writes it when
+     * every section has a stored score, AI evaluation updates the attempt's ai_band_score without
+     * touching the full-test section scores, and markAsExpired() stores an average of whatever
+     * partial results exist. Reading it raw therefore showed "Pending" for sittings the student's
+     * own results page scores, and could present a single section's band as a whole-test overall.
+     *
+     * Per section the effective score is: the stored section score, else the attempt's band_score
+     * (auto-scored reading/listening, or a teacher's writing band), else its ai_band_score.
+     * Returns null unless EVERY section of that full test has one, so a partial sitting shows no
+     * overall rather than a misleading one. Uses official IELTS .25/.75 rounding.
+     */
+    public static function effectiveOverall($fullTestAttempt): ?float
+    {
+        if (!$fullTestAttempt || !$fullTestAttempt->fullTest) {
+            return null;
+        }
+
+        $available = $fullTestAttempt->fullTest->getAvailableSections();
+        if (empty($available)) {
+            return null;
+        }
+
+        $scores = [];
+
+        foreach ($available as $type) {
+            $score = $fullTestAttempt->{$type . '_score'} ?? null;
+
+            if ($score === null) {
+                $sectionAttempt = $fullTestAttempt->sectionAttempts->firstWhere('section_type', $type);
+                $attempt = $sectionAttempt ? $sectionAttempt->studentAttempt : null;
+
+                if ($attempt) {
+                    $score = $attempt->band_score ?? $attempt->ai_band_score;
+                }
+            }
+
+            if ($score === null) {
+                return null; // section not scored yet — no honest overall to show
+            }
+
+            $scores[] = (float) $score;
+        }
+
+        $average = array_sum($scores) / count($scores);
+        $decimal = $average - floor($average);
+
+        if ($decimal < 0.25) {
+            return (float) floor($average);
+        }
+
+        if ($decimal < 0.75) {
+            return floor($average) + 0.5;
+        }
+
+        return (float) ceil($average);
     }
 
     /**

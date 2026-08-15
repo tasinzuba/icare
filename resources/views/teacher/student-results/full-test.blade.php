@@ -27,7 +27,8 @@
                 if ($band >= 5) return '#b45309';
                 return '#b91c1c';
             };
-            $overall = $fullTestAttempt->overall_band_score;
+            // Recomputed from effective section scores; the stored column is unreliable.
+            $overall = \App\Services\StudentSectionResultService::effectiveOverall($fullTestAttempt);
         @endphp
 
         <div class="bg-white shadow rounded-lg mb-6 p-6">

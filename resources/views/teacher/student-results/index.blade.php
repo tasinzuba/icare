@@ -198,7 +198,7 @@
                             $done = $fta->sectionAttempts
                                 ->filter(fn ($sa) => $sa->studentAttempt && $sa->studentAttempt->status === 'completed')
                                 ->keyBy('section_type');
-                            $overall = $fta->overall_band_score;
+                            $overall = \App\Services\StudentSectionResultService::effectiveOverall($fta);
                             $overallTone = $overall === null ? '#b45309'
                                 : ($overall >= 7 ? '#15803d' : ($overall >= 6 ? '#1d4ed8' : ($overall >= 5 ? '#b45309' : '#b91c1c')));
                         @endphp

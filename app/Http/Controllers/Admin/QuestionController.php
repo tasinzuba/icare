@@ -110,6 +110,8 @@ class QuestionController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        abort_unless(auth()->user()->hasPermission('questions.create'), 403);
+
         // Debug: Check what's coming in
         \Log::info('Question Store Request:', $request->all());
         
@@ -947,6 +949,8 @@ class QuestionController extends Controller
      */
     public function update(Request $request, Question $question): RedirectResponse
     {
+        abort_unless(auth()->user()->hasPermission('questions.edit'), 403);
+
         // Get test set to determine section
         $testSet = TestSet::with('section')->findOrFail($question->test_set_id);
         $section = $testSet->section->name;
@@ -1264,6 +1268,8 @@ class QuestionController extends Controller
      */
     public function destroy(Question $question): RedirectResponse
     {
+        abort_unless(auth()->user()->hasPermission('questions.delete'), 403);
+
         // Delete media if exists
         if ($question->media_path) {
             // Use stored storage_disk, fallback to section-based detection

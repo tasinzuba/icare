@@ -66,6 +66,9 @@ return [
 'd_id' => [
     'api_key' => env('DID_API_KEY'),
     'api_url' => env('DID_API_URL', 'https://api.d-id.com'),
+    // Shared secret proving a callback really came from our own D-ID configuration.
+    // Append it to the callback URL as ?token=... (or send it as X-Webhook-Token).
+    'webhook_secret' => env('DID_WEBHOOK_SECRET'),
 ],
 
 

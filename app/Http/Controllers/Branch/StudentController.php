@@ -368,14 +368,24 @@ class StudentController extends Controller
                 'notes' => $validated['notes'],
             ];
 
-            // Update batch — sync enrollment config from batch
+            // Update batch — sync enrollment config from batch.
+            // SECURITY: resolve the batch WITHIN this branch. Previously any existing batch id was
+            // accepted, so a branch admin could move their student onto another branch's batch and
+            // inherit its quota/test allowances (and appear on that branch's roster). store() already
+            // checked this; update() did not.
             if (array_key_exists('batch_id', $validated) && $validated['batch_id'] != $enrollment->batch_id) {
                 $newBatchId = $validated['batch_id'] ?: null;
-                $enrollmentUpdate['batch_id'] = $newBatchId;
 
                 if ($newBatchId) {
-                    $newBatch = \App\Models\Batch::find($newBatchId);
-                    if ($newBatch && $newBatch->isConfigured()) {
+                    $newBatch = \App\Models\Batch::where('branch_id', $branch->id)->find($newBatchId);
+
+                    if (!$newBatch) {
+                        return back()->withInput()->with('error', 'The selected batch does not belong to your branch.');
+                    }
+
+                    $enrollmentUpdate['batch_id'] = $newBatchId;
+
+                    if ($newBatch->isConfigured()) {
                         $limits = $newBatch->section_test_limits ?? [];
                         $enrollmentUpdate['full_tests_allowed'] = $newBatch->full_tests_allowed;
                         $enrollmentUpdate['section_test_limits'] = $limits;
@@ -385,6 +395,9 @@ class StudentController extends Controller
                         $enrollmentUpdate['valid_until'] = now()->addDays($newBatch->validity_days)->toDateString();
                         $enrollmentUpdate['valid_from'] = now()->toDateString();
                     }
+                } else {
+                    // Batch cleared
+                    $enrollmentUpdate['batch_id'] = null;
                 }
             }
 
@@ -1144,6 +1157,21 @@ class StudentController extends Controller
                 ])->id;
             } else {
                 $resolvedBatchId = $validated['batch_id'] ?? false;
+
+                // SECURITY: only accept a batch that belongs to this branch — 'exists:batches,id'
+                // alone would let an imported roster be attached to another branch's batch.
+                if ($resolvedBatchId) {
+                    $ownsBatch = \App\Models\Batch::where('branch_id', $branch->id)
+                        ->whereKey($resolvedBatchId)
+                        ->exists();
+
+                    if (!$ownsBatch) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'The selected batch does not belong to your branch.',
+                        ], 422);
+                    }
+                }
             }
         }
 

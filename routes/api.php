@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 
 // D-ID Webhook (no auth required - called by D-ID service)
 Route::post('/webhooks/d-id', [DIDWebhookController::class, 'handle'])
+    ->middleware('throttle:60,1')
     ->name('webhooks.d-id');
 
 /*

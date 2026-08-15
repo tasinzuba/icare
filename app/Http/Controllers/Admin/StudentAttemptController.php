@@ -76,14 +76,27 @@ class StudentAttemptController extends Controller
         
         // Two tabs: finished sittings (which have a result) vs sittings still open or given up on.
         // Counts use every other filter but not the tab itself, so each tab shows what it holds.
-        $activeTab = $request->input('view') === 'attempts' ? 'attempts' : 'results';
+        $statusFilter = $request->filled('status') ? $request->status : null;
+
+        // An explicit Status filter decides the tab, otherwise the tab constraint would be ANDed on
+        // top of it — "In Progress" inside the Results tab means status=in_progress AND
+        // status=completed, which can never match and silently emptied the page.
+        if ($statusFilter !== null) {
+            $activeTab = $statusFilter === 'completed' ? 'results' : 'attempts';
+        } else {
+            $activeTab = $request->input('view') === 'attempts' ? 'attempts' : 'results';
+        }
+
         $resultsCount = (clone $query)->where('status', 'completed')->count();
         $attemptsCount = (clone $query)->where('status', '!=', 'completed')->count();
 
-        if ($activeTab === 'attempts') {
-            $query->where('status', '!=', 'completed');
-        } else {
-            $query->where('status', 'completed');
+        // Only constrain by tab when the user has not already pinned a specific status.
+        if ($statusFilter === null) {
+            if ($activeTab === 'attempts') {
+                $query->where('status', '!=', 'completed');
+            } else {
+                $query->where('status', 'completed');
+            }
         }
 
         $attempts = $query->latest()->paginate(15)->withQueryString();

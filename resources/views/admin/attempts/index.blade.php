@@ -200,6 +200,10 @@
                             </select>
                         </div>
 
+                        {{-- Keep the current tab when applying filters, otherwise the form would
+                             always submit back to the default tab. --}}
+                        <input type="hidden" name="view" value="{{ $activeTab }}">
+
                         <!-- Action Buttons -->
                         <div class="flex items-end space-x-2">
                             <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -209,7 +213,7 @@
                                 Apply Filter
                             </button>
                             
-                            @if(request()->hasAny(['section', 'status', 'user', 'test_type']))
+                            @if(request()->hasAny(['section', 'status', 'user', 'test_type', 'view']))
                                 <a href="{{ route('admin.attempts.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

@@ -12,19 +12,6 @@ use Illuminate\Support\Facades\Log;
 class DIDWebhookController extends Controller
 {
     /**
-     * D-ID's known IP ranges for webhook requests.
-     * Update this list if D-ID provides official IP ranges.
-     */
-    private const ALLOWED_IPS = [
-        '3.251.*.*',      // AWS EU (Ireland) - D-ID infrastructure
-        '54.220.*.*',     // AWS EU (Ireland)
-        '52.214.*.*',     // AWS EU (Ireland)
-        '34.249.*.*',     // AWS EU (Ireland)
-        '63.33.*.*',      // AWS EU (Ireland)
-        '127.0.0.1',      // Localhost for testing
-    ];
-
-    /**
      * Handle D-ID webhook callback.
      *
      * D-ID sends webhook when talk generation is complete:
@@ -134,14 +121,30 @@ class DIDWebhookController extends Controller
 
     /**
      * Verify the webhook request is legitimate.
-     * Uses IP whitelist + result_url domain validation.
+     *
+     * Authentication is a shared secret, NOT the source IP. The previous allow-list held general
+     * AWS eu-west-1 /16 ranges (not owned by D-ID) plus 127.0.0.1, so anyone able to obtain an
+     * Elastic IP in those ranges could post forged callbacks and flip avatar tasks to failed.
+     * The secret may arrive as an X-Webhook-Token header or a ?token= query parameter, since D-ID
+     * only lets you configure the callback URL.
      */
     private function verifyRequest(Request $request): bool
     {
-        $ip = $request->ip();
+        $expected = (string) config('services.d_id.webhook_secret', '');
 
-        // Check IP whitelist
-        if (!$this->isAllowedIP($ip)) {
+        if ($expected === '') {
+            // Fail closed in production: without a configured secret the endpoint cannot be trusted.
+            if (app()->environment('local')) {
+                return true;
+            }
+
+            Log::error('D-ID webhook: DID_WEBHOOK_SECRET is not configured; rejecting callback');
+            return false;
+        }
+
+        $provided = (string) ($request->header('X-Webhook-Token') ?? $request->query('token', ''));
+
+        if ($provided === '' || !hash_equals($expected, $provided)) {
             return false;
         }
 
@@ -155,26 +158,6 @@ class DIDWebhookController extends Controller
         }
 
         return true;
-    }
-
-    /**
-     * Check if IP is in allowed list (supports wildcards).
-     */
-    private function isAllowedIP(string $ip): bool
-    {
-        foreach (self::ALLOWED_IPS as $pattern) {
-            $regex = str_replace(['.', '*'], ['\.', '\d+'], $pattern);
-            if (preg_match('/^' . $regex . '$/', $ip)) {
-                return true;
-            }
-        }
-
-        // Allow if D-ID webhook verification is disabled (for development)
-        if (config('app.env') === 'local' && config('app.debug') === true) {
-            return true;
-        }
-
-        return false;
     }
 
     /**

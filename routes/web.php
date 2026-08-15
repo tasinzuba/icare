@@ -177,11 +177,15 @@ Route::middleware(['auth', \App\Http\Middleware\CheckBanned::class])->group(func
 
     // AI Evaluation routes
     Route::prefix('ai')->name('ai.')->group(function () {
-        Route::post('/evaluate/writing', [AIEvaluationController::class, 'evaluateWriting'])->name('evaluation.writing');
-        Route::post('/evaluate/speaking', [AIEvaluationController::class, 'evaluateSpeaking'])->name('evaluation.speaking');
+        // These three spend real AI credit, so cap how fast one user can trigger them.
+        Route::post('/evaluate/writing', [AIEvaluationController::class, 'evaluateWriting'])
+            ->middleware('throttle:5,1')->name('evaluation.writing');
+        Route::post('/evaluate/speaking', [AIEvaluationController::class, 'evaluateSpeaking'])
+            ->middleware('throttle:5,1')->name('evaluation.speaking');
         // Progressive speaking evaluation (one recording at a time to prevent timeout)
         Route::post('/evaluate/speaking/status', [AIEvaluationController::class, 'getEvaluationStatus'])->name('evaluation.speaking.status');
-        Route::post('/evaluate/speaking/single', [AIEvaluationController::class, 'evaluateSingleRecording'])->name('evaluation.speaking.single');
+        Route::post('/evaluate/speaking/single', [AIEvaluationController::class, 'evaluateSingleRecording'])
+            ->middleware('throttle:20,1')->name('evaluation.speaking.single');
         Route::post('/evaluate/speaking/finalize', [AIEvaluationController::class, 'finalizeEvaluation'])->name('evaluation.speaking.finalize');
         Route::get('/evaluation/{attempt}', [AIEvaluationController::class, 'getEvaluation'])->name('evaluation.get');
         // H8: rate-limit the LLM explanation proxy (per authenticated user).

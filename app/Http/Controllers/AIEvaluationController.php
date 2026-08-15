@@ -94,7 +94,10 @@ class AIEvaluationController extends Controller
             // and both charge. Flipping ai_evaluated_at only-if-null in a single UPDATE is the
             // guard — only the request whose UPDATE affects a row (returns 1) proceeds. On failure
             // below we roll the claim back so the student can retry.
-            $forceReEvaluate = $request->boolean('force_reevaluate', false);
+            // SECURITY: re-evaluation must never be client-controlled. Honouring a request flag let a
+            // student POST force_reevaluate=1 in a loop, skipping the atomic already-evaluated claim and
+            // deducting another AI evaluation from the branch every time. Only staff may force one.
+            $forceReEvaluate = (bool) optional(auth()->user())->is_admin;
             $claimedThisRequest = false;
             if (!$forceReEvaluate) {
                 $claimed = StudentAttempt::whereKey($attempt->id)
@@ -286,7 +289,10 @@ class AIEvaluationController extends Controller
 
             // H10: atomically claim the evaluation so two concurrent requests can't both evaluate
             // and both charge (rolled back below on failure so the student can retry).
-            $forceReEvaluate = $request->boolean('force_reevaluate', false);
+            // SECURITY: re-evaluation must never be client-controlled. Honouring a request flag let a
+            // student POST force_reevaluate=1 in a loop, skipping the atomic already-evaluated claim and
+            // deducting another AI evaluation from the branch every time. Only staff may force one.
+            $forceReEvaluate = (bool) optional(auth()->user())->is_admin;
             $claimedThisRequest = false;
             if (!$forceReEvaluate) {
                 $claimed = StudentAttempt::whereKey($attempt->id)
@@ -675,7 +681,10 @@ class AIEvaluationController extends Controller
             }
 
             // Already evaluated (skip if force_reevaluate is true)
-            $forceReEvaluate = $request->boolean('force_reevaluate', false);
+            // SECURITY: re-evaluation must never be client-controlled. Honouring a request flag let a
+            // student POST force_reevaluate=1 in a loop, skipping the atomic already-evaluated claim and
+            // deducting another AI evaluation from the branch every time. Only staff may force one.
+            $forceReEvaluate = (bool) optional(auth()->user())->is_admin;
             if (!empty($answer->ai_evaluation) && !$forceReEvaluate) {
                 return response()->json([
                     'success' => true,

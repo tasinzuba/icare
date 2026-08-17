@@ -343,6 +343,10 @@ trait ResultDataTrait
                 'content' => $item['content'], 'student_answer' => $displayAnswer,
                 'correct_answer' => $correctAnswerForExplain, 'is_correct' => $isCorrect,
                 'is_answered' => $isAnswered, 'explanation' => $item['explanation'],
+                // Passage marker id (e.g. "Q5") so the result page can jump to and highlight the
+                // {{Q5}}…{{Q5}} span. Taken from raw_question here so every question-type branch
+                // above gets it without having to repeat the field eleven times.
+                'location' => $question->passage_reference ?: null,
             ];
         }
 

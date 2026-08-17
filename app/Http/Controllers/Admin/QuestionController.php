@@ -599,8 +599,12 @@ class QuestionController extends Controller
                 'audio_transcript' => $request->audio_transcript ?? null,
                 'word_limit' => $request->word_limit ?? null,
                 'time_limit' => $request->time_limit ?? null,
+                // Shown to the student on the RESULT page only (never during the test).
+                // passage_reference holds the passage marker id, e.g. Q5 for a {{Q5}}...{{Q5}} span.
+                'explanation' => $request->explanation ?? null,
+                'passage_reference' => $request->passage_reference ?: null,
             ];
-            
+
             // Set marks based on question type
             if ($request->question_type === 'matching_headings' && isset($typeSpecificData['matching_headings']['mappings'])) {
                 $questionData['marks'] = $request->marks ?? count($typeSpecificData['matching_headings']['mappings']);
@@ -1028,6 +1032,9 @@ class QuestionController extends Controller
             'instructions' => $request->instructions,
             'word_limit' => $request->word_limit ?? null,
             'time_limit' => $request->time_limit ?? null,
+            // Result-page only: the answer explanation and the passage marker id (e.g. Q5).
+            'explanation' => $request->explanation ?? null,
+            'passage_reference' => $request->passage_reference ?: null,
         ];
 
         // Add media path and storage_disk if new file was uploaded

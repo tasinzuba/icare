@@ -54,3 +54,28 @@
            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
            min="0" max="40">
 </div>
+
+{{-- Answer explanation + passage location. Both are shown to the student ONLY on the result
+     page after they submit, never during the test. --}}
+<div class="w-full">
+    <label class="block text-sm font-medium text-gray-700 mb-2">
+        Explanation <span class="text-gray-400 font-normal">(optional)</span>
+    </label>
+    <textarea name="explanation" rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              placeholder="Why this answer is correct — the student sees this on their result page.">{{ old('explanation', isset($question) ? $question->explanation : '') }}</textarea>
+</div>
+
+<div class="w-full">
+    <label class="block text-sm font-medium text-gray-700 mb-2">
+        Answer location in passage <span class="text-gray-400 font-normal">(optional)</span>
+    </label>
+    <input type="text" name="passage_reference"
+           value="{{ old('passage_reference', isset($question) ? $question->passage_reference : '') }}"
+           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+           placeholder="e.g. Q5">
+    <p class="text-xs text-gray-500 mt-1">
+        Wrap the answer text in the passage with <code class="bg-gray-100 px-1 rounded">&#123;&#123;Q5&#125;&#125;…&#123;&#123;Q5&#125;&#125;</code>,
+        then put <strong>Q5</strong> here. On the result page the student can jump straight to it.
+    </p>
+</div>

@@ -102,6 +102,10 @@ const props = defineProps({
 // AI Evaluation Modal
 const showAiModal = ref(false);
 
+// Reading passage panel. Open by default so a Location jump has a visible target; the button can
+// still collapse it.
+const showPassage = ref(true);
+
 const formatDuration = (start, end) => {
     const s = start || props.attempt.created_at;
     const e = end || props.attempt.updated_at;
@@ -392,6 +396,25 @@ const activePartAnswers = computed(() => speakingParts.value[activePart.value] |
                             </template>
                         </NoAnswersAlert>
 
+                        <!-- Reading passage, so a question's Location button has somewhere to jump to.
+                             processed_content already carries the <span id="marker-Qn"> spans. -->
+                        <div v-if="passages && passages.length" class="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
+                            <button @click="showPassage = !showPassage"
+                                    class="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-gray-50/50 transition-colors">
+                                <span class="text-sm font-semibold text-gray-800">
+                                    <i class="fas fa-book-open mr-2 text-gray-400"></i>Reading Passage
+                                </span>
+                                <i :class="['fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-200', showPassage && 'rotate-180']"></i>
+                            </button>
+                            <div v-show="showPassage" class="px-5 pb-5 border-t border-gray-100">
+                                <div v-for="passage in passages" :key="passage.id" class="mt-4">
+                                    <h4 v-if="passage.title" class="text-sm font-bold text-gray-900 mb-2">{{ passage.title }}</h4>
+                                    <div class="result-passage prose prose-sm max-w-none text-gray-700 leading-relaxed"
+                                         v-html="passage.processed_content || passage.passage_text || passage.content"></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <QuestionAnalysis :questions="formattedQuestions" :attemptId="attempt.id" />
                     </template>
 
@@ -655,3 +678,17 @@ const activePartAnswers = computed(() => speakingParts.value[activePart.value] |
     />
     </StudentDashboardLayout>
 </template>
+
+<style scoped>
+/* The passage is injected with v-html, so these need :deep() to reach the marker spans. */
+.result-passage :deep(.marker-text) {
+    border-radius: 3px;
+    transition: background-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* Applied briefly when a question's Location button jumps here. */
+.result-passage :deep(.marker-text.marker-active) {
+    background: #fef08a;
+    box-shadow: 0 0 0 4px #fef08a;
+}
+</style>

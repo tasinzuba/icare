@@ -28,6 +28,28 @@ const togglePanel = (panel) => {
     openPanel.value = openPanel.value === panel ? null : panel;
 };
 
+// Jump to the answer's spot in the passage. The passage is rendered on this page with the
+// <span id="marker-Qn"> spans the marker system produces, so we scroll to it and flash a
+// highlight. If the passage is not on screen (or the marker is missing) we fall back to
+// showing the marked sentence in a panel instead.
+const goToLocation = () => {
+    const marker = props.question.location;
+    const el = marker ? document.getElementById(`marker-${marker}`) : null;
+
+    if (!el) {
+        togglePanel('location');
+        return;
+    }
+
+    openPanel.value = null;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    document.querySelectorAll('.marker-text.marker-active')
+        .forEach((n) => n.classList.remove('marker-active'));
+    el.classList.add('marker-active');
+    setTimeout(() => el.classList.remove('marker-active'), 2600);
+};
+
 // Report modal
 const isReportModalOpen = ref(false);
 const reportIssueType = ref('');
@@ -125,7 +147,7 @@ const submitReport = async () => {
                     title="Why this answer is correct">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z" /></svg>
             </button>
-            <button v-if="hasLocation" @click="togglePanel('location')"
+            <button v-if="hasLocation" @click="goToLocation"
                     :class="['p-2 rounded-lg transition-colors', openPanel === 'location' ? 'bg-sky-100 text-sky-700' : 'text-sky-500 hover:bg-sky-50 hover:text-sky-700']"
                     title="Where the answer is in the passage">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -196,7 +218,7 @@ const submitReport = async () => {
                                 :class="['p-1.5 rounded-md', openPanel === 'explanation' ? 'bg-violet-100 text-violet-700' : 'text-violet-500 hover:bg-violet-50']">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z" /></svg>
                         </button>
-                        <button v-if="hasLocation" @click="togglePanel('location')"
+                        <button v-if="hasLocation" @click="goToLocation"
                                 :class="['p-1.5 rounded-md', openPanel === 'location' ? 'bg-sky-100 text-sky-700' : 'text-sky-500 hover:bg-sky-50']">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         </button>

@@ -66,16 +66,13 @@
               placeholder="Why this answer is correct — the student sees this on their result page.">{{ old('explanation', isset($question) ? $question->explanation : '') }}</textarea>
 </div>
 
+{{-- No location field: the marker in the passage already names its question. Wrapping the answer
+     text as {{Q5}}…{{Q5}} is enough for question 5 to offer a Location button. --}}
 <div class="w-full">
-    <label class="block text-sm font-medium text-gray-700 mb-2">
-        Answer location in passage <span class="text-gray-400 font-normal">(optional)</span>
-    </label>
-    <input type="text" name="passage_reference"
-           value="{{ old('passage_reference', isset($question) ? $question->passage_reference : '') }}"
-           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-           placeholder="e.g. Q5">
-    <p class="text-xs text-gray-500 mt-1">
-        Wrap the answer text in the passage with <code class="bg-gray-100 px-1 rounded">&#123;&#123;Q5&#125;&#125;…&#123;&#123;Q5&#125;&#125;</code>,
-        then put <strong>Q5</strong> here. On the result page the student can jump straight to it.
+    <p class="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-md px-3 py-2">
+        <i class="fas fa-lightbulb text-blue-400 mr-1"></i>
+        <strong>Answer location:</strong> in the passage, wrap the answer text as
+        <code class="bg-white px-1 rounded">&#123;&#123;Q5&#125;&#125;…&#123;&#123;Q5&#125;&#125;</code>
+        for question 5. A Location button then appears on the student's result page and jumps there.
     </p>
 </div>

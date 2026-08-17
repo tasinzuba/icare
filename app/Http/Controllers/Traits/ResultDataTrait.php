@@ -343,21 +343,23 @@ trait ResultDataTrait
             elseif ($item['type'] === 'multiple_choice') { $correctAnswerForExplain = ($item['correct_option']->content ?? ''); }
             else { $correctAnswerForExplain = $question->getCorrectAnswerForDisplay(); }
 
-            // Resolve the marked passage excerpt for this question's location, loading the passage
-            // text lazily and only once per test set.
-            $locationText = null;
-            if ($question->passage_reference) {
-                if (!$passageLoaded) {
-                    $passageLoaded = true;
-                    $passageText = \App\Models\Question::where('test_set_id', $question->test_set_id)
-                        ->where('question_type', 'passage')
-                        ->get()
-                        ->map(fn ($p) => $p->passage_text ?: $p->content)
-                        ->implode("\n\n");
-                }
-
-                $locationText = \App\Models\Question::extractMarkerText($passageText, $question->passage_reference);
+            // Answer location. The marker in the passage already encodes the question number, so
+            // {{Q5}}…{{Q5}} belongs to question 5 and the author does not have to record it on the
+            // question as well. An explicit passage_reference still wins if one was set.
+            // The passage text is loaded lazily, at most once per result page.
+            if (!$passageLoaded) {
+                $passageLoaded = true;
+                $passageText = \App\Models\Question::where('test_set_id', $question->test_set_id)
+                    ->where('question_type', 'passage')
+                    ->get()
+                    ->map(fn ($p) => $p->passage_text ?: $p->content)
+                    ->implode("\n\n");
             }
+
+            $marker = $question->passage_reference ?: ('Q' . $item['number']);
+            $locationText = \App\Models\Question::extractMarkerText($passageText, $marker);
+            // Only offer the location when that marker actually exists in the passage.
+            $locationMarker = $locationText !== null ? $marker : null;
 
             $formatted[] = [
                 'id' => $item['id'], 'question_id' => $item['question_id'],
@@ -365,9 +367,9 @@ trait ResultDataTrait
                 'content' => $item['content'], 'student_answer' => $displayAnswer,
                 'correct_answer' => $correctAnswerForExplain, 'is_correct' => $isCorrect,
                 'is_answered' => $isAnswered, 'explanation' => $item['explanation'],
-                // Where the answer sits in the passage. Resolved here from raw_question so all
-                // eleven question-type branches above get it without repeating the field.
-                'location' => $question->passage_reference ?: null,
+                // Where the answer sits in the passage: the marker id to scroll to, plus the text
+                // itself as a fallback. Resolved here so all eleven question-type branches get it.
+                'location' => $locationMarker,
                 'location_text' => $locationText,
             ];
         }

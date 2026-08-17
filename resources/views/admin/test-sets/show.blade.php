@@ -193,6 +193,94 @@
             </div>
         @endif
         
+        {{-- Passages get their own section rather than a one-line banner inside the question list.
+             A reading set has one per part, they are the longest thing an author edits, and the
+             answer-location markers live inside them, so they need room and their own edit links. --}}
+        @if($testSet->section->name === 'reading')
+            @php
+                $passages = $testSet->questions()->where('question_type', 'passage')
+                    ->orderBy('part_number')->orderBy('order_number')->get();
+                $passagesByPart = $passages->groupBy(fn ($p) => $p->part_number ?: 1);
+                $expectedParts = max(3, (int) $testSet->questions()->max('part_number'));
+            @endphp
+            <div class="bg-white rounded-lg shadow mb-6">
+                <div class="px-6 py-4 border-b flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        Reading Passages ({{ $passages->count() }})
+                    </h3>
+                    <a href="{{ route('admin.questions.create', ['test_set' => $testSet->id]) }}"
+                       class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+                        + Add Passage
+                    </a>
+                </div>
+                <div class="p-6 space-y-3">
+                    @for($part = 1; $part <= $expectedParts; $part++)
+                        @php $passage = ($passagesByPart[$part] ?? collect())->first(); @endphp
+
+                        @if($passage)
+                            @php
+                                $text = $passage->passage_text ?: $passage->content;
+                                $words = str_word_count(strip_tags((string) $text));
+                                // Count only markers that form a complete {{Qn}}…{{Qn}} pair — the same
+                                // test the result page applies, so this is the number of questions that
+                                // will actually offer a Location button.
+                                $located = collect(\App\Models\Question::extractMarkersFromPassage((string) $text))
+                                    ->filter(fn ($m) => \App\Models\Question::extractMarkerText($text, $m) !== null);
+                            @endphp
+                            <div class="flex items-start justify-between gap-4 p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition-colors">
+                                <div class="flex items-start gap-4 min-w-0">
+                                    <div class="flex items-center justify-center w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg text-sm font-semibold shrink-0">
+                                        {{ $part }}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ $passage->title ?: 'Passage ' . $part }}
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-0.5 truncate">
+                                            {{ Str::limit(strip_tags((string) $text), 90) }}
+                                        </div>
+                                        <div class="flex flex-wrap items-center gap-2 mt-1.5">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                                {{ number_format($words) }} words
+                                            </span>
+                                            @if($located->count())
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                    {{ $located->count() }} answer {{ Str::plural('location', $located->count()) }}: {{ $located->implode(', ') }}
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                                                    No answer locations marked
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <a href="{{ route('admin.questions.show', $passage) }}"
+                                       class="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50">View</a>
+                                    <a href="{{ route('admin.questions.edit', $passage) }}"
+                                       class="px-3 py-1.5 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Edit</a>
+                                </div>
+                            </div>
+                        @else
+                            <div class="flex items-center justify-between gap-4 p-4 border border-dashed border-amber-300 bg-amber-50 rounded-lg">
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center justify-center w-10 h-10 bg-amber-100 text-amber-600 rounded-lg text-sm font-semibold">
+                                        {{ $part }}
+                                    </div>
+                                    <span class="text-sm font-medium text-amber-800">No passage for Part {{ $part }}</span>
+                                </div>
+                                <a href="{{ route('admin.questions.create', ['test_set' => $testSet->id]) }}"
+                                   class="px-3 py-1.5 text-sm text-amber-800 bg-white border border-amber-300 rounded-md hover:bg-amber-100">
+                                    Add Passage
+                                </a>
+                            </div>
+                        @endif
+                    @endfor
+                </div>
+            </div>
+        @endif
+
         <!-- Questions Section -->
         <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b">
@@ -204,46 +292,7 @@
             </div>
             
             <div class="p-6">
-                @if($testSet->section->name === 'reading')
-                    @php
-                        $passage = $testSet->questions()->where('question_type', 'passage')->first();
-                        $questions = $testSet->questions()->where('question_type', '!=', 'passage')->orderBy('order_number')->get();
-                    @endphp
-                    
-                    <!-- Reading Passage Status -->
-                    @if($passage)
-                        <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <span class="text-sm font-medium text-green-800">Reading Passage Added</span>
-                                </div>
-                                <a href="{{ route('admin.questions.edit', $passage) }}" 
-                                   class="text-sm text-green-600 hover:text-green-800">
-                                    Edit Passage
-                                </a>
-                            </div>
-                        </div>
-                    @else
-                        <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                                    </svg>
-                                    <span class="text-sm font-medium text-yellow-800">No Reading Passage</span>
-                                </div>
-                                <a href="{{ route('admin.questions.create', ['test_set' => $testSet->id]) }}" 
-                                   class="text-sm text-yellow-600 hover:text-yellow-800">
-                                    Add Passage
-                                </a>
-                            </div>
-                        </div>
-                    @endif
-                @endif
-                
+                {{-- The passage lives in its own section above; this list is questions only. --}}
                 @if($testSet->questions->count() > 0)
                     <div class="space-y-4">
                         @php

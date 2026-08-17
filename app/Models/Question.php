@@ -459,6 +459,32 @@ public static function sanitizeSectionDataForStudent(?array $ssd): ?array
 }
 
 /**
+ * Pull the text an author marked as the answer's location out of a passage.
+ *
+ * Authors wrap the relevant words as {{Q5}}…{{Q5}} and put "Q5" on the question. The result page
+ * shows that exact sentence, which works even though the full passage is not rendered there.
+ * Returns null when the marker is absent or unpaired.
+ */
+public static function extractMarkerText(?string $passageText, ?string $markerId): ?string
+{
+    $markerId = trim((string) $markerId);
+
+    if (!$passageText || $markerId === '') {
+        return null;
+    }
+
+    $escaped = preg_quote($markerId, '/');
+
+    if (preg_match('/\{\{' . $escaped . '\}\}(.*?)\{\{' . $escaped . '\}\}/s', $passageText, $matches)) {
+        $text = trim(strip_tags(html_entity_decode($matches[1])));
+
+        return $text !== '' ? $text : null;
+    }
+
+    return null;
+}
+
+/**
  * Strip scripting from author-supplied rich text before it is stored.
  *
  * Question content, instructions and passage text are authored in TinyMCE and rendered with v-html

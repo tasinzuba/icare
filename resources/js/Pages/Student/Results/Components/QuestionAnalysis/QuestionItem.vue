@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import axios from 'axios';
 
 const props = defineProps({
@@ -16,6 +16,17 @@ const props = defineProps({
         default: null
     }
 });
+
+// Answer explanation / passage location, written by the question author and shown only here on
+// the result page. Either panel can be open; opening one closes the other.
+const openPanel = ref(null);
+
+const hasExplanation = computed(() => !!(props.question.explanation || '').toString().trim());
+const hasLocation = computed(() => !!(props.question.location_text || props.question.location));
+
+const togglePanel = (panel) => {
+    openPanel.value = openPanel.value === panel ? null : panel;
+};
 
 // Report modal
 const isReportModalOpen = ref(false);
@@ -109,9 +120,39 @@ const submitReport = async () => {
 
         <!-- Actions -->
         <div class="col-span-2 flex justify-center gap-1.5">
+            <button v-if="hasExplanation" @click="togglePanel('explanation')"
+                    :class="['p-2 rounded-lg transition-colors', openPanel === 'explanation' ? 'bg-violet-100 text-violet-700' : 'text-violet-500 hover:bg-violet-50 hover:text-violet-700']"
+                    title="Why this answer is correct">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z" /></svg>
+            </button>
+            <button v-if="hasLocation" @click="togglePanel('location')"
+                    :class="['p-2 rounded-lg transition-colors', openPanel === 'location' ? 'bg-sky-100 text-sky-700' : 'text-sky-500 hover:bg-sky-50 hover:text-sky-700']"
+                    title="Where the answer is in the passage">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </button>
             <button @click="openReportModal" class="p-2 rounded-lg text-amber-500 hover:bg-amber-50 hover:text-amber-600 transition-colors" title="Report a mistake">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg>
             </button>
+        </div>
+    </div>
+
+    <!-- Explanation / Location panel (shared by desktop and mobile) -->
+    <div v-if="openPanel === 'explanation'" class="px-4 py-3 bg-violet-50/60">
+        <div class="flex items-start gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wide text-violet-700 shrink-0 mt-0.5">Explanation</span>
+            <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ question.explanation }}</p>
+        </div>
+    </div>
+    <div v-else-if="openPanel === 'location'" class="px-4 py-3 bg-sky-50/60">
+        <div class="flex items-start gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wide text-sky-700 shrink-0 mt-0.5">In the passage</span>
+            <div class="min-w-0">
+                <p v-if="question.location_text" class="text-sm text-gray-800 leading-relaxed"
+                   style="background:#fef9c3;border-left:3px solid #eab308;padding:6px 10px;border-radius:4px;">
+                    “{{ question.location_text }}”
+                </p>
+                <p v-else class="text-sm text-gray-600">Reference: {{ question.location }}</p>
+            </div>
         </div>
     </div>
 
@@ -151,6 +192,14 @@ const submitReport = async () => {
                         </div>
                     </div>
                     <div class="flex gap-1 shrink-0">
+                        <button v-if="hasExplanation" @click="togglePanel('explanation')"
+                                :class="['p-1.5 rounded-md', openPanel === 'explanation' ? 'bg-violet-100 text-violet-700' : 'text-violet-500 hover:bg-violet-50']">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z" /></svg>
+                        </button>
+                        <button v-if="hasLocation" @click="togglePanel('location')"
+                                :class="['p-1.5 rounded-md', openPanel === 'location' ? 'bg-sky-100 text-sky-700' : 'text-sky-500 hover:bg-sky-50']">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </button>
                         <button @click="openReportModal" class="p-1.5 rounded-md text-amber-500 hover:bg-amber-50">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg>
                         </button>

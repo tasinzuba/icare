@@ -206,6 +206,12 @@ trait ResultDataTrait
     {
         $formatted = [];
 
+        // Passage text for this test set, loaded at most once, so a question carrying a location
+        // marker can ship the exact sentence the author highlighted. The result page does not
+        // render the passage itself, so sending the excerpt is what makes the location usable.
+        $passageText = null;
+        $passageLoaded = false;
+
         foreach ($questionsAnalysis as $item) {
             $question = $item['raw_question'];
             $answer = $item['raw_answer'];
@@ -337,16 +343,32 @@ trait ResultDataTrait
             elseif ($item['type'] === 'multiple_choice') { $correctAnswerForExplain = ($item['correct_option']->content ?? ''); }
             else { $correctAnswerForExplain = $question->getCorrectAnswerForDisplay(); }
 
+            // Resolve the marked passage excerpt for this question's location, loading the passage
+            // text lazily and only once per test set.
+            $locationText = null;
+            if ($question->passage_reference) {
+                if (!$passageLoaded) {
+                    $passageLoaded = true;
+                    $passageText = \App\Models\Question::where('test_set_id', $question->test_set_id)
+                        ->where('question_type', 'passage')
+                        ->get()
+                        ->map(fn ($p) => $p->passage_text ?: $p->content)
+                        ->implode("\n\n");
+                }
+
+                $locationText = \App\Models\Question::extractMarkerText($passageText, $question->passage_reference);
+            }
+
             $formatted[] = [
                 'id' => $item['id'], 'question_id' => $item['question_id'],
                 'number' => $item['number'], 'part_number' => $item['part_number'],
                 'content' => $item['content'], 'student_answer' => $displayAnswer,
                 'correct_answer' => $correctAnswerForExplain, 'is_correct' => $isCorrect,
                 'is_answered' => $isAnswered, 'explanation' => $item['explanation'],
-                // Passage marker id (e.g. "Q5") so the result page can jump to and highlight the
-                // {{Q5}}…{{Q5}} span. Taken from raw_question here so every question-type branch
-                // above gets it without having to repeat the field eleven times.
+                // Where the answer sits in the passage. Resolved here from raw_question so all
+                // eleven question-type branches above get it without repeating the field.
                 'location' => $question->passage_reference ?: null,
+                'location_text' => $locationText,
             ];
         }
 

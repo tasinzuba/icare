@@ -193,9 +193,16 @@ const closeReport = () => { reportFor.value = null; };
                 </div>
             </div>
 
-            <!-- Answers -->
+            <!-- Answers. Beside the source text they take a narrow column; with no source to sit
+                 next to, one card per row across the full width is mostly empty space, so they
+                 pair up instead and the list is half as tall. -->
             <div ref="answerPane"
-                 :class="['order-1 lg:order-2 overflow-y-auto p-4 sm:p-5 space-y-3', hasSource ? 'lg:w-2/5 lg:max-h-[70vh]' : 'w-full']">
+                 :class="[
+                     'order-1 lg:order-2 overflow-y-auto p-4 sm:p-5',
+                     hasSource
+                         ? 'lg:w-2/5 lg:max-h-[70vh] space-y-3'
+                         : 'w-full grid grid-cols-1 md:grid-cols-2 gap-3 content-start'
+                 ]">
                 <div v-for="question in partQuestions" :key="question.id"
                      class="rounded-xl border border-gray-200 px-4 py-3">
                     <!-- Correct answer -->
@@ -255,7 +262,9 @@ const closeReport = () => { reportFor.value = null; };
                     </div>
                 </div>
 
-                <p v-if="!partQuestions.length" class="text-sm text-gray-500 py-6 text-center">
+                <!-- col-span so the empty state spans both columns in the paired layout; it is
+                     inert when the answers are a plain stack. -->
+                <p v-if="!partQuestions.length" class="md:col-span-2 text-sm text-gray-500 py-6 text-center">
                     No questions in this part.
                 </p>
             </div>

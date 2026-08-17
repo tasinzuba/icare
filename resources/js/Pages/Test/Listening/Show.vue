@@ -253,9 +253,9 @@ const generateQuestionHtml = (q, dItem) => {
 
         html += `
         <div class="ielts-question-item drag-drop-question" id="question-${q.id}" style="margin-bottom: 28px;">
-            <div style="display: flex; gap: 16px; align-items: flex-start;">
-                <div class="dd-content" style="flex: 1 1 auto; font-size: 14px; line-height: 2.4; color: #1e293b; min-width: 0;">${processedContent}</div>
-                <div style="flex: 0 0 auto; max-width: 480px; position: sticky; top: 16px;">
+            <div style="display: flex; gap: 24px; align-items: flex-start;">
+                <div class="dd-content" style="flex: 1 1 auto; max-width: 640px; font-size: 14px; line-height: 2.4; color: #1e293b; min-width: 0;">${processedContent}</div>
+                <div style="flex: 0 0 auto; max-width: 420px; position: sticky; top: 16px;">
                     <div class="dd-source" id="dd-source-${q.id}" style="display: inline-flex; flex-direction: column; gap: 8px; padding: 4px; align-items: stretch;">`;
 
         if (Array.isArray(options)) {

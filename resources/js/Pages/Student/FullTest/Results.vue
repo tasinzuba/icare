@@ -248,7 +248,7 @@ const bandProgressPct = computed(() => {
                 </div>
             </ResultHeroCard>
 
-            <!-- ═══ ACTIONS + SCORING NOTES ═══
+            <!-- ═══ ACTIONS ═══
                  Previously a right sidebar. Moved above the review, which now runs full width:
                  the two panes of a review need the room, and these are read once and done with. -->
             <div class="space-y-4 mb-6">
@@ -313,31 +313,6 @@ const bandProgressPct = computed(() => {
 
                     <p v-if="aiEvalError.writing" class="text-xs text-red-500 mt-2">{{ aiEvalError.writing }}</p>
                     <p v-if="aiEvalError.speaking" class="text-xs text-red-500 mt-1">{{ aiEvalError.speaking }}</p>
-                </div>
-
-                <div class="bg-white rounded-2xl border border-gray-200 p-4">
-                    <h3 class="font-bold text-gray-900 mb-3 flex items-center gap-2 text-sm">
-                        <i class="fas fa-info-circle text-gray-400"></i>
-                        About Full Test Scoring
-                    </h3>
-                    <ul class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm text-gray-600">
-                        <li class="flex items-start gap-2">
-                            <i class="fas fa-check text-emerald-500 mt-0.5 shrink-0"></i>
-                            <span>Overall band is the average of all 4 section scores, rounded to nearest 0.5.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <i class="fas fa-check text-emerald-500 mt-0.5 shrink-0"></i>
-                            <span>Listening &amp; Reading are auto-scored based on correct answers.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <i class="fas fa-robot text-blue-500 mt-0.5 shrink-0"></i>
-                            <span>Writing &amp; Speaking require AI or human evaluation for band scores.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <i class="fas fa-bolt text-[#C8102E] mt-0.5 shrink-0"></i>
-                            <span>Open a section below to review each answer with its explanation.</span>
-                        </li>
-                    </ul>
                 </div>
             </div>
 
@@ -650,6 +625,32 @@ const bandProgressPct = computed(() => {
                     </template>
                 </div>
 
+
+            <!-- Scoring notes. Reference material, so it sits under the review rather than above it. -->
+                <div class="bg-white rounded-2xl border border-gray-200 p-4">
+                    <h3 class="font-bold text-gray-900 mb-3 flex items-center gap-2 text-sm">
+                        <i class="fas fa-info-circle text-gray-400"></i>
+                        About Full Test Scoring
+                    </h3>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm text-gray-600">
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-500 mt-0.5 shrink-0"></i>
+                            <span>Overall band is the average of all 4 section scores, rounded to nearest 0.5.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-500 mt-0.5 shrink-0"></i>
+                            <span>Listening &amp; Reading are auto-scored based on correct answers.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-robot text-blue-500 mt-0.5 shrink-0"></i>
+                            <span>Writing &amp; Speaking require AI or human evaluation for band scores.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-bolt text-[#C8102E] mt-0.5 shrink-0"></i>
+                            <span>Open a section below to review each answer with its explanation.</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

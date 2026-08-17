@@ -1193,11 +1193,18 @@ th {
     border-color: #3b82f6;
 }
 
+/* One scrolling row, never two. Wrapping pushed a second line of numbers out of the fixed
+   60px bar and under the edge of the window, where they could not be clicked. The 600px cap went
+   with it: the strip now takes the room left between the part buttons and the submit button. */
 .nav-numbers {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 4px;
-    max-width: 600px;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
     transition: all 0.3s ease;
 }
 
@@ -1359,7 +1366,6 @@ th {
     }
 
     .nav-numbers {
-        max-width: 100%;
         gap: 3px;
     }
 

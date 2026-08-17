@@ -833,7 +833,7 @@ onMounted(() => {
     document.addEventListener('click', ddOnClick);
     readingStyles = document.createElement('link');
     readingStyles.rel = 'stylesheet';
-    readingStyles.href = '/css/reading-test.css?v=20260817-3';
+    readingStyles.href = '/css/reading-test.css?v=20260817-4';
     document.head.appendChild(readingStyles);
 
     splitInstance = Split(['#passage-section', '#questions-section'], {

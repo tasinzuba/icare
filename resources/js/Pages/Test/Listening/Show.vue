@@ -923,15 +923,18 @@ const initializeDragDrop = () => {
 
 // Audio & Test Start
 const startAudioAndTest = () => {
-    if (!audioPlayer.value) {
-        alert("Audio player not ready. Please refresh the page and try again.");
-        return;
-    }
-
+    // Checked before the player element, because the element is rendered with v-if="audioUrl" —
+    // with no audio there is no player, and testing for the player first blamed a missing file on
+    // the page not having loaded and told the student to refresh, which never helped.
     if (!props.audioUrl) {
         // Covers both "nothing was ever uploaded" and "the file lives on the CDN this environment
         // cannot reach" — the student can do nothing about either, so the message is the same.
         alert("The audio for this test is unavailable. Please contact your administrator.");
+        return;
+    }
+
+    if (!audioPlayer.value) {
+        alert("Audio player not ready. Please refresh the page and try again.");
         return;
     }
 

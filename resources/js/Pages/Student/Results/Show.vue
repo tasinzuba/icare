@@ -4,7 +4,7 @@ import { Head, router } from '@inertiajs/vue3';
 import StudentDashboardLayout from '@/Layouts/StudentDashboardLayout.vue';
 import ResultHeroCard from './Components/ResultHeroCard.vue';
 import NoAnswersAlert from './Components/NoAnswersAlert.vue';
-import QuestionAnalysis from './Components/QuestionAnalysis/QuestionAnalysis.vue';
+import ReviewExplanations from './Components/Review/ReviewExplanations.vue';
 import AiEvaluationModal from './Components/AiEvaluationModal.vue';
 import AudioVisualizer from './Components/AudioVisualizer.vue';
 
@@ -101,10 +101,6 @@ const props = defineProps({
 
 // AI Evaluation Modal
 const showAiModal = ref(false);
-
-// Reading passage panel. Open by default so a Location jump has a visible target; the button can
-// still collapse it.
-const showPassage = ref(true);
 
 const formatDuration = (start, end) => {
     const s = start || props.attempt.created_at;
@@ -396,27 +392,12 @@ const activePartAnswers = computed(() => speakingParts.value[activePart.value] |
                             </template>
                         </NoAnswersAlert>
 
-                        <!-- The source text a question's Location button jumps into: the passage for
-                             reading, the audioscript for listening. processed_content already carries
-                             the <span id="marker-Qn"> spans either way. -->
-                        <div v-if="passages && passages.length" class="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
-                            <button @click="showPassage = !showPassage"
-                                    class="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-gray-50/50 transition-colors">
-                                <span class="text-sm font-semibold text-gray-800">
-                                    <i :class="['mr-2 text-gray-400 fas', sectionName === 'listening' ? 'fa-headphones' : 'fa-book-open']"></i>{{ sectionName === 'listening' ? 'Audioscript' : 'Reading Passage' }}
-                                </span>
-                                <i :class="['fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-200', showPassage && 'rotate-180']"></i>
-                            </button>
-                            <div v-show="showPassage" class="px-5 pb-5 border-t border-gray-100">
-                                <div v-for="passage in passages" :key="passage.id" class="mt-4">
-                                    <h4 v-if="passage.title" class="text-sm font-bold text-gray-900 mb-2">{{ passage.title }}</h4>
-                                    <div class="result-passage prose prose-sm max-w-none text-gray-700 leading-relaxed"
-                                         v-html="passage.processed_content || passage.passage_text || passage.content"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <QuestionAnalysis :questions="formattedQuestions" :attemptId="attempt.id" />
+                        <!-- Answers beside the source text they came from, one part at a time. -->
+                        <ReviewExplanations
+                            :questions="formattedQuestions"
+                            :passages="passages"
+                            :sectionName="sectionName"
+                            :attemptId="attempt.id" />
                     </template>
 
                     <!-- Writing/Speaking -->
@@ -679,17 +660,3 @@ const activePartAnswers = computed(() => speakingParts.value[activePart.value] |
     />
     </StudentDashboardLayout>
 </template>
-
-<style scoped>
-/* The passage is injected with v-html, so these need :deep() to reach the marker spans. */
-.result-passage :deep(.marker-text) {
-    border-radius: 3px;
-    transition: background-color 0.35s ease, box-shadow 0.35s ease;
-}
-
-/* Applied briefly when a question's Location button jumps here. */
-.result-passage :deep(.marker-text.marker-active) {
-    background: #fef08a;
-    box-shadow: 0 0 0 4px #fef08a;
-}
-</style>

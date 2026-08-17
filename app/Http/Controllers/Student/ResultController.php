@@ -227,23 +227,30 @@ class ResultController extends Controller
             'answers.selectedOption',
         ]);
 
-        // Load passages separately and process them
+        // Source text for the review panel: the passage for reading, the audioscript for listening.
+        // part_number lets the panel show only the part being reviewed; null means the text covers
+        // every part, which is how a single full-length audio behaves.
         $passages = $attempt->testSet->questions()
             ->where('question_type', 'passage')
             ->orderBy('part_number')
             ->orderBy('order_number')
             ->get()
-            ->map(function($passage) {
-                $passage->processed_content = Question::processPassageForDisplay(
-                    $passage->passage_text ?? $passage->content,
+            ->map(fn ($passage) => (object) [
+                'id' => 'passage-' . $passage->id,
+                'part_number' => $passage->part_number ?: null,
+                'title' => $passage->title,
+                'audio_url' => null,
+                'processed_content' => Question::processPassageForDisplay(
+                    $passage->passage_text ?: $passage->content,
                     true
-                );
-                return $passage;
-            });
+                ),
+            ])
+            ->values();
 
         // Listening keeps its source text as the per-part audioscript rather than a passage row.
-        // Shaped like a passage so the result page renders it through the same panel, markers and
-        // Location jumps included. Only consulted when there is no passage.
+        // Shaped identically so the panel renders it the same way, markers and Location jumps
+        // included, with the part's audio alongside so the script can be followed. Only consulted
+        // when there is no passage.
         if ($passages->isEmpty()) {
             $passages = \App\Models\TestPartAudio::where('test_set_id', $attempt->test_set_id)
                 ->orderBy('part_number')
@@ -251,7 +258,9 @@ class ResultController extends Controller
                 ->filter(fn ($audio) => trim((string) $audio->transcript) !== '')
                 ->map(fn ($audio) => (object) [
                     'id' => 'audio-' . $audio->id,
+                    'part_number' => $audio->part_number ?: null,
                     'title' => $audio->part_number > 0 ? 'Part ' . $audio->part_number : null,
+                    'audio_url' => $audio->audio_url ?: null,
                     'processed_content' => Question::processPassageForDisplay($audio->transcript, true),
                 ])
                 ->values();

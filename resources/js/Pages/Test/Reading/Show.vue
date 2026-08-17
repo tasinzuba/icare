@@ -1038,6 +1038,7 @@ const isAnswered = (item, type, indexOrKey, number) => {
             :timeLimitSeconds="timeLimitSeconds"
             :serverTime="serverTime"
             :attemptStartTime="attemptStartTime"
+            :showTextSize="true"
             @timeUp="handleTimeUp"
         />
 
@@ -1048,8 +1049,9 @@ const isAnswered = (item, type, indexOrKey, number) => {
                  carries the name as an id, so its rule never applied. -->
             <div id="passage-section" class="h-full bg-[#e8f4fa] overflow-y-auto relative custom-scrollbar pb-10">
 
-
-                <div class="px-8 py-8">
+                <!-- Text size. Zoom sits on this inner wrapper, not on the section: Split.js writes
+                     the section's width inline, and zooming that would fight it. -->
+                <div class="px-8 py-8 exam-zoomable">
                     <div v-for="(passages, partNum) in passagesByPart" :key="'p'+partNum" v-show="activePart === Number(partNum)">
                         <div :id="'passage-content-' + partNum" class="transition-all duration-300">
                             <div v-for="passage in passages" :key="passage.id" class="mb-10 text-gray-800 text-base leading-relaxed passage-content prose prose-slate max-w-none">
@@ -1062,6 +1064,7 @@ const isAnswered = (item, type, indexOrKey, number) => {
             </div>
 
             <div id="questions-section" class="h-full bg-[#e8f4fa] overflow-y-auto px-8 py-8 custom-scrollbar pb-10">
+              <div class="exam-zoomable">
                 <div v-for="(instructionGroups, partNum) in groupedQuestionsData" :key="'qpart'+partNum" v-show="activePart === Number(partNum)">
                     
                     <div v-for="(items, instruction) in instructionGroups" :key="instruction">
@@ -1171,9 +1174,10 @@ const isAnswered = (item, type, indexOrKey, number) => {
                             <!-- Media if attached -->
                             <img v-if="item.question.media_path" :src="'/storage/' + item.question.media_path" class="max-w-full rounded mt-6 border border-gray-200 shadow-sm" />
                         </div>
-                        
+
                     </div>
                 </div>
+              </div>
 
             </div>
 
@@ -1273,6 +1277,20 @@ const isAnswered = (item, type, indexOrKey, number) => {
 <style scoped></style>
 
 <style>
+/**
+ * Reading text size, driven by --exam-zoom from the header control.
+ *
+ * zoom rather than font-size: the exam stylesheets pin dozens of sizes in px, several with
+ * !important, and the answer boxes and dropdowns carry their own. A container font-size would
+ * leave most of the page untouched, while zoom scales the whole block, inputs included.
+ *
+ * Applied to inner wrappers, never to #passage-section / #questions-section themselves — Split.js
+ * writes their widths inline and zooming those would fight the drag handle.
+ */
+.exam-zoomable {
+    zoom: var(--exam-zoom, 1);
+}
+
 /* Reset all question styles */
 .exam-nav-right {
     display: flex;

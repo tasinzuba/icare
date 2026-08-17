@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import ExamTimer from './ExamTimer.vue';
 
@@ -10,6 +10,9 @@ const props = defineProps({
     showTimer: { type: Boolean, default: true },
     isReviewPhase: { type: Boolean, default: false },
     reviewTimeSeconds: { type: Number, default: 0 },
+    // Offered only where the page has wired --exam-zoom to its content, so the control is never
+    // shown somewhere pressing it would do nothing.
+    showTextSize: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['timeUp']);
@@ -17,6 +20,53 @@ const emit = defineEmits(['timeUp']);
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const isHelpModalOpen = ref(false);
+
+/* ------------------------------------------------------------------ text size */
+
+/**
+ * Reading text size.
+ *
+ * Applied as a zoom factor on a CSS custom property rather than a font-size, because the exam
+ * stylesheets pin dozens of sizes in px — several with !important — and inputs and dropdowns carry
+ * their own. A container font-size would leave most of the page unchanged; zoom scales the whole
+ * block, answer boxes included.
+ *
+ * Kept in localStorage so a student sets it once rather than on every part and every test.
+ */
+const ZOOM_STEPS = [0.9, 1, 1.15, 1.3, 1.5];
+const STORAGE_KEY = 'exam-text-zoom';
+
+const zoomIndex = ref(1);
+
+const applyZoom = () => {
+    document.documentElement.style.setProperty('--exam-zoom', String(ZOOM_STEPS[zoomIndex.value]));
+};
+
+const setZoom = (index) => {
+    zoomIndex.value = Math.min(ZOOM_STEPS.length - 1, Math.max(0, index));
+    applyZoom();
+    try {
+        localStorage.setItem(STORAGE_KEY, String(zoomIndex.value));
+    } catch (e) {
+        // Private browsing can refuse storage; the size still applies for this sitting.
+    }
+};
+
+const zoomPercent = computed(() => Math.round(ZOOM_STEPS[zoomIndex.value] * 100));
+const canGrow = computed(() => zoomIndex.value < ZOOM_STEPS.length - 1);
+const canShrink = computed(() => zoomIndex.value > 0);
+
+onMounted(() => {
+    let saved = null;
+    try {
+        saved = localStorage.getItem(STORAGE_KEY);
+    } catch (e) {
+        saved = null;
+    }
+    const parsed = parseInt(saved, 10);
+    zoomIndex.value = Number.isFinite(parsed) && ZOOM_STEPS[parsed] !== undefined ? parsed : 1;
+    applyZoom();
+});
 
 const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -53,6 +103,15 @@ const toggleFullscreen = () => {
         
         <div class="user-controls">
             <slot name="extra-controls"></slot>
+
+            <div v-if="showTextSize" class="text-size-control" title="Text size">
+                <button type="button" class="text-size-btn" :disabled="!canShrink"
+                        @click="setZoom(zoomIndex - 1)" aria-label="Smaller text">A<span class="minus">−</span></button>
+                <span class="text-size-value">{{ zoomPercent }}%</span>
+                <button type="button" class="text-size-btn" :disabled="!canGrow"
+                        @click="setZoom(zoomIndex + 1)" aria-label="Larger text">A<span class="plus">+</span></button>
+            </div>
+
             <button class="help-button text-sm" @click="isHelpModalOpen = true">Help ?</button>
             <button class="no-nav text-sm" @click="toggleFullscreen">Full Screen</button>
         </div>
@@ -142,5 +201,51 @@ const toggleFullscreen = () => {
 
 .animate-modal-in {
     animation: modal-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Text size control. Sits on the dark bar beside Help and Full Screen. */
+.text-size-control {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+}
+
+.text-size-btn {
+    display: inline-flex;
+    align-items: baseline;
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    background: transparent;
+    transition: background-color 0.15s ease;
+}
+
+.text-size-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.text-size-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.text-size-btn .minus,
+.text-size-btn .plus {
+    font-size: 10px;
+    margin-left: 1px;
+}
+
+.text-size-value {
+    min-width: 38px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
 }
 </style>

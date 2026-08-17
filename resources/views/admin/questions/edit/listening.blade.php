@@ -105,11 +105,21 @@
                             <!-- Audio Transcript - Full Width -->
                             <div class="mb-6">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Audio Transcript</label>
-                                <textarea name="audio_transcript" rows="4" 
+                                <textarea name="audio_transcript" rows="4"
                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 text-sm"
                                           placeholder="Enter the transcript of the audio...">{{ old('audio_transcript', $question->audio_transcript) }}</textarea>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    A note for this question only. The audioscript the student sees on their result page
+                                    is the per-part one on
+                                    <a href="{{ route('admin.test-sets.part-audios', $testSet) }}" class="text-purple-600 underline">Part Audios</a>.
+                                </p>
                             </div>
-                            
+
+                            <!-- Explanation + answer location, same as reading -->
+                            <div class="mb-6 space-y-3">
+                                @include('admin.questions.partials.question-explanation')
+                            </div>
+
                             <!-- Instructions -->
                             <div class="mb-6">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Instructions</label>

@@ -129,6 +129,43 @@ class TestPartAudioController extends Controller
     }
     
     /**
+     * Save the audioscript for a part.
+     *
+     * Upload was the only way to set a transcript, so an author who wanted to add or correct the
+     * script afterwards had to re-upload the audio. This edits it in place, and reports back which
+     * {{Qn}} markers the script now carries so the author can see the answer locations landed.
+     */
+    public function saveTranscript(Request $request, TestSet $testSet, $partNumber): JsonResponse
+    {
+        $request->validate([
+            'transcript' => 'nullable|string|max:200000',
+        ]);
+
+        $partAudio = $testSet->partAudios()
+            ->where('part_number', (int) $partNumber)
+            ->first();
+
+        if (!$partAudio) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Upload the audio for this part first, then add its script.',
+            ], 404);
+        }
+
+        $transcript = $request->input('transcript');
+        $partAudio->update(['transcript' => $transcript]);
+
+        $markers = \App\Models\Question::extractMarkersFromPassage((string) $transcript);
+        sort($markers, SORT_NATURAL);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Audioscript saved.',
+            'markers' => array_values($markers),
+        ]);
+    }
+
+    /**
      * Delete part audio
      */
     public function destroy(TestSet $testSet, $partNumber): JsonResponse

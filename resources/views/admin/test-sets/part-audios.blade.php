@@ -212,15 +212,32 @@
                                     </button>
                                 </div>
                                 
-                                <!-- Transcript -->
-                                @if($partAudio->transcript)
-                                    <div class="mt-4">
-                                        <h4 class="text-sm font-medium text-gray-700 mb-1">Transcript:</h4>
-                                        <div class="bg-gray-50 rounded p-3 text-sm text-gray-600 max-h-32 overflow-y-auto">
-                                            {{ Str::limit($partAudio->transcript, 200) }}
-                                        </div>
+                                {{-- Audioscript. Editable in place, and the {{Qn}} markers in it drive
+                                     the Location button on the student's result page. --}}
+                                <div class="mt-4">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <h4 class="text-sm font-medium text-gray-700">Audioscript</h4>
+                                        <span id="marker-count-{{ $part }}" class="text-xs text-gray-500">
+                                            @php $marks = \App\Models\Question::extractMarkersFromPassage((string) $partAudio->transcript); @endphp
+                                            {{ count($marks) }} answer location{{ count($marks) === 1 ? '' : 's' }} marked
+                                        </span>
                                     </div>
-                                @endif
+                                    <textarea id="transcript-{{ $part }}" rows="6"
+                                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-mono"
+                                              placeholder="Paste the audioscript here...">{{ $partAudio->transcript }}</textarea>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Wrap the answer text as
+                                        <code class="bg-gray-100 px-1 rounded">&#123;&#123;Q5&#125;&#125;…&#123;&#123;Q5&#125;&#125;</code>
+                                        for question 5 — that question then gets a Location button on the result page.
+                                    </p>
+                                    <div class="flex items-center gap-3 mt-2">
+                                        <button type="button" onclick="saveTranscript({{ $testSet->id }}, {{ $part }})"
+                                                class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm font-medium">
+                                            Save Audioscript
+                                        </button>
+                                        <span id="transcript-status-{{ $part }}" class="text-sm"></span>
+                                    </div>
+                                </div>
                             </div>
                         @else
                             <!-- No audio -->
@@ -468,7 +485,52 @@
                 alert('An error occurred while deleting the audio');
             });
         }
-        
+
+        /**
+         * Save a part's audioscript without touching its audio file, and report back how many
+         * {{Qn}} answer locations the saved script carries.
+         */
+        function saveTranscript(testSetId, partNumber) {
+            const box = document.getElementById('transcript-' + partNumber);
+            const status = document.getElementById('transcript-status-' + partNumber);
+            const counter = document.getElementById('marker-count-' + partNumber);
+            if (!box) return;
+
+            status.textContent = 'Saving...';
+            status.className = 'text-sm text-gray-500';
+
+            fetch(`/admin/test-sets/${testSetId}/part-audios/${partNumber}/transcript`, {
+                method: 'PUT',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ transcript: box.value })
+            })
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok || !data.success) {
+                    status.textContent = data.message || 'Failed to save';
+                    status.className = 'text-sm text-red-600';
+                    return;
+                }
+
+                const n = (data.markers || []).length;
+                status.textContent = 'Saved';
+                status.className = 'text-sm text-green-600';
+                if (counter) {
+                    counter.textContent = n + ' answer location' + (n === 1 ? '' : 's') + ' marked';
+                }
+                setTimeout(() => { status.textContent = ''; }, 3000);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                status.textContent = 'An error occurred while saving';
+                status.className = 'text-sm text-red-600';
+            });
+        }
+
         // File input change handler
         document.getElementById('audio-file').addEventListener('change', function(e) {
             const file = e.target.files[0];

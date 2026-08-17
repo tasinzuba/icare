@@ -354,6 +354,17 @@ trait ResultDataTrait
                     ->get()
                     ->map(fn ($p) => $p->passage_text ?: $p->content)
                     ->implode("\n\n");
+
+                // Listening has no passage rows; its source text is the per-part audioscript, which
+                // carries the same {{Qn}} markers. Only consulted when there is no passage, so a
+                // reading set behaves exactly as before.
+                if (trim($passageText) === '') {
+                    $passageText = \App\Models\TestPartAudio::where('test_set_id', $question->test_set_id)
+                        ->orderBy('part_number')
+                        ->pluck('transcript')
+                        ->filter()
+                        ->implode("\n\n");
+                }
             }
 
             $marker = $question->passage_reference ?: ('Q' . $item['number']);

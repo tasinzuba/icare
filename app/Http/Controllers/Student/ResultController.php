@@ -241,6 +241,22 @@ class ResultController extends Controller
                 return $passage;
             });
 
+        // Listening keeps its source text as the per-part audioscript rather than a passage row.
+        // Shaped like a passage so the result page renders it through the same panel, markers and
+        // Location jumps included. Only consulted when there is no passage.
+        if ($passages->isEmpty()) {
+            $passages = \App\Models\TestPartAudio::where('test_set_id', $attempt->test_set_id)
+                ->orderBy('part_number')
+                ->get()
+                ->filter(fn ($audio) => trim((string) $audio->transcript) !== '')
+                ->map(fn ($audio) => (object) [
+                    'id' => 'audio-' . $audio->id,
+                    'title' => $audio->part_number > 0 ? 'Part ' . $audio->part_number : null,
+                    'processed_content' => Question::processPassageForDisplay($audio->transcript, true),
+                ])
+                ->values();
+        }
+
         $formattedQuestions = [];
         $correctAnswers = 0;
         $totalQuestions = 0;

@@ -427,6 +427,7 @@ Route::middleware(['auth', \App\Http\Middleware\CheckBanned::class])->group(func
             Route::prefix('test-sets/{testSet}')->name('test-sets.')->group(function () {
                 Route::get('/part-audios', [App\Http\Controllers\Admin\TestPartAudioController::class, 'index'])->name('part-audios');
                 Route::post('/part-audios', [App\Http\Controllers\Admin\TestPartAudioController::class, 'upload'])->name('part-audios.upload');
+                Route::put('/part-audios/{partNumber}/transcript', [App\Http\Controllers\Admin\TestPartAudioController::class, 'saveTranscript'])->name('part-audios.transcript');
                 Route::delete('/part-audios/{partNumber}', [App\Http\Controllers\Admin\TestPartAudioController::class, 'destroy'])->name('part-audios.destroy');
                 Route::get('/check-part-audio/{partNumber}', function ($testSetId, $partNumber) {
                     $testSet = \App\Models\TestSet::findOrFail($testSetId);

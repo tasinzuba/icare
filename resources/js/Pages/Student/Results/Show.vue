@@ -396,13 +396,14 @@ const activePartAnswers = computed(() => speakingParts.value[activePart.value] |
                             </template>
                         </NoAnswersAlert>
 
-                        <!-- Reading passage, so a question's Location button has somewhere to jump to.
-                             processed_content already carries the <span id="marker-Qn"> spans. -->
+                        <!-- The source text a question's Location button jumps into: the passage for
+                             reading, the audioscript for listening. processed_content already carries
+                             the <span id="marker-Qn"> spans either way. -->
                         <div v-if="passages && passages.length" class="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
                             <button @click="showPassage = !showPassage"
                                     class="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-gray-50/50 transition-colors">
                                 <span class="text-sm font-semibold text-gray-800">
-                                    <i class="fas fa-book-open mr-2 text-gray-400"></i>Reading Passage
+                                    <i :class="['mr-2 text-gray-400 fas', sectionName === 'listening' ? 'fa-headphones' : 'fa-book-open']"></i>{{ sectionName === 'listening' ? 'Audioscript' : 'Reading Passage' }}
                                 </span>
                                 <i :class="['fas fa-chevron-down text-[10px] text-gray-400 transition-transform duration-200', showPassage && 'rotate-180']"></i>
                             </button>

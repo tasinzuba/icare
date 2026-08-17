@@ -209,7 +209,7 @@ const closeReport = () => { reportFor.value = null; };
                     <div class="flex items-baseline gap-2 flex-wrap">
                         <span class="text-sm font-bold text-gray-800">{{ question.number }}</span>
                         <span class="text-xs text-gray-500">Answer:</span>
-                        <span class="text-sm font-bold text-[#C8102E]" v-html="question.correct_answer"></span>
+                        <span class="wrap-long text-sm font-bold text-[#C8102E]" v-html="question.correct_answer"></span>
                     </div>
 
                     <!-- What the student put -->
@@ -218,7 +218,7 @@ const closeReport = () => { reportFor.value = null; };
                         <span v-if="!question.is_answered" class="text-sm italic text-gray-400">Skipped</span>
                         <span v-else
                               :class="[
-                                  'text-sm font-medium px-2 py-0.5 rounded',
+                                  'wrap-long text-sm font-medium px-2 py-0.5 rounded',
                                   question.is_correct ? 'text-emerald-800 bg-emerald-50' : 'text-[#C8102E] bg-[#C8102E]/5'
                               ]"
                               v-html="question.student_answer"></span>
@@ -248,17 +248,17 @@ const closeReport = () => { reportFor.value = null; };
                     </div>
 
                     <!-- Explanation -->
-                    <div v-if="isExplanationOpen(question)" class="mt-2.5 rounded-lg bg-violet-50 px-3 py-2.5">
-                        <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ question.explanation }}</p>
+                    <div v-if="isExplanationOpen(question)" class="mt-2.5 rounded-lg bg-violet-50 px-3 py-2.5 min-w-0">
+                        <p class="wrap-long text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ question.explanation }}</p>
                     </div>
 
                     <!-- Location fallback, used when the marker is not on screen to scroll to -->
-                    <div v-else-if="isLocationOpen(question)" class="mt-2.5 rounded-lg bg-sky-50 px-3 py-2.5">
-                        <p v-if="question.location_text" class="text-sm text-gray-800 leading-relaxed"
+                    <div v-else-if="isLocationOpen(question)" class="mt-2.5 rounded-lg bg-sky-50 px-3 py-2.5 min-w-0">
+                        <p v-if="question.location_text" class="wrap-long text-sm text-gray-800 leading-relaxed"
                            style="background:#fef9c3;border-left:3px solid #eab308;padding:6px 10px;border-radius:4px;">
                             “{{ question.location_text }}”
                         </p>
-                        <p v-else class="text-sm text-gray-600">Reference: {{ question.location }}</p>
+                        <p v-else class="wrap-long text-sm text-gray-600">Reference: {{ question.location }}</p>
                     </div>
                 </div>
 
@@ -298,6 +298,19 @@ const closeReport = () => { reportFor.value = null; };
 </template>
 
 <style scoped>
+/**
+ * Break text that has nowhere to break.
+ *
+ * An explanation is free text and can contain a long unbroken run — a URL, a pasted key, a word
+ * with no spaces. With nothing to wrap at it ran straight out of the panel and past the edge of
+ * the card. `anywhere` breaks only when a line cannot otherwise fit, so ordinary prose still wraps
+ * between words; break-all would chop every word at the margin instead.
+ */
+.wrap-long {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 /* The source text is injected with v-html, so the marker spans need :deep() to be reachable.
 
    Marked answers are deliberately invisible until asked for. Highlighting all of them on arrival

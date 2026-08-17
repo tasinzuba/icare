@@ -578,6 +578,9 @@ class FullTestController extends Controller
                     'answeredQuestions' => $answeredQuestions,
                     'correctAnswers' => $correctAnswers,
                     'formattedQuestions' => $formattedQuestions,
+                    // Withheld until the section is submitted, for the same reason the answer key
+                    // is: the passage carries markers that give away where each answer sits.
+                    'passages' => $sectionCompleted ? $this->sourcePassagesFor($studentAttempt->testSet) : [],
                     'status' => $sectionCompleted ? 'completed' : $studentAttempt->status,
                 ];
             } elseif ($sectionKey === 'writing') {

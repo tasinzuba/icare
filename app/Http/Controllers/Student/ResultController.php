@@ -228,49 +228,7 @@ class ResultController extends Controller
         ]);
 
         // Source text for the review panel: the passage for reading, the audioscript for listening.
-        // part_number lets the panel show only the part being reviewed; null means the text covers
-        // every part, which is how a single full-length audio behaves.
-        $passages = $attempt->testSet->questions()
-            ->where('question_type', 'passage')
-            ->orderBy('part_number')
-            ->orderBy('order_number')
-            ->get()
-            ->map(fn ($passage) => (object) [
-                'id' => 'passage-' . $passage->id,
-                'part_number' => $passage->part_number ?: null,
-                'title' => $passage->title,
-                'audio_url' => null,
-                'processed_content' => Question::processPassageForDisplay(
-                    $passage->passage_text ?: $passage->content,
-                    true
-                ),
-            ])
-            ->values();
-
-        // Listening keeps its source text as the per-part audioscript rather than a passage row.
-        // Shaped identically so the panel renders it the same way, markers and Location jumps
-        // included, with the part's audio alongside so the script can be followed. Only consulted
-        // when there is no passage.
-        if ($passages->isEmpty()) {
-            $audios = \App\Models\TestPartAudio::where('test_set_id', $attempt->test_set_id)
-                ->orderBy('part_number')
-                ->get();
-
-            // Scripts are written per part, but the audio is usually one full-length file on part 0.
-            // A part without its own file still plays that one, so the reader can listen along.
-            $fullAudioUrl = optional($audios->firstWhere('part_number', 0))->audio_url ?: null;
-
-            $passages = $audios
-                ->filter(fn ($audio) => trim((string) $audio->transcript) !== '')
-                ->map(fn ($audio) => (object) [
-                    'id' => 'audio-' . $audio->id,
-                    'part_number' => $audio->part_number ?: null,
-                    'title' => $audio->part_number > 0 ? 'Part ' . $audio->part_number : null,
-                    'audio_url' => ($audio->audio_url ?: null) ?? $fullAudioUrl,
-                    'processed_content' => Question::processPassageForDisplay($audio->transcript, true),
-                ])
-                ->values();
-        }
+        $passages = $this->sourcePassagesFor($attempt->testSet);
 
         $formattedQuestions = [];
         $correctAnswers = 0;

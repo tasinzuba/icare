@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import StudentDashboardLayout from '@/Layouts/StudentDashboardLayout.vue';
-import QuestionAnalysis from '../Results/Components/QuestionAnalysis/QuestionAnalysis.vue';
+import ReviewExplanations from '../Results/Components/Review/ReviewExplanations.vue';
 import ScoreBreakdown from '../Results/Components/ScoreBreakdown.vue';
 import AiEvaluationModal from '../Results/Components/AiEvaluationModal.vue';
 import AudioVisualizer from '../Results/Components/AudioVisualizer.vue';
@@ -125,6 +125,26 @@ const activeAiStudentAnswers = computed(() => {
     if (!activeAiSection.value) return [];
     return props.sectionsData[activeAiSection.value]?.studentAnswers || [];
 });
+
+/**
+ * One section open at a time.
+ *
+ * A full test carries four sections of review; expanded together they run to hundreds of rows and
+ * the section a student actually wants is somewhere in the middle of it. Opening one closes the
+ * rest, and clicking the open one closes it, so the page can be collapsed down to its headings.
+ *
+ * Starts on the first completed section rather than the first available: an unfinished one has no
+ * review to show, and opening on it would look broken.
+ */
+const openSection = ref(
+    props.availableSections.find(s => props.sectionsData[s]?.status === 'completed')
+    ?? props.availableSections[0]
+    ?? null
+);
+
+const toggleSection = (sectionKey) => {
+    openSection.value = openSection.value === sectionKey ? null : sectionKey;
+};
 
 // ── Writing tabs (per section) ──
 const activeWritingTask = ref(1);
@@ -280,30 +300,34 @@ const bandProgressPct = computed(() => {
                     <template v-for="sectionKey in availableSections" :key="sectionKey">
                         <template v-if="sectionsData[sectionKey]?.status === 'completed'">
 
-                            <!-- ── Listening / Reading: ScoreBreakdown + QuestionAnalysis ── -->
+                            <!-- ── Listening / Reading: collapsible Review & Explanations ── -->
                             <template v-if="['listening', 'reading'].includes(sectionKey)">
                                 <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                                    <div class="p-5 border-b border-gray-100 bg-gradient-to-r"
-                                         :class="[sectionStyles[sectionKey]?.bgLight, 'to-white']">
-                                        <div class="flex items-center justify-between">
+                                    <button type="button" @click="toggleSection(sectionKey)"
+                                            class="w-full p-5 border-b border-gray-100 bg-gradient-to-r text-left"
+                                            :class="[sectionStyles[sectionKey]?.bgLight, 'to-white']">
+                                        <div class="flex items-center justify-between gap-3">
                                             <h3 class="font-bold text-gray-900 flex items-center gap-2">
                                                 <i class="fas" :class="[sectionStyles[sectionKey]?.icon, sectionStyles[sectionKey]?.textColor]"></i>
-                                                {{ sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1) }} - Question Analysis
+                                                {{ sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1) }} - Review &amp; Explanations
                                             </h3>
                                             <div class="flex items-center gap-4 text-sm">
-                                                <span :class="sectionStyles[sectionKey]?.textColor" class="font-semibold">{{ sectionsData[sectionKey].totalQuestions }} Questions</span>
+                                                <span :class="sectionStyles[sectionKey]?.textColor" class="font-semibold hidden sm:inline">{{ sectionsData[sectionKey].totalQuestions }} Questions</span>
                                                 <span v-if="sectionsData[sectionKey].bandScore"
                                                       class="px-3 py-1 rounded-full font-bold"
                                                       :class="[sectionStyles[sectionKey]?.bgLight, sectionStyles[sectionKey]?.textColor]">
                                                     Band: {{ bandScoreRange(sectionsData[sectionKey].bandScore) }}
                                                 </span>
+                                                <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
+                                                   :class="{ 'rotate-180': openSection === sectionKey }"></i>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="p-5">
-                                        <!-- Question Analysis (reuse component) -->
-                                        <QuestionAnalysis
+                                    </button>
+                                    <div v-show="openSection === sectionKey" class="px-5 pb-5">
+                                        <ReviewExplanations
                                             :questions="sectionsData[sectionKey].formattedQuestions"
+                                            :passages="sectionsData[sectionKey].passages || []"
+                                            :sectionName="sectionKey"
                                             :attemptId="sectionsData[sectionKey].attemptId"
                                         />
                                     </div>
@@ -313,7 +337,18 @@ const bandProgressPct = computed(() => {
                             <!-- ── Writing: Tabbed Submission ── -->
                             <template v-if="sectionKey === 'writing' && sectionsData.writing?.studentAnswers?.length">
                                 <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                                    <div class="border-b border-gray-200">
+                                    <button type="button" @click="toggleSection('writing')"
+                                            class="w-full px-5 py-4 bg-violet-50 text-left border-b border-gray-100">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                                                <i class="fas fa-pen-fancy text-violet-600"></i>
+                                                Writing - Submission
+                                            </h3>
+                                            <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
+                                               :class="{ 'rotate-180': openSection === 'writing' }"></i>
+                                        </div>
+                                    </button>
+                                    <div v-show="openSection === 'writing'" class="border-b border-gray-200">
                                         <div class="p-5 pb-0">
                                             <div class="flex items-center justify-between mb-4">
                                                 <h3 class="font-bold text-gray-900 flex items-center gap-2">
@@ -349,7 +384,7 @@ const bandProgressPct = computed(() => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div v-if="activeWritingAnswer" class="p-6 space-y-5">
+                                    <div v-if="activeWritingAnswer && openSection === 'writing'" class="p-6 space-y-5">
                                         <!-- Question -->
                                         <div v-if="activeWritingAnswer.question_text || activeWritingAnswer.question_image">
                                             <div class="flex items-center gap-2 mb-3">
@@ -406,13 +441,21 @@ const bandProgressPct = computed(() => {
                             <!-- ── Speaking: Tabbed Submission with AudioVisualizer ── -->
                             <template v-if="sectionKey === 'speaking' && sectionsData.speaking?.studentAnswers?.length">
                                 <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                                    <div class="border-b border-gray-200">
+                                    <button type="button" @click="toggleSection('speaking')"
+                                            class="w-full px-5 py-4 bg-orange-50 text-left border-b border-gray-100">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                                                <i class="fas fa-microphone text-orange-600"></i>
+                                                Speaking - Submission
+                                            </h3>
+                                            <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
+                                               :class="{ 'rotate-180': openSection === 'speaking' }"></i>
+                                        </div>
+                                    </button>
+                                    <div v-show="openSection === 'speaking'" class="border-b border-gray-200">
                                         <div class="p-5 pb-0">
                                             <div class="flex items-center justify-between mb-4">
-                                                <h3 class="font-bold text-gray-900 flex items-center gap-2">
-                                                    <i class="fas fa-microphone text-orange-600"></i>
-                                                    Speaking - Submission
-                                                </h3>
+                                                <h3 class="sr-only">Speaking band</h3>
                                                 <span v-if="sectionsData.speaking.bandScore"
                                                       class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full font-bold text-sm">
                                                     Band: {{ bandScoreRange(sectionsData.speaking.bandScore) }}
@@ -442,7 +485,7 @@ const bandProgressPct = computed(() => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div v-if="activeSpeakingAnswers.length" class="p-6 space-y-5">
+                                    <div v-if="activeSpeakingAnswers.length && openSection === 'speaking'" class="p-6 space-y-5">
                                         <div v-for="(answer, idx) in activeSpeakingAnswers" :key="answer.id" class="rounded-xl border border-gray-100 overflow-hidden">
                                             <div class="px-4 py-2.5 bg-gray-50/70 border-b border-gray-100 flex items-center gap-2.5">
                                                 <div class="w-6 h-6 rounded-full bg-[#C8102E]/10 flex items-center justify-center shrink-0">

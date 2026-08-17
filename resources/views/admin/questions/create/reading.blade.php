@@ -138,6 +138,7 @@
                                         <label class="block text-sm font-medium text-gray-700 mb-2">
                                             Passage Content <span class="text-red-500">*</span>
                                         </label>
+                                        @include('admin.questions.partials.passage-marker-toolbar')
                                         <textarea id="passage_text" name="passage_text" class="tinymce-editor">{{ old('passage_text') }}</textarea>
                                     </div>
                                 </div>

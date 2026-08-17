@@ -296,9 +296,20 @@
                 @if($testSet->questions->count() > 0)
                     <div class="space-y-4">
                         @php
-                            $displayQuestions = $testSet->section->name === 'reading' 
+                            $displayQuestions = $testSet->section->name === 'reading'
                                 ? $testSet->questions()->where('question_type', '!=', 'passage')->orderBy('order_number')->get()
                                 : $testSet->questions->sortBy('order_number');
+
+                            // Resolved once rather than per question: getPartAudio() is a query, and a
+                            // 40-question set would otherwise fire 40 of them to draw one badge each.
+                            $audioByPart = [];
+                            if ($testSet->section->name === 'listening') {
+                                $rows = $testSet->partAudios;
+                                $fullAudio = $rows->firstWhere('part_number', 0);
+                                foreach ($displayQuestions->pluck('part_number')->unique() as $partNo) {
+                                    $audioByPart[$partNo] = $fullAudio ?: $rows->firstWhere('part_number', $partNo);
+                                }
+                            }
                         @endphp
                         
                         @foreach ($displayQuestions as $question)
@@ -334,13 +345,21 @@
                                                 </span>
                                             @endif
                                             @if($testSet->section->name === 'listening')
-                                                @if($question->use_part_audio)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
-                                                        Part {{ $question->part_number }} Audio
-                                                    </span>
-                                                @elseif($question->media_path)
+                                                {{-- What the student will actually hear, not what use_part_audio
+                                                     claims. The player streams one audio for the whole set and
+                                                     never reads that flag, so a question with it turned off was
+                                                     being labelled "No Audio" while playing perfectly well. --}}
+                                                @php
+                                                    $ownAudio = !$question->use_part_audio && $question->media_path;
+                                                    $setAudio = $ownAudio ? null : ($audioByPart[$question->part_number] ?? null);
+                                                @endphp
+                                                @if($ownAudio)
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
                                                         Custom Audio
+                                                    </span>
+                                                @elseif($setAudio)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                                                        {{ $setAudio->part_number > 0 ? 'Part ' . $setAudio->part_number . ' Audio' : 'Full Audio' }}
                                                     </span>
                                                 @else
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">

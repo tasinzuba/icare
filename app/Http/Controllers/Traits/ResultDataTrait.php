@@ -366,7 +366,9 @@ trait ResultDataTrait
                 'number' => $item['number'], 'part_number' => $item['part_number'],
                 'content' => $item['content'], 'student_answer' => $displayAnswer,
                 'correct_answer' => $correctAnswerForExplain, 'is_correct' => $isCorrect,
-                'is_answered' => $isAnswered, 'explanation' => $item['explanation'],
+                'is_answered' => $isAnswered,
+                // One question row can be many numbered questions, so pick this part's [Qn] note.
+                'explanation' => \App\Models\Question::explanationFor($item['explanation'], $item['number']),
                 // Where the answer sits in the passage: the marker id to scroll to, plus the text
                 // itself as a fallback. Resolved here so all eleven question-type branches get it.
                 'location' => $locationMarker,

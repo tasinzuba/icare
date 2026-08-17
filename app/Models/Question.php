@@ -459,6 +459,44 @@ public static function sanitizeSectionDataForStudent(?array $ssd): ?array
 }
 
 /**
+ * The explanation belonging to one numbered question.
+ *
+ * A single question row can produce many student questions - a fill-blanks row with nine blanks is
+ * nine questions - but there is only one explanation column. Authors therefore tag the parts:
+ *
+ *   [Q1] The passage says "people", so that is the answer.
+ *   [Q2] "marine" appears in the second paragraph.
+ *
+ * Each part then shows only its own note. Untagged text is treated as one shared explanation and is
+ * returned for every part, so single questions need no tags at all.
+ */
+public static function explanationFor(?string $explanation, $questionNumber): ?string
+{
+    $explanation = trim((string) $explanation);
+
+    if ($explanation === '') {
+        return null;
+    }
+
+    // No tags at all: the whole note applies to this (and every) part.
+    if (!preg_match('/\[Q\d+\]/i', $explanation)) {
+        return $explanation;
+    }
+
+    $number = (int) $questionNumber;
+    $pattern = '/\[Q' . $number . '\]\s*(.*?)(?=\[Q\d+\]|$)/is';
+
+    if ($number > 0 && preg_match($pattern, $explanation, $matches)) {
+        $text = trim($matches[1]);
+
+        return $text !== '' ? $text : null;
+    }
+
+    // Tagged, but nothing written for this particular part.
+    return null;
+}
+
+/**
  * Pull the text an author marked as the answer's location out of a passage.
  *
  * Authors wrap the relevant words as {{Q5}}…{{Q5}} and put "Q5" on the question. The result page

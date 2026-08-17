@@ -282,8 +282,26 @@
         <div class="w-14 h-14 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-3">
             <i class="fas fa-clipboard-list text-gray-400 text-xl"></i>
         </div>
-        <p class="text-sm font-medium text-gray-600">No full mock tests yet</p>
-        <p class="text-xs text-gray-400 mt-1">Tests will appear here once students start them</p>
+        <p class="text-sm font-medium text-gray-600">
+            @if($activeTab === 'results' && $attemptsCount > 0)
+                No completed full mock tests match these filters
+            @elseif($activeTab === 'attempts' && $resultsCount > 0)
+                No unfinished full mock tests match these filters
+            @else
+                No full mock tests yet
+            @endif
+        </p>
+        <p class="text-xs text-gray-400 mt-1">
+            @if($activeTab === 'results' && $attemptsCount > 0)
+                {{ $attemptsCount }} still in progress or abandoned —
+                <a href="{{ route('branch.tests.index', array_merge($tabParams, ['view' => 'attempts'])) }}" class="text-[#C8102E] font-medium hover:underline">see Recent Attempts</a>
+            @elseif($activeTab === 'attempts' && $resultsCount > 0)
+                {{ $resultsCount }} finished —
+                <a href="{{ route('branch.tests.index', array_merge($tabParams, ['view' => 'results'])) }}" class="text-[#C8102E] font-medium hover:underline">see Recent Results</a>
+            @else
+                Tests will appear here once students start them
+            @endif
+        </p>
     </div>
     @endif
 </section>
@@ -385,8 +403,26 @@
         <div class="w-14 h-14 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-3">
             <i class="fas fa-puzzle-piece text-gray-400 text-xl"></i>
         </div>
-        <p class="text-sm font-medium text-gray-600">No section tests yet</p>
-        <p class="text-xs text-gray-400 mt-1">Practice attempts will appear here</p>
+        <p class="text-sm font-medium text-gray-600">
+            @if($activeTab === 'results' && $attemptsCount > 0)
+                No completed section tests match these filters
+            @elseif($activeTab === 'attempts' && $resultsCount > 0)
+                No unfinished section tests match these filters
+            @else
+                No section tests yet
+            @endif
+        </p>
+        <p class="text-xs text-gray-400 mt-1">
+            @if($activeTab === 'results' && $attemptsCount > 0)
+                {{ $attemptsCount }} still in progress or abandoned —
+                <a href="{{ route('branch.tests.index', array_merge($tabParams, ['view' => 'attempts'])) }}" class="text-[#C8102E] font-medium hover:underline">see Recent Attempts</a>
+            @elseif($activeTab === 'attempts' && $resultsCount > 0)
+                {{ $resultsCount }} finished —
+                <a href="{{ route('branch.tests.index', array_merge($tabParams, ['view' => 'results'])) }}" class="text-[#C8102E] font-medium hover:underline">see Recent Results</a>
+            @else
+                Practice attempts will appear here
+            @endif
+        </p>
     </div>
     @endif
 </section>

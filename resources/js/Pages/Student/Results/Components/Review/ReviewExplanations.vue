@@ -325,6 +325,10 @@ const closeReport = () => { reportFor.value = null; };
     background: transparent;
     border-radius: 3px;
     padding: 1px 3px;
+    /* A marker that wraps is several line fragments, not one box. clone gives each fragment its own
+       padding and rounding rather than opening one at the start and closing it at the end. */
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
     scroll-margin-top: 1rem;
     transition: background 0.25s ease, box-shadow 0.25s ease;
 }
@@ -337,19 +341,19 @@ const closeReport = () => { reportFor.value = null; };
    are inline spans, and transform does nothing on an inline box. */
 .review-source :deep(.marker-text.marker-active) {
     background: #f8ff73;
-    box-shadow: 0 0 0 3px rgba(248, 255, 115, 0.85), 0 1px 2px rgba(120, 113, 20, 0.25);
     animation: marker-pop 0.55s ease-out;
 }
 
 @keyframes marker-pop {
     0% {
-        box-shadow: 0 0 0 0 rgba(248, 255, 115, 0), 0 1px 2px rgba(120, 113, 20, 0);
+        box-shadow: 0 0 0 0 rgba(248, 255, 115, 0);
     }
     45% {
-        box-shadow: 0 0 0 9px rgba(248, 255, 115, 0.9), 0 1px 3px rgba(120, 113, 20, 0.3);
+        box-shadow: 0 0 0 6px rgba(248, 255, 115, 0.5);
     }
+    /* Back to no ring, so nothing is left overlapping the neighbouring lines. */
     100% {
-        box-shadow: 0 0 0 3px rgba(248, 255, 115, 0.85), 0 1px 2px rgba(120, 113, 20, 0.25);
+        box-shadow: 0 0 0 0 rgba(248, 255, 115, 0);
     }
 }
 

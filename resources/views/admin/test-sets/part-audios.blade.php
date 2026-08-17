@@ -122,11 +122,28 @@
                         </div>
                     </div>
                     
-                    <audio controls class="w-full mb-3">
-                        <source src="{{ $fullAudio->audio_url }}" type="audio/mpeg">
-                        Your browser does not support the audio element.
-                    </audio>
-                    
+                    {{-- An empty audio_url means the file is not reachable from this environment —
+                         stored on R2 with no R2_URL configured, or missing from local storage. Say
+                         so plainly rather than rendering a player that will never load. --}}
+                    @if($fullAudio->audio_url)
+                        <audio controls class="w-full mb-3">
+                            <source src="{{ $fullAudio->audio_url }}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    @else
+                        <div class="mb-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5">
+                            <p class="text-sm font-medium text-amber-800">Audio file not reachable here</p>
+                            <p class="text-xs text-amber-700 mt-0.5">
+                                @if($fullAudio->storage_disk === 'r2')
+                                    Stored on R2. Set <code class="bg-white px-1 rounded">R2_URL</code> in .env, or replace it with a local upload.
+                                @else
+                                    The file is missing from local storage. Replace it to fix this test.
+                                @endif
+                            </p>
+                        </div>
+                    @endif
+
+
                     <div class="flex justify-between text-sm text-gray-600 mb-3">
                         <span>Duration: {{ $fullAudio->formatted_duration }}</span>
                         <span>Size: {{ $fullAudio->formatted_size }}</span>
@@ -195,12 +212,27 @@
                         @elseif($partAudio && $partAudio->audio_path)
                             <!-- Audio exists -->
                             <div class="space-y-4">
-                                <!-- Audio Player -->
+                                <!-- Audio Player. Goes through audio_url, not Storage::url: the
+                                     accessor knows about R2 and about the file being absent, while
+                                     Storage::url would hand back a path that cannot load. -->
                                 <div class="bg-gray-50 rounded-lg p-4">
-                                    <audio controls class="w-full mb-2">
-                                        <source src="{{ Storage::url($partAudio->audio_path) }}" type="audio/mpeg">
-                                        Your browser does not support the audio element.
-                                    </audio>
+                                    @if($partAudio->audio_url)
+                                        <audio controls class="w-full mb-2">
+                                            <source src="{{ $partAudio->audio_url }}" type="audio/mpeg">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    @else
+                                        <div class="mb-2 rounded bg-amber-50 border border-amber-200 px-3 py-2">
+                                            <p class="text-sm font-medium text-amber-800">Audio file not reachable here</p>
+                                            <p class="text-xs text-amber-700 mt-0.5">
+                                                @if($partAudio->storage_disk === 'r2')
+                                                    Stored on R2. Set <code class="bg-white px-1 rounded">R2_URL</code> in .env, or replace it with a local upload.
+                                                @else
+                                                    The file is missing from local storage. Replace it to fix this test.
+                                                @endif
+                                            </p>
+                                        </div>
+                                    @endif
                                     <div class="flex justify-between text-sm text-gray-600">
                                         <span>Duration: {{ $partAudio->formatted_duration }}</span>
                                         <span>Size: {{ $partAudio->formatted_size }}</span>

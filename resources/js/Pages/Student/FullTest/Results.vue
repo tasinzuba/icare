@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import StudentDashboardLayout from '@/Layouts/StudentDashboardLayout.vue';
 import ReviewExplanations from '../Results/Components/Review/ReviewExplanations.vue';
@@ -146,6 +146,31 @@ const toggleSection = (sectionKey) => {
     openSection.value = openSection.value === sectionKey ? null : sectionKey;
 };
 
+/**
+ * Whether a section has a panel further down to jump to.
+ *
+ * Listening and reading render one once submitted; writing and speaking need submitted work as
+ * well, since their panel is built from the answers themselves.
+ */
+const hasPanel = (sectionKey) => {
+    const data = props.sectionsData[sectionKey];
+    if (data?.status !== 'completed') return false;
+    if (['writing', 'speaking'].includes(sectionKey)) {
+        return (data.studentAnswers?.length ?? 0) > 0;
+    }
+    return true;
+};
+
+// Open that section and bring it into view. Opening first, then scrolling on the next tick, so the
+// panel has its expanded height before the browser works out where to stop.
+const goToSection = (sectionKey) => {
+    openSection.value = sectionKey;
+    nextTick(() => {
+        document.getElementById(`section-${sectionKey}`)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+};
+
 // ── Writing tabs (per section) ──
 const activeWritingTask = ref(1);
 const writingData = computed(() => props.sectionsData.writing || null);
@@ -214,9 +239,19 @@ const bandProgressPct = computed(() => {
                 <!-- Section Scores inside hero card -->
                 <div class="mt-6 pt-5 border-t border-gray-100">
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div v-for="sk in availableSections" :key="sk"
-                             class="text-center p-4 rounded-xl border"
-                             :class="[sectionStyles[sk]?.bgLight, sectionStyles[sk]?.borderLight]">
+                        <!-- A score card is the shortcut to that section's review: it opens the
+                             panel and scrolls to it. Only where there is a panel to open — an
+                             unfinished section has nothing below to jump to. -->
+                        <component :is="hasPanel(sk) ? 'button' : 'div'"
+                             v-for="sk in availableSections" :key="sk"
+                             :type="hasPanel(sk) ? 'button' : null"
+                             @click="hasPanel(sk) && goToSection(sk)"
+                             class="w-full text-center p-4 rounded-xl border transition-all"
+                             :class="[
+                                 sectionStyles[sk]?.bgLight,
+                                 sectionStyles[sk]?.borderLight,
+                                 hasPanel(sk) ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5' : ''
+                             ]">
                             <div class="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2 shadow-sm bg-gradient-to-br"
                                  :class="sectionStyles[sk]?.gradient">
                                 <i class="fas text-white text-sm" :class="sectionStyles[sk]?.icon"></i>
@@ -229,7 +264,10 @@ const bandProgressPct = computed(() => {
                                 </span>
                             </template>
                             <p v-else class="text-sm font-semibold text-amber-500">Pending</p>
-                        </div>
+                            <p v-if="hasPanel(sk)" class="text-[10px] text-gray-400 mt-1.5">
+                                <i class="fas fa-arrow-down mr-0.5"></i>View review
+                            </p>
+                        </component>
                     </div>
 
                     <!-- Band Progress Bar -->
@@ -371,7 +409,7 @@ const bandProgressPct = computed(() => {
 
                             <!-- ── Listening / Reading: collapsible Review & Explanations ── -->
                             <template v-if="['listening', 'reading'].includes(sectionKey)">
-                                <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                                <div :id="`section-${sectionKey}`" class="scroll-mt-24 bg-white rounded-2xl border border-gray-200 overflow-hidden">
                                     <button type="button" @click="toggleSection(sectionKey)"
                                             class="w-full p-5 border-b border-gray-100 bg-gradient-to-r text-left"
                                             :class="[sectionStyles[sectionKey]?.bgLight, 'to-white']">
@@ -405,7 +443,7 @@ const bandProgressPct = computed(() => {
 
                             <!-- ── Writing: Tabbed Submission ── -->
                             <template v-if="sectionKey === 'writing' && sectionsData.writing?.studentAnswers?.length">
-                                <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                                <div :id="'section-writing'" class="scroll-mt-24 bg-white rounded-2xl border border-gray-200 overflow-hidden">
                                     <button type="button" @click="toggleSection('writing')"
                                             class="w-full px-5 py-4 bg-violet-50 text-left border-b border-gray-100">
                                         <div class="flex items-center justify-between gap-3">
@@ -511,7 +549,7 @@ const bandProgressPct = computed(() => {
 
                             <!-- ── Speaking: Tabbed Submission with AudioVisualizer ── -->
                             <template v-if="sectionKey === 'speaking' && sectionsData.speaking?.studentAnswers?.length">
-                                <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                                <div :id="'section-speaking'" class="scroll-mt-24 bg-white rounded-2xl border border-gray-200 overflow-hidden">
                                     <button type="button" @click="toggleSection('speaking')"
                                             class="w-full px-5 py-4 bg-orange-50 text-left border-b border-gray-100">
                                         <div class="flex items-center justify-between gap-3">

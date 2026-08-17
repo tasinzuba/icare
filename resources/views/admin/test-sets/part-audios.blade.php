@@ -177,7 +177,7 @@
 
                     {{-- The audio half is disabled while a full audio is active, but the script half
                          below it is not: the script is written per part whatever the audio is. --}}
-                    <div class="p-6 {{ $fullAudio ? 'opacity-50 pointer-events-none' : '' }}">
+                    <div class="part-audio-body p-6 {{ $fullAudio ? 'opacity-50 pointer-events-none' : '' }}">
                         @if($fullAudio)
                             <!-- Full Audio is Active - Show Notice -->
                             <div class="text-center py-8">
@@ -345,12 +345,13 @@
 
     @push('styles')
     <style>
-        /* Disabled state for part audio cards when full audio is active */
-        .part-audio-card.opacity-50 {
+        /* Disabled state for the audio half of a part card when full audio is active.
+           Scoped to .part-audio-body so the wash never covers the audioscript below it. */
+        .part-audio-body.opacity-50 {
             position: relative;
         }
-        
-        .part-audio-card.opacity-50::after {
+
+        .part-audio-body.opacity-50::after {
             content: '';
             position: absolute;
             top: 0;
@@ -359,7 +360,6 @@
             bottom: 0;
             background: linear-gradient(135deg, rgba(139, 92, 246, 0.03) 0%, rgba(124, 58, 237, 0.03) 100%);
             pointer-events: none;
-            border-radius: 0.5rem;
         }
         
         /* Smooth transitions */
@@ -380,17 +380,20 @@
         let currentPart = null;
         let isFullAudio = false;
         
-        // Check and toggle part audio sections based on full audio
+        /**
+         * Grey out the audio half of each part card while a full audio is active.
+         *
+         * Targets .part-audio-body, not the whole card: the audioscript sits in a sibling below it
+         * and stays editable whatever the audio is, since the script is written per part either way.
+         */
         function togglePartAudioSections(hasFullAudio) {
-            const partAudioCards = document.querySelectorAll('.part-audio-card');
-            
-            partAudioCards.forEach(card => {
+            document.querySelectorAll('.part-audio-card .part-audio-body').forEach(body => {
                 if (hasFullAudio) {
-                    card.classList.add('opacity-50', 'pointer-events-none', 'select-none');
-                    card.style.cursor = 'not-allowed';
+                    body.classList.add('opacity-50', 'pointer-events-none', 'select-none');
+                    body.style.cursor = 'not-allowed';
                 } else {
-                    card.classList.remove('opacity-50', 'pointer-events-none', 'select-none');
-                    card.style.cursor = 'default';
+                    body.classList.remove('opacity-50', 'pointer-events-none', 'select-none');
+                    body.style.cursor = 'default';
                 }
             });
         }

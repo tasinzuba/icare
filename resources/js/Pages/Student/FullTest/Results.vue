@@ -248,10 +248,102 @@ const bandProgressPct = computed(() => {
                 </div>
             </ResultHeroCard>
 
-            <!-- ═══ MAIN CONTENT GRID ═══ -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- LEFT (2/3) -->
-                <div class="lg:col-span-2 space-y-6">
+            <!-- ═══ ACTIONS + SCORING NOTES ═══
+                 Previously a right sidebar. Moved above the review, which now runs full width:
+                 the two panes of a review need the room, and these are read once and done with. -->
+            <div class="space-y-4 mb-6">
+                <div class="bg-white rounded-2xl border border-gray-200 p-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span v-if="isOfflineStudent"
+                              class="inline-flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl text-sm">
+                            <span class="text-gray-600">Evaluation:</span>
+                            <span class="font-semibold" :class="evaluationType === 'ai' ? 'text-blue-600' : evaluationType === 'human' ? 'text-purple-600' : 'text-emerald-600'">
+                                <template v-if="evaluationType === 'ai'"><i class="fas fa-robot mr-1"></i>AI Only</template>
+                                <template v-else-if="evaluationType === 'human'"><i class="fas fa-user-tie mr-1"></i>Human Only</template>
+                                <template v-else><i class="fas fa-balance-scale mr-1"></i>AI + Human</template>
+                            </span>
+                        </span>
+
+                        <!-- Writing AI Evaluation -->
+                        <template v-if="sectionsData.writing?.status === 'completed'">
+                            <button v-if="sectionsData.writing.aiEvaluated" @click="openAiModal('writing')"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all">
+                                <i class="fas fa-pen-fancy"></i> View Writing AI Evaluation
+                            </button>
+                            <button v-else-if="canUseAI && sectionsData.writing?.hasAiFeature" @click="startAIEvaluation('writing')" :disabled="aiEvalLoading.writing"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all disabled:opacity-50">
+                                <svg v-if="aiEvalLoading.writing" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <i v-else class="fas fa-pen-fancy"></i>
+                                {{ aiEvalLoading.writing ? 'Evaluating...' : 'Get Writing AI Evaluation' }}
+                            </button>
+                        </template>
+
+                        <!-- Speaking AI Evaluation -->
+                        <template v-if="sectionsData.speaking?.status === 'completed'">
+                            <button v-if="sectionsData.speaking.aiEvaluated" @click="openAiModal('speaking')"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all">
+                                <i class="fas fa-microphone"></i> View Speaking AI Evaluation
+                            </button>
+                            <button v-else-if="canUseAI && sectionsData.speaking?.hasAiFeature" @click="startAIEvaluation('speaking')" :disabled="aiEvalLoading.speaking"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all disabled:opacity-50">
+                                <svg v-if="aiEvalLoading.speaking" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <i v-else class="fas fa-microphone"></i>
+                                {{ aiEvalLoading.speaking ? 'Evaluating...' : 'Get Speaking AI Evaluation' }}
+                            </button>
+                        </template>
+
+                        <!-- Human Evaluation Request -->
+                        <button v-if="canUseHuman && hasHumanEvaluationFeature && availableSections.some(s => ['writing','speaking'].includes(s) && sectionsData[s]?.status === 'completed' && !sectionsData[s]?.humanEvaluationRequested)"
+                            @click="handleRequestEvaluation"
+                            class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all">
+                            <i class="fas fa-user-tie"></i> Request Human Evaluation
+                        </button>
+
+                        <div class="flex flex-wrap gap-2 sm:ml-auto">
+                            <a href="/student/test/full-test"
+                               class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all">
+                                <i class="fas fa-list"></i> All Full Tests
+                            </a>
+                            <a href="/student/dashboard"
+                               class="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-all">
+                                <i class="fas fa-home"></i> Dashboard
+                            </a>
+                        </div>
+                    </div>
+
+                    <p v-if="aiEvalError.writing" class="text-xs text-red-500 mt-2">{{ aiEvalError.writing }}</p>
+                    <p v-if="aiEvalError.speaking" class="text-xs text-red-500 mt-1">{{ aiEvalError.speaking }}</p>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-200 p-4">
+                    <h3 class="font-bold text-gray-900 mb-3 flex items-center gap-2 text-sm">
+                        <i class="fas fa-info-circle text-gray-400"></i>
+                        About Full Test Scoring
+                    </h3>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm text-gray-600">
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-500 mt-0.5 shrink-0"></i>
+                            <span>Overall band is the average of all 4 section scores, rounded to nearest 0.5.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-500 mt-0.5 shrink-0"></i>
+                            <span>Listening &amp; Reading are auto-scored based on correct answers.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-robot text-blue-500 mt-0.5 shrink-0"></i>
+                            <span>Writing &amp; Speaking require AI or human evaluation for band scores.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-bolt text-[#C8102E] mt-0.5 shrink-0"></i>
+                            <span>Open a section below to review each answer with its explanation.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ═══ MAIN CONTENT ═══ -->
+            <div>
+                <div class="space-y-6">
 
                     <!-- ── Performance Summary ── -->
                     <div v-if="strongest && weakest" class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
@@ -558,102 +650,6 @@ const bandProgressPct = computed(() => {
                     </template>
                 </div>
 
-                <!-- RIGHT SIDEBAR (1/3) -->
-                <div class="space-y-6">
-                    <!-- Evaluation Type Badge (offline only) -->
-                    <div v-if="isOfflineStudent" class="bg-white rounded-2xl border border-gray-200 p-5">
-                        <h3 class="font-bold text-gray-900 mb-3">Evaluation</h3>
-                        <div class="p-3 bg-gray-50 rounded-xl">
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-600">Evaluation Type:</span>
-                                <span class="font-semibold" :class="evaluationType === 'ai' ? 'text-blue-600' : evaluationType === 'human' ? 'text-purple-600' : 'text-emerald-600'">
-                                    <template v-if="evaluationType === 'ai'"><i class="fas fa-robot mr-1"></i>AI Only</template>
-                                    <template v-else-if="evaluationType === 'human'"><i class="fas fa-user-tie mr-1"></i>Human Only</template>
-                                    <template v-else><i class="fas fa-balance-scale mr-1"></i>AI + Human</template>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actions Card -->
-                    <div class="bg-white rounded-2xl border border-gray-200 p-5">
-                        <h3 class="font-bold text-gray-900 mb-4">Actions</h3>
-                        <div class="space-y-3">
-                            <!-- Writing AI Evaluation -->
-                            <template v-if="sectionsData.writing?.status === 'completed'">
-                                <button v-if="sectionsData.writing.aiEvaluated" @click="openAiModal('writing')"
-                                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all">
-                                    <i class="fas fa-pen-fancy"></i> View Writing AI Evaluation
-                                </button>
-                                <button v-else-if="canUseAI && sectionsData.writing?.hasAiFeature" @click="startAIEvaluation('writing')" :disabled="aiEvalLoading.writing"
-                                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50">
-                                    <svg v-if="aiEvalLoading.writing" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    <i v-else class="fas fa-pen-fancy"></i>
-                                    {{ aiEvalLoading.writing ? 'Evaluating...' : 'Get Writing AI Evaluation' }}
-                                </button>
-                                <p v-if="aiEvalError.writing" class="text-xs text-red-500 -mt-1 px-1">{{ aiEvalError.writing }}</p>
-                            </template>
-
-                            <!-- Speaking AI Evaluation -->
-                            <template v-if="sectionsData.speaking?.status === 'completed'">
-                                <button v-if="sectionsData.speaking.aiEvaluated" @click="openAiModal('speaking')"
-                                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all">
-                                    <i class="fas fa-microphone"></i> View Speaking AI Evaluation
-                                </button>
-                                <button v-else-if="canUseAI && sectionsData.speaking?.hasAiFeature" @click="startAIEvaluation('speaking')" :disabled="aiEvalLoading.speaking"
-                                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50">
-                                    <svg v-if="aiEvalLoading.speaking" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    <i v-else class="fas fa-microphone"></i>
-                                    {{ aiEvalLoading.speaking ? 'Evaluating...' : 'Get Speaking AI Evaluation' }}
-                                </button>
-                                <p v-if="aiEvalError.speaking" class="text-xs text-red-500 -mt-1 px-1">{{ aiEvalError.speaking }}</p>
-                            </template>
-
-                            <!-- Human Evaluation Request -->
-                            <button v-if="canUseHuman && hasHumanEvaluationFeature && availableSections.some(s => ['writing','speaking'].includes(s) && sectionsData[s]?.status === 'completed' && !sectionsData[s]?.humanEvaluationRequested)"
-                                @click="handleRequestEvaluation"
-                                class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all">
-                                <i class="fas fa-user-tie"></i> Request Human Evaluation
-                            </button>
-
-                            <!-- Navigation Links -->
-                            <a href="/student/test/full-test"
-                               class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all">
-                                <i class="fas fa-list"></i> All Full Tests
-                            </a>
-                            <a href="/student/dashboard"
-                               class="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-50 transition-all">
-                                <i class="fas fa-home"></i> Dashboard
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Test Info Card -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-24">
-                        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <i class="fas fa-info-circle text-gray-400"></i>
-                            About Full Test Scoring
-                        </h3>
-                        <ul class="space-y-3 text-sm text-gray-600">
-                            <li class="flex items-start gap-2">
-                                <i class="fas fa-check text-emerald-500 mt-0.5 shrink-0"></i>
-                                <span>Overall band is the average of all 4 section scores, rounded to nearest 0.5.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <i class="fas fa-check text-emerald-500 mt-0.5 shrink-0"></i>
-                                <span>Listening & Reading are auto-scored based on correct answers.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <i class="fas fa-robot text-blue-500 mt-0.5 shrink-0"></i>
-                                <span>Writing & Speaking require AI or human evaluation for band scores.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <i class="fas fa-bolt text-[#C8102E] mt-0.5 shrink-0"></i>
-                                <span>Click 'Explain Answer' on any question for AI-powered explanations.</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
             </div>
         </div>
     </div>

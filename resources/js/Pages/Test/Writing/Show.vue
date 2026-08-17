@@ -407,9 +407,11 @@ const confirmSubmit = () => {
             line-height: 1.5;
         }
         
+        /* The task sits on the panel tint the way a reading passage does, rather than on a white
+           card. The border stays so the task is still bounded, just not a slab of white. */
         .question-prompt {
-            background-color: white;
-            border: 1px solid #e5e7eb;
+            background-color: var(--exam-bg);
+            border: 1px solid #cfe3ee;
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
@@ -493,9 +495,11 @@ const confirmSubmit = () => {
             overflow: hidden;
         }
 
+        /* Word count strip. Tinted so the right side reads as one panel holding a white writing
+           box, rather than two near-white bands stacked on each other. */
         .editor-header {
-            background-color: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
+            background-color: var(--exam-bg);
+            border-bottom: 1px solid #cfe3ee;
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;

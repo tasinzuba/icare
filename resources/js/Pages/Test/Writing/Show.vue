@@ -126,7 +126,7 @@ const confirmSubmit = () => {
 
         <!-- Global Part Header -->
         <div class="global-part-header">
-            <div class="part-header-inner" style="background: white; padding: 16px 24px; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
+            <div class="part-header-inner" style="background: #e1f3fc; padding: 16px 24px; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
                 <div class="part-title">Writing Task {{ isSingleTask ? taskNumber : activeTask }}</div>
                 <div class="part-instruction">
                     You should spend about {{ Math.floor(timeLimitSeconds / 60) }} minutes on this task.
@@ -314,6 +314,8 @@ const confirmSubmit = () => {
            so they all inherit it. */
         .main-container {
             --exam-bg: #e8f4fa;
+            /* Part header band — its own token so it can be tuned apart from the body. */
+            --exam-header-bg: #e1f3fc;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -383,9 +385,9 @@ const confirmSubmit = () => {
             padding: 20px;
         }
         
-        /* Global Part Header — keeps its original white; only the content below is tinted. */
+        /* Global Part Header */
         .global-part-header {
-            background: white;
+            background: var(--exam-header-bg);
             border-bottom: 1px solid #e0e0e0;
             padding: 16px 5%;
             z-index: 200;

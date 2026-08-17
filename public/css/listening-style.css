@@ -4,6 +4,8 @@
            cards, inputs and the nav bars stay white so they still read as raised. */
         :root {
             --exam-bg: #e8f4fa;
+            /* Part header band — its own token so it can be tuned apart from the body. */
+            --exam-header-bg: #e1f3fc;
         }
 
         /* ========== BASE STYLES ========== */
@@ -90,9 +92,8 @@
         }
 
         /* ========== FIXED PART HEADER ========== */
-        /* Header strip keeps its original white/grey — only the content below is tinted. */
         .part-header-container {
-            background: white;
+            background: var(--exam-header-bg);
             padding: 20px 40px 20px 50px;
             z-index: 10;
             flex-shrink: 0;
@@ -121,7 +122,7 @@
 
         /* ========== PART HEADER - CARD STYLE ========== */
         .part-header {
-            background: #f0f0f0;
+            background: var(--exam-header-bg);
             padding: 16px 24px;
             margin: 0 0 30px 0;
             border-radius: 8px;
@@ -139,7 +140,7 @@
             margin: 0;
             border-radius: 8px;
             border: 1px solid #e0e0e0;
-            background: #f0f0f0;
+            background: var(--exam-header-bg);
         }
 
         .part-title {

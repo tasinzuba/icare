@@ -255,7 +255,7 @@ const closeReport = () => { reportFor.value = null; };
                     <!-- Location fallback, used when the marker is not on screen to scroll to -->
                     <div v-else-if="isLocationOpen(question)" class="mt-2.5 rounded-lg bg-sky-50 px-3 py-2.5 min-w-0">
                         <p v-if="question.location_text" class="wrap-long text-sm text-gray-800 leading-relaxed"
-                           style="background:#fef9c3;border-left:3px solid #eab308;padding:6px 10px;border-radius:4px;">
+                           style="background:#dcfce7;border-left:3px solid #16a34a;padding:6px 10px;border-radius:4px;">
                             “{{ question.location_text }}”
                         </p>
                         <p v-else class="wrap-long text-sm text-gray-600">Reference: {{ question.location }}</p>
@@ -327,8 +327,8 @@ const closeReport = () => { reportFor.value = null; };
 /* Applied by Locate, and left in place so the answer can be read rather than glimpsed. Only one
    marker carries it at a time, so the next Locate moves the highlight rather than adding to it. */
 .review-source :deep(.marker-text.marker-active) {
-    background: #fde68a;
-    box-shadow: 0 0 0 3px rgba(253, 230, 138, 0.6);
+    background: #bbf7d0;
+    box-shadow: 0 0 0 3px rgba(187, 247, 208, 0.65);
 }
 
 /* The question number appears with the highlight, naming what was just located. */
@@ -338,7 +338,7 @@ const closeReport = () => { reportFor.value = null; };
     margin-right: 5px;
     padding: 0 5px;
     border-radius: 3px;
-    background: #f59e0b;
+    background: #16a34a;
     color: #fff;
     font-size: 11px;
     font-weight: 700;

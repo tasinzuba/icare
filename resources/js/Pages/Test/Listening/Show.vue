@@ -1240,7 +1240,7 @@ onMounted(() => {
     // Bumped version query to bust browser cache when this file changes.
     listeningFixStyles = document.createElement('link');
     listeningFixStyles.rel = 'stylesheet';
-    listeningFixStyles.href = '/css/listening-test-fix.css?v=20260817-5';
+    listeningFixStyles.href = '/css/listening-test-fix.css?v=20260817-6';
     document.head.appendChild(listeningFixStyles);
 
     // Dismiss loading screen after a brief moment (let CSS/fonts settle)

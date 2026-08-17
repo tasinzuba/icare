@@ -319,8 +319,8 @@ body.ielts-test-mode .question-item .ielts-matching-matrix table thead th {
     cursor: pointer !important;
     transition: all 0.2s ease !important;
     vertical-align: middle !important;
-    height: 28px !important;
-    line-height: 26px !important;
+    height: 24px !important;
+    line-height: 22px !important;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
     appearance: none !important;

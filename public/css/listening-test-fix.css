@@ -376,3 +376,15 @@ body.ielts-test-mode .question-item .ielts-matching-matrix table thead th {
         padding-right: 5% !important;
     }
 }
+
+/* ==========================================================================
+   Exam layout background.
+
+   The Blade shell puts Tailwind's .bg-gray-50 on <body>, which is a class
+   selector and so outranks the plain `body {}` rule in listening-style.css.
+   Matching on the test-mode class the page adds beats it back, so no strip of
+   grey shows through behind the fixed exam chrome.
+   ========================================================================== */
+body.ielts-test-mode {
+    background-color: var(--exam-bg, #e1f3fc);
+}

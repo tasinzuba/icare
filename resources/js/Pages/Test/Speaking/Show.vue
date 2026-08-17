@@ -533,7 +533,8 @@ const finalSubmit = () => {
             --primary-hover: #334155;
             --success: #166534;
             --danger: #dc2626;
-            --bg-body: #f1f5f9;
+            /* Exam layout background — same tint as the other test surfaces. */
+            --bg-body: #e1f3fc;
             --bg-card: #ffffff;
             --text-main: #0f172a;
             --text-muted: #64748b;
@@ -544,9 +545,15 @@ const finalSubmit = () => {
 
         * { box-sizing: border-box; }
         
+        /* Exam layout background — same tint as the other test surfaces.
+
+           Set literally, not through --bg-body: Vue rewrites the scoped `:root`
+           block above to `[data-v-x]:root`, which never matches <html>, so none of
+           those tokens actually resolve on this page. Left the rest alone — reviving
+           them would restyle the whole speaking screen. */
         .main-container {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-body);
+            background: #e1f3fc;
             height: 100vh;
             overflow: hidden;
             display: flex;

@@ -1231,7 +1231,7 @@ onMounted(() => {
     // Base page styles (layout, typography, containers, etc.)
     listeningStyles = document.createElement('link');
     listeningStyles.rel = 'stylesheet';
-    listeningStyles.href = '/css/listening-style.css?v=20260629';
+    listeningStyles.href = '/css/listening-style.css?v=20260817-1';
     document.head.appendChild(listeningStyles);
 
     // Override/fix CSS — loads AFTER listening-style.css to win cascade
@@ -1239,7 +1239,7 @@ onMounted(() => {
     // Bumped version query to bust browser cache when this file changes.
     listeningFixStyles = document.createElement('link');
     listeningFixStyles.rel = 'stylesheet';
-    listeningFixStyles.href = '/css/listening-test-fix.css?v=20260817-3';
+    listeningFixStyles.href = '/css/listening-test-fix.css?v=20260817-4';
     document.head.appendChild(listeningFixStyles);
 
     // Dismiss loading screen after a brief moment (let CSS/fonts settle)

@@ -1,12 +1,19 @@
 /* Updated CSS for Reading Test - resources/css/reading-test.css */
 /* Simplified IELTS Reading Test Interface - Clean Layout */
+
+/* Exam layout background. One place to change the tint of the whole test surface;
+   cards, inputs and the nav bars stay white so they still read as raised. */
+:root {
+    --exam-bg: #e1f3fc;
+}
+
 /* ========== BASE STYLES ========== */
 body,
 html {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-    background-color: #f5f5f5;
+    background-color: var(--exam-bg);
     overflow-x: hidden;
 }
 
@@ -62,13 +69,13 @@ html {
     /* 50px header + 60px bottom nav */
     display: flex;
     flex-direction: column;
-    background: #f5f5f5;
+    background: var(--exam-bg);
     overflow: hidden;
 }
 
 /* ========== GLOBAL PART HEADER ========== */
 .global-part-header {
-    background: white;
+    background: var(--exam-bg);
     border-bottom: 1px solid #e0e0e0;
     padding: 16px 5%;
     z-index: 200;
@@ -79,7 +86,7 @@ html {
     margin: 0;
     border-radius: 8px;
     border: 1px solid #e0e0e0;
-    background: #f0f0f0;
+    background: #ffffff;
 }
 
 /* ========== CONTENT AREA - FULL HEIGHT ========== */
@@ -88,7 +95,7 @@ html {
     flex: 1;
     gap: 0;
     padding: 0;
-    background: #f5f5f5;
+    background: var(--exam-bg);
     position: relative;
     overflow: hidden;
     isolation: isolate;
@@ -98,7 +105,7 @@ html {
 /* ========== PASSAGE SECTION - IMPROVED LAYOUT ========== */
 .passage-section {
     flex: 0 0 50%;
-    background: white;
+    background: var(--exam-bg);
     border-right: 1px solid #e0e0e0;
     padding: 20px 40px 30px 40px;
     overflow-y: auto;
@@ -208,7 +215,7 @@ html {
 /* ========== QUESTIONS SECTION - FULL HEIGHT ========== */
 .questions-section {
     flex: 1;
-    background: white;
+    background: var(--exam-bg);
     padding: 20px 40px 30px 40px;
     overflow-y: auto;
     position: relative;
@@ -261,7 +268,7 @@ body.dragging .split-divider::before {
 
 /* ========== PART HEADER - CARD STYLE ========== */
 .part-header {
-    background: #f0f0f0;
+    background: #ffffff;
     padding: 16px 24px;
     margin: 0 0 30px 0;
     border-radius: 8px;
@@ -1992,4 +1999,15 @@ body.fullscreen-mode::after {
     100% {
         opacity: 0;
     }
+}
+/* ==========================================================================
+   Exam layout background.
+
+   The Blade shell puts Tailwind's .bg-gray-50 on <body>, which is a class
+   selector and so outranks the plain `body {}` rule above. Matching on the
+   test-mode class the page adds beats it back, so no strip of grey shows
+   through behind the fixed exam chrome.
+   ========================================================================== */
+body.ielts-test-mode {
+    background-color: var(--exam-bg, #e1f3fc);
 }

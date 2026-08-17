@@ -300,16 +300,24 @@ const confirmSubmit = () => {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
+            background-color: #e1f3fc;
             height: 100vh;
             overflow: hidden;
         }
-        
+
+        /* Exam layout background — same tint as the listening/reading test surface.
+           Cards, the answer box and the nav bars stay white so they still read as raised.
+
+           The token lives here rather than on :root because Vue rewrites a scoped
+           `:root` to `[data-v-x]:root`, which never matches <html> — it would be a
+           dead rule. Every styled element on this page sits inside .main-container,
+           so they all inherit it. */
         .main-container {
+            --exam-bg: #e1f3fc;
             height: 100vh;
             display: flex;
             flex-direction: column;
-            background-color: #f8f9fa;
+            background-color: var(--exam-bg);
             font-family: Arial, sans-serif;
         }
         
@@ -362,7 +370,7 @@ const confirmSubmit = () => {
         
         .left-panel {
             width: 45%;
-            background-color: #f8f9fa;
+            background-color: var(--exam-bg);
             border-right: 1px solid #e5e7eb;
             display: flex;
             flex-direction: column;
@@ -377,7 +385,7 @@ const confirmSubmit = () => {
         
         /* Global Part Header */
         .global-part-header {
-            background: white;
+            background: var(--exam-bg);
             border-bottom: 1px solid #e0e0e0;
             padding: 16px 5%;
             z-index: 200;
@@ -477,14 +485,14 @@ const confirmSubmit = () => {
         
         .right-panel {
             flex: 1;
-            background-color: white;
+            background-color: var(--exam-bg);
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
-        
+
         .editor-header {
-            background-color: #f9fafb;
+            background-color: var(--exam-bg);
             border-bottom: 1px solid #e5e7eb;
             padding: 15px 20px;
             display: flex;
@@ -526,6 +534,7 @@ const confirmSubmit = () => {
         .editor-textarea {
             width: 100%;
             height: 100%;
+            background-color: #ffffff;
             border: 1px solid #e5e7eb;
             border-radius: 6px;
             padding: 20px;

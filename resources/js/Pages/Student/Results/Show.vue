@@ -377,16 +377,31 @@ const activePartAnswers = computed(() => speakingParts.value[activePart.value] |
             </div>
 
             <div class="flex flex-col lg:flex-row gap-8">
-                <!-- MAIN CONTENT COLUMN (2/3 width) -->
-                <div class="w-full lg:w-2/3">
+                <!-- Listening and reading run full width: the review puts the answers and the source
+                     text side by side, and neither pane reads well squeezed into two thirds. -->
+                <div :class="['w-full', ['listening', 'reading'].includes(sectionName) ? '' : 'lg:w-2/3']">
 
                     <!-- Listening/Reading -->
                     <template v-if="['listening', 'reading'].includes(sectionName)">
+                        <!-- The warning carries the actions the sidebar used to, since a run with no
+                             answers is exactly when a student wants to go somewhere else. -->
                         <NoAnswersAlert v-if="answeredQuestions === 0 && totalQuestions > 0">
                             <template #actions>
-                                <div class="mt-4">
-                                    <a :href="`/student/test/${testSet.section?.name || 'reading'}/confirm/${attempt.test_set_id}`" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 active:bg-red-700 focus:outline-none focus:border-red-700 focus:ring focus:ring-red-200 transition">
+                                <div class="mt-4 flex flex-wrap gap-2">
+                                    <a :href="`/student/test/${testSet.section?.name || 'reading'}/confirm/${attempt.test_set_id}`"
+                                       class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 transition">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                         Retake Test
+                                    </a>
+                                    <a :href="`/student/test/${sectionName}`"
+                                       class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-red-200 rounded-lg font-semibold text-xs text-red-700 uppercase tracking-widest hover:bg-red-50 transition">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                                        All {{ sectionName.charAt(0).toUpperCase() + sectionName.slice(1) }} Tests
+                                    </a>
+                                    <a href="/student/test/results"
+                                       class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-red-200 rounded-lg font-semibold text-xs text-red-700 uppercase tracking-widest hover:bg-red-50 transition">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        View All Results
                                     </a>
                                 </div>
                             </template>
@@ -550,24 +565,9 @@ const activePartAnswers = computed(() => speakingParts.value[activePart.value] |
                     </template>
                 </div>
 
-                <!-- SIDEBAR COLUMN (1/3 width) -->
-                <div class="w-full lg:w-1/3 space-y-6">
-                    <!-- Performance Feedback (Listening/Reading only) -->
-                    <div v-if="scoreMessage && ['listening', 'reading'].includes(sectionName)" class="bg-gradient-to-br from-[#C8102E] to-[#8B0000] rounded-2xl shadow-lg border border-[#C8102E]/50 p-6 text-white relative overflow-hidden">
-                        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
-                        <div class="absolute bottom-0 left-0 -mb-8 -ml-8 w-32 h-32 bg-[#C8102E] opacity-30 rounded-full blur-2xl"></div>
-
-                        <div class="relative z-10">
-                            <div class="flex items-center gap-2 mb-3">
-                                <svg class="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                                </svg>
-                                <h3 class="font-bold text-xs text-white/70 uppercase tracking-wider">Performance Feedback</h3>
-                            </div>
-                            <p class="text-[15px] font-medium leading-relaxed">{{ scoreMessage }}</p>
-                        </div>
-                    </div>
-
+                <!-- Sidebar, writing and speaking only. Listening and reading reach the same links
+                     from the dashboard nav and from the no-answers warning. -->
+                <div v-if="['writing', 'speaking'].includes(sectionName)" class="w-full lg:w-1/3 space-y-6">
                     <!-- Actions Card -->
                     <div class="bg-white rounded-2xl border border-gray-200 p-5">
                         <h3 class="font-bold text-gray-900 mb-4">Actions</h3>
@@ -599,32 +599,8 @@ const activePartAnswers = computed(() => speakingParts.value[activePart.value] |
                         </div>
                     </div>
 
-                    <!-- Info Card - L/R specific -->
-                    <div v-if="['listening', 'reading'].includes(sectionName)" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-24">
-                        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Understanding Your Score
-                        </h3>
-                        <ul class="space-y-3 text-sm text-gray-600">
-                            <li class="flex items-start gap-2">
-                                <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                <span>Each correct answer awards 1 mark.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                <span>Scores out of 40 are converted to the IELTS 9-band scale.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <svg class="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                <span>Hover or click 'Explain Answer' to get AI-powered detailed explanations for challenging questions.</span>
-                            </li>
-                        </ul>
-                    </div>
-
                     <!-- Info Card - W/S specific -->
-                    <div v-if="['writing', 'speaking'].includes(sectionName)" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-24">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-24">
                         <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
                             <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

@@ -133,14 +133,42 @@
                     </div>
                     
                     <div class="flex space-x-2">
-                        <button onclick="replaceFullAudio()" 
+                        <button onclick="replaceFullAudio()"
                                 class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
                             Replace
                         </button>
-                        <button onclick="deleteFullAudio({{ $testSet->id }})" 
+                        <button onclick="deleteFullAudio({{ $testSet->id }})"
                                 class="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium">
                             Delete
                         </button>
+                    </div>
+
+                    {{-- Audioscript for the full audio. It belongs here as well as on the per-part
+                         cards: every set in the bank uploads one full-length audio, which disables
+                         those cards, so without this the script could not be entered at all. --}}
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-sm font-medium text-gray-700">Audioscript</h4>
+                            @php $fullMarks = \App\Models\Question::extractMarkersFromPassage((string) $fullAudio->transcript); @endphp
+                            <span id="marker-count-0" class="text-xs text-gray-500">
+                                {{ count($fullMarks) }} answer location{{ count($fullMarks) === 1 ? '' : 's' }} marked
+                            </span>
+                        </div>
+                        <textarea id="transcript-0" rows="8"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-mono"
+                                  placeholder="Paste the audioscript for the whole test here...">{{ $fullAudio->transcript }}</textarea>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Wrap the answer text as
+                            <code class="bg-gray-100 px-1 rounded">&#123;&#123;Q5&#125;&#125;…&#123;&#123;Q5&#125;&#125;</code>
+                            for question 5 — that question then gets a Location button on the student's result page.
+                        </p>
+                        <div class="flex items-center gap-3 mt-2">
+                            <button type="button" onclick="saveTranscript({{ $testSet->id }}, 0)"
+                                    class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm font-medium">
+                                Save Audioscript
+                            </button>
+                            <span id="transcript-status-0" class="text-sm"></span>
+                        </div>
                     </div>
                 </div>
             @endif
@@ -488,7 +516,10 @@
 
         /**
          * Save a part's audioscript without touching its audio file, and report back how many
-         * {{Qn}} answer locations the saved script carries.
+         * answer locations the saved script carries.
+         *
+         * Marker braces are deliberately not written in this comment: Blade compiles a double-brace
+         * pair into an echo wherever it appears, script comments included.
          */
         function saveTranscript(testSetId, partNumber) {
             const box = document.getElementById('transcript-' + partNumber);

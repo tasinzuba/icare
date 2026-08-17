@@ -32,14 +32,22 @@ const isHelpModalOpen = ref(false);
  * block, answer boxes included.
  *
  * Kept in localStorage so a student sets it once rather than on every part and every test.
+ *
+ * Each step is its own button showing an A drawn at that step's size, so the choice reads at a
+ * glance without a percentage to interpret — the small A is the small text.
  */
-const ZOOM_STEPS = [0.9, 1, 1.15, 1.3, 1.5];
+const ZOOM_STEPS = [
+    { zoom: 0.9, label: 11 },
+    { zoom: 1, label: 13 },
+    { zoom: 1.15, label: 15 },
+    { zoom: 1.3, label: 18 },
+];
 const STORAGE_KEY = 'exam-text-zoom';
 
 const zoomIndex = ref(1);
 
 const applyZoom = () => {
-    document.documentElement.style.setProperty('--exam-zoom', String(ZOOM_STEPS[zoomIndex.value]));
+    document.documentElement.style.setProperty('--exam-zoom', String(ZOOM_STEPS[zoomIndex.value].zoom));
 };
 
 const setZoom = (index) => {
@@ -51,10 +59,6 @@ const setZoom = (index) => {
         // Private browsing can refuse storage; the size still applies for this sitting.
     }
 };
-
-const zoomPercent = computed(() => Math.round(ZOOM_STEPS[zoomIndex.value] * 100));
-const canGrow = computed(() => zoomIndex.value < ZOOM_STEPS.length - 1);
-const canShrink = computed(() => zoomIndex.value > 0);
 
 onMounted(() => {
     let saved = null;
@@ -105,11 +109,12 @@ const toggleFullscreen = () => {
             <slot name="extra-controls"></slot>
 
             <div v-if="showTextSize" class="text-size-control" title="Text size">
-                <button type="button" class="text-size-btn" :disabled="!canShrink"
-                        @click="setZoom(zoomIndex - 1)" aria-label="Smaller text">A<span class="minus">−</span></button>
-                <span class="text-size-value">{{ zoomPercent }}%</span>
-                <button type="button" class="text-size-btn" :disabled="!canGrow"
-                        @click="setZoom(zoomIndex + 1)" aria-label="Larger text">A<span class="plus">+</span></button>
+                <button v-for="(step, i) in ZOOM_STEPS" :key="step.zoom" type="button"
+                        class="text-size-btn" :class="{ active: zoomIndex === i }"
+                        :style="{ fontSize: step.label + 'px' }"
+                        :aria-label="'Text size ' + Math.round(step.zoom * 100) + '%'"
+                        :aria-pressed="zoomIndex === i"
+                        @click="setZoom(i)">A</button>
             </div>
 
             <button class="help-button text-sm" @click="isHelpModalOpen = true">Help ?</button>
@@ -203,49 +208,35 @@ const toggleFullscreen = () => {
     animation: modal-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* Text size control. Sits on the dark bar beside Help and Full Screen. */
+/* Text size control. Sits on the dark bar beside Help and Full Screen.
+   Each button draws its A at its own step's size, so the row itself is the scale. */
 .text-size-control {
     display: flex;
-    align-items: center;
-    gap: 2px;
-    padding: 2px;
+    align-items: baseline;
+    gap: 1px;
+    padding: 2px 3px;
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 6px;
 }
 
 .text-size-btn {
-    display: inline-flex;
-    align-items: baseline;
-    padding: 3px 8px;
+    min-width: 24px;
+    padding: 2px 5px;
     border-radius: 4px;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 700;
+    line-height: 1.1;
     background: transparent;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.text-size-btn:hover:not(:disabled) {
+.text-size-btn:hover {
+    color: #fff;
     background: rgba(255, 255, 255, 0.15);
 }
 
-.text-size-btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
-
-.text-size-btn .minus,
-.text-size-btn .plus {
-    font-size: 10px;
-    margin-left: 1px;
-}
-
-.text-size-value {
-    min-width: 38px;
-    text-align: center;
-    color: rgba(255, 255, 255, 0.75);
-    font-size: 11px;
-    font-variant-numeric: tabular-nums;
+.text-size-btn.active {
+    color: #1a1a1a;
+    background: #fff;
 }
 </style>

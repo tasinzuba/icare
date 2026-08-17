@@ -1202,7 +1202,31 @@ class OfflineEnrollment extends Model
      */
     public function isFullTestRetake(int $fullTestId): bool
     {
-        return in_array($fullTestId, $this->getCurrentCompletedFullTestIds());
+        return in_array($fullTestId, $this->getQuotaChargedFullTestIds());
+    }
+
+    /**
+     * Full tests this student has already spent a quota slot on.
+     *
+     * Quota is consumed when the attempt is created, so any attempt at all means this test has
+     * been paid for — whether it was finished, abandoned, or left to expire past the 24h limit.
+     *
+     * This used to count only completed attempts, which stranded students: start a test, let it
+     * expire, and the slot was gone while the test still counted as never taken. With the quota
+     * exhausted, every route back was refused with "You have reached your test limit" — including
+     * the Retake the dashboard was offering. Starting the same test again costs nothing new,
+     * because nothing new is being granted.
+     *
+     * Only consulted behind branchAllowsRetakes(), so branches with retakes switched off keep
+     * their existing behaviour.
+     */
+    public function getQuotaChargedFullTestIds(): array
+    {
+        return FullTestAttempt::where('user_id', $this->user_id)
+            ->pluck('full_test_id')
+            ->unique()
+            ->values()
+            ->toArray();
     }
 
     /**
@@ -1210,6 +1234,22 @@ class OfflineEnrollment extends Model
      */
     public function isSectionTestRetake(int $testSetId): bool
     {
-        return in_array($testSetId, $this->getCurrentCompletedSectionTestIds());
+        return in_array($testSetId, $this->getQuotaChargedSectionTestIds());
+    }
+
+    /**
+     * Section tests this student has already spent a quota slot on. Same reasoning as
+     * getQuotaChargedFullTestIds(): the slot goes when the attempt is created, so an abandoned or
+     * expired attempt has still been paid for. Sections sat as part of a full test are excluded,
+     * as they are — they never charged section quota in the first place.
+     */
+    public function getQuotaChargedSectionTestIds(): array
+    {
+        return StudentAttempt::where('user_id', $this->user_id)
+            ->doesntHave('fullTestSectionAttempt')
+            ->pluck('test_set_id')
+            ->unique()
+            ->values()
+            ->toArray();
     }
 }

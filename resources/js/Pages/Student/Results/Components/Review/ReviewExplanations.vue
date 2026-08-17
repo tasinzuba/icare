@@ -132,6 +132,11 @@ const locate = (question) => {
     // Left in place rather than flashed: the point is to read the sentence, not to catch a blink.
     // Clearing first keeps exactly one marker lit, so the passage never fills up with highlights.
     document.querySelectorAll('.marker-text.marker-active').forEach((n) => n.classList.remove('marker-active'));
+
+    // Reading offsetWidth forces a reflow between removing and adding the class. Without it,
+    // pressing Locate again on the marker that is already lit does both in one frame, the browser
+    // sees no change, and the flare never replays.
+    void el.offsetWidth;
     el.classList.add('marker-active');
 };
 
@@ -325,10 +330,34 @@ const closeReport = () => { reportFor.value = null; };
 }
 
 /* Applied by Locate, and left in place so the answer can be read rather than glimpsed. Only one
-   marker carries it at a time, so the next Locate moves the highlight rather than adding to it. */
+   marker carries it at a time, so the next Locate moves the highlight rather than adding to it.
+
+   The ring flares out and settles once on arrival, so the eye is drawn to it even when the sentence
+   was already on screen and nothing scrolled. Animated on box-shadow rather than transform: these
+   are inline spans, and transform does nothing on an inline box. */
 .review-source :deep(.marker-text.marker-active) {
     background: #f8ff73;
-    box-shadow: 0 0 0 3px rgba(248, 255, 115, 0.75);
+    box-shadow: 0 0 0 3px rgba(248, 255, 115, 0.85), 0 1px 2px rgba(120, 113, 20, 0.25);
+    animation: marker-pop 0.55s ease-out;
+}
+
+@keyframes marker-pop {
+    0% {
+        box-shadow: 0 0 0 0 rgba(248, 255, 115, 0), 0 1px 2px rgba(120, 113, 20, 0);
+    }
+    45% {
+        box-shadow: 0 0 0 9px rgba(248, 255, 115, 0.9), 0 1px 3px rgba(120, 113, 20, 0.3);
+    }
+    100% {
+        box-shadow: 0 0 0 3px rgba(248, 255, 115, 0.85), 0 1px 2px rgba(120, 113, 20, 0.25);
+    }
+}
+
+/* Someone who has asked not to see motion still gets the highlight, just without the flare. */
+@media (prefers-reduced-motion: reduce) {
+    .review-source :deep(.marker-text.marker-active) {
+        animation: none;
+    }
 }
 
 /* The question number appears with the highlight, naming what was just located. */
@@ -338,7 +367,7 @@ const closeReport = () => { reportFor.value = null; };
     margin-right: 5px;
     padding: 0 5px;
     border-radius: 3px;
-    background: #16a34a;
+    background: #a3a80a;
     color: #fff;
     font-size: 11px;
     font-weight: 700;

@@ -40,7 +40,6 @@ const ZOOM_STEPS = [
     { zoom: 0.9, label: 12 },
     { zoom: 1, label: 13 },
     { zoom: 1.15, label: 15 },
-    { zoom: 1.3, label: 17 },
 ];
 const STORAGE_KEY = 'exam-text-zoom';
 

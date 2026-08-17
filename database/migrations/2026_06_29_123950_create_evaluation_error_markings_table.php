@@ -8,9 +8,17 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * Guarded because the table can already exist without this migration being recorded: a
+     * database imported from another environment brings the table along but not that environment's
+     * migrations rows, and the create then fails and halts everything queued behind it.
      */
     public function up(): void
     {
+        if (Schema::hasTable('evaluation_error_markings')) {
+            return;
+        }
+
         Schema::create('evaluation_error_markings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('human_evaluation_id')->constrained('human_evaluations')->cascadeOnDelete();

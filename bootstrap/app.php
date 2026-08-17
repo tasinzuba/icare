@@ -67,6 +67,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('enrollments:expire')
             ->dailyAt('00:30')
             ->withoutOverlapping();
+
+        // Score attempts the student walked away from. A test finalises itself when the page is
+        // open at the deadline, or when the student opens it again afterwards — neither happens if
+        // they close the browser and never return, and the work autosaved into draft_answers was
+        // then never scored. Only attempts holding real answers are touched.
+        $schedule->command('attempts:finalize-stale --apply')
+            ->dailyAt('01:00')
+            ->withoutOverlapping();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Custom test exceptions are self-rendering (have render() method)

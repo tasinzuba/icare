@@ -175,7 +175,9 @@ const closeReport = () => { reportFor.value = null; };
              a passage above them would mean scrolling past the whole text to reach question 1. -->
         <div class="flex flex-col lg:flex-row bg-white">
             <!-- Source text -->
-            <div v-if="hasSource" class="order-2 lg:order-1 lg:w-1/2 flex flex-col border-t lg:border-t-0 lg:border-r border-gray-200">
+            <!-- 60/40 rather than half each: the source text is prose and needs the line length,
+                 while an answer row is a couple of words and a button. -->
+            <div v-if="hasSource" class="order-2 lg:order-1 lg:w-3/5 flex flex-col border-t lg:border-t-0 lg:border-r border-gray-200">
                 <div class="px-5 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between gap-3">
                     <span class="text-xs font-bold uppercase tracking-wide text-gray-500">{{ sourceLabel }}</span>
                     <span class="text-[11px] text-gray-400">Locate jumps to the highlighted answer</span>
@@ -193,7 +195,7 @@ const closeReport = () => { reportFor.value = null; };
 
             <!-- Answers -->
             <div ref="answerPane"
-                 :class="['order-1 lg:order-2 overflow-y-auto p-4 sm:p-5 space-y-3', hasSource ? 'lg:w-1/2 lg:max-h-[70vh]' : 'w-full']">
+                 :class="['order-1 lg:order-2 overflow-y-auto p-4 sm:p-5 space-y-3', hasSource ? 'lg:w-2/5 lg:max-h-[70vh]' : 'w-full']">
                 <div v-for="question in partQuestions" :key="question.id"
                      class="rounded-xl border border-gray-200 px-4 py-3">
                     <!-- Correct answer -->

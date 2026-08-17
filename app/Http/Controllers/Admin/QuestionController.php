@@ -600,8 +600,7 @@ class QuestionController extends Controller
                 'word_limit' => $request->word_limit ?? null,
                 'time_limit' => $request->time_limit ?? null,
                 // Shown to the student on the RESULT page only (never during the test).
-                // passage_reference holds the passage marker id, e.g. Q5 for a {{Q5}}...{{Q5}} span.
-                'explanation' => $request->explanation ?? null,
+                'explanation' => $this->composeExplanation($request),
                 'passage_reference' => $request->passage_reference ?: null,
             ];
 
@@ -857,6 +856,44 @@ class QuestionController extends Controller
     }
 
     /**
+     * Build the stored explanation from the form.
+     *
+     * A multi-part question (several blanks or dropdowns) posts one box per numbered question as
+     * explanations[15], explanations[16], … Those are folded into the single tagged string the
+     * result page understands ("[Q15] … [Q16] …"), so storage and the reader stay unchanged.
+     * A single-part question just posts `explanation` and is stored verbatim.
+     */
+    private function composeExplanation(Request $request): ?string
+    {
+        $parts = $request->input('explanations');
+
+        if (is_array($parts)) {
+            $chunks = [];
+
+            foreach ($parts as $number => $text) {
+                $text = trim((string) $text);
+
+                if ($text !== '' && is_numeric($number)) {
+                    $chunks[(int) $number] = '[Q' . (int) $number . '] ' . $text;
+                }
+            }
+
+            if (!empty($chunks)) {
+                ksort($chunks);
+
+                return implode("\n", $chunks);
+            }
+
+            // All boxes were cleared.
+            return null;
+        }
+
+        $single = trim((string) $request->input('explanation', ''));
+
+        return $single !== '' ? $single : null;
+    }
+
+    /**
      * Display the specified question.
      */
     public function show(Question $question): View
@@ -1033,7 +1070,7 @@ class QuestionController extends Controller
             'word_limit' => $request->word_limit ?? null,
             'time_limit' => $request->time_limit ?? null,
             // Result-page only: the answer explanation and the passage marker id (e.g. Q5).
-            'explanation' => $request->explanation ?? null,
+            'explanation' => $this->composeExplanation($request),
             'passage_reference' => $request->passage_reference ?: null,
         ];
 

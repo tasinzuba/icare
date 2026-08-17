@@ -76,8 +76,43 @@ class TestController extends Controller
             });
         }
 
+        // Section filter. A full test covers every section, so choosing one is only meaningful for
+        // the standalone list — picking Listening therefore shows section tests only, rather than
+        // leaving a Full Mock Tests block above that quietly ignored the filter.
+        $sectionFilter = $request->input('section');
+        if ($sectionFilter) {
+            $sectionQuery->whereHas('testSet.section', fn ($q) => $q->where('name', $sectionFilter));
+        }
+
+        // Results are finished sittings, Attempts are still open or abandoned. An explicit Status
+        // decides the tab, so the two are never ANDed into something that can never match.
+        $statusFilter = $request->input('status');
+        $activeTab = $statusFilter
+            ? ($statusFilter === 'completed' ? 'results' : 'attempts')
+            : ($request->input('view') === 'attempts' ? 'attempts' : 'results');
+
+        // Counted before the tab narrows anything, so each tab shows what it actually holds.
+        $resultsCount = (clone $fullTestQuery)->where('status', 'completed')->count()
+            + (clone $sectionQuery)->where('status', 'completed')->count();
+        $attemptsCount = (clone $fullTestQuery)->where('status', '!=', 'completed')->count()
+            + (clone $sectionQuery)->where('status', '!=', 'completed')->count();
+
+        if ($statusFilter) {
+            $fullTestQuery->where('status', $statusFilter);
+            $sectionQuery->where('status', $statusFilter);
+        } elseif ($activeTab === 'attempts') {
+            $fullTestQuery->where('status', '!=', 'completed');
+            $sectionQuery->where('status', '!=', 'completed');
+        } else {
+            $fullTestQuery->where('status', 'completed');
+            $sectionQuery->where('status', 'completed');
+        }
+
         // Test type filter
         $testType = $request->input('type', 'all');
+        if ($sectionFilter) {
+            $testType = 'section';
+        }
 
         if ($testType === 'full') {
             $fullTestAttempts = $fullTestQuery->orderBy('created_at', 'desc')->paginate(15);
@@ -109,7 +144,10 @@ class TestController extends Controller
         $stats['today'] = $stats['today_full'] + $stats['today_section'];
         $stats['total'] = $stats['total_full_tests'] + $stats['total_section_tests'];
 
-        return view('branch.tests.index', compact('fullTestAttempts', 'sectionAttempts', 'stats', 'branch', 'testType'));
+        return view('branch.tests.index', compact(
+            'fullTestAttempts', 'sectionAttempts', 'stats', 'branch', 'testType',
+            'sectionFilter', 'statusFilter', 'activeTab', 'resultsCount', 'attemptsCount'
+        ));
     }
 
     /**

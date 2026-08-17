@@ -104,16 +104,54 @@
                 <option value="section" {{ $testType === 'section' ? 'selected' : '' }}>Section Tests</option>
             </select>
         </div>
+        <div>
+            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Section</label>
+            <select name="section" class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8102E]/20 focus:border-[#C8102E]/40 transition bg-white">
+                <option value="">All Sections</option>
+                @foreach(['listening', 'reading', 'writing', 'speaking'] as $s)
+                    <option value="{{ $s }}" {{ $sectionFilter === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Status</label>
+            <select name="status" class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C8102E]/20 focus:border-[#C8102E]/40 transition bg-white">
+                <option value="">Any Status</option>
+                <option value="completed" {{ $statusFilter === 'completed' ? 'selected' : '' }}>Completed</option>
+                <option value="in_progress" {{ $statusFilter === 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                <option value="abandoned" {{ $statusFilter === 'abandoned' ? 'selected' : '' }}>Abandoned</option>
+            </select>
+        </div>
+        {{-- Carried so filtering does not silently throw the reader back to the Results tab. --}}
+        <input type="hidden" name="view" value="{{ $activeTab }}">
         <button type="submit" class="px-5 py-2 bg-[#C8102E] hover:bg-[#A00E27] text-white text-sm font-semibold rounded-lg shadow-sm transition">
             <i class="fas fa-filter mr-1.5 text-xs"></i> Filter
         </button>
-        @if(request()->hasAny(['search', 'date', 'type']))
+        @if(request()->hasAny(['search', 'date', 'type', 'section', 'status']))
         <a href="{{ route('branch.tests.index') }}" class="text-sm text-gray-500 hover:text-[#C8102E] font-medium px-2 py-2 transition">
             <i class="fas fa-times mr-1"></i> Clear
         </a>
         @endif
     </form>
 </div>
+
+    {{-- Results are finished sittings; Attempts are still open or abandoned. Both lists below are
+         narrowed by whichever is chosen, so the page is never a mix of the two. --}}
+    @php $tabParams = request()->except(['view', 'page', 'full_page', 'section_page']); @endphp
+    <div class="bg-white rounded-xl border border-gray-200 mb-6">
+        <nav class="flex gap-6 px-5" aria-label="Attempt view">
+            <a href="{{ route('branch.tests.index', array_merge($tabParams, ['view' => 'results'])) }}"
+               class="whitespace-nowrap border-b-2 py-3 text-sm font-medium {{ $activeTab === 'results' ? 'border-[#C8102E] text-[#C8102E]' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
+                <i class="fas fa-award mr-1.5"></i>Recent Results
+                <span class="ml-1.5 rounded-full px-2 py-0.5 text-xs {{ $activeTab === 'results' ? 'bg-[#C8102E]/10 text-[#C8102E]' : 'bg-gray-100 text-gray-600' }}">{{ $resultsCount }}</span>
+            </a>
+            <a href="{{ route('branch.tests.index', array_merge($tabParams, ['view' => 'attempts'])) }}"
+               class="whitespace-nowrap border-b-2 py-3 text-sm font-medium {{ $activeTab === 'attempts' ? 'border-[#C8102E] text-[#C8102E]' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
+                <i class="fas fa-hourglass-half mr-1.5"></i>Recent Attempts
+                <span class="ml-1.5 rounded-full px-2 py-0.5 text-xs {{ $activeTab === 'attempts' ? 'bg-[#C8102E]/10 text-[#C8102E]' : 'bg-gray-100 text-gray-600' }}">{{ $attemptsCount }}</span>
+            </a>
+        </nav>
+    </div>
 
 {{-- Full Mock Tests Section --}}
 @if($testType !== 'section')

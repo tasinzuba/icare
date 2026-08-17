@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import ExamTimer from './ExamTimer.vue';
 
@@ -13,6 +13,8 @@ const props = defineProps({
     // Offered only where the page has wired --exam-zoom to its content, so the control is never
     // shown somewhere pressing it would do nothing.
     showTextSize: { type: Boolean, default: false },
+    // Every page carrying this header is a live exam, so fullscreen is on by default.
+    autoFullscreen: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(['timeUp']);
@@ -69,6 +71,61 @@ onMounted(() => {
     const parsed = parseInt(saved, 10);
     zoomIndex.value = Number.isFinite(parsed) && ZOOM_STEPS[parsed] !== undefined ? parsed : 1;
     applyZoom();
+});
+
+/* ------------------------------------------------------------- fullscreen */
+
+/**
+ * Put the exam in fullscreen as soon as it can.
+ *
+ * Browsers refuse requestFullscreen() outside a user gesture, and arriving on this page is a
+ * navigation rather than a gesture, so the call on mount is only worth making in case the browser
+ * allows it. When it is refused, the next thing the student does — any click or key — takes them in
+ * instead. That listener removes itself once it has worked, so a student who deliberately leaves
+ * fullscreen afterwards is not dragged back in on their next click.
+ */
+const enterFullscreen = async () => {
+    if (document.fullscreenElement || !document.documentElement.requestFullscreen) {
+        return true;
+    }
+    try {
+        await document.documentElement.requestFullscreen();
+        return true;
+    } catch (e) {
+        return false;
+    }
+};
+
+let releaseGestureHook = null;
+
+const hookFirstGesture = () => {
+    const onGesture = async () => {
+        if (await enterFullscreen()) {
+            releaseGestureHook?.();
+        }
+    };
+
+    releaseGestureHook = () => {
+        document.removeEventListener('pointerdown', onGesture);
+        document.removeEventListener('keydown', onGesture);
+        releaseGestureHook = null;
+    };
+
+    document.addEventListener('pointerdown', onGesture);
+    document.addEventListener('keydown', onGesture);
+};
+
+onMounted(async () => {
+    if (!props.autoFullscreen) {
+        return;
+    }
+    if (!(await enterFullscreen())) {
+        hookFirstGesture();
+    }
+});
+
+onUnmounted(() => {
+    releaseGestureHook?.();
 });
 
 const toggleFullscreen = () => {

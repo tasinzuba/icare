@@ -464,8 +464,10 @@ const activePartAnswers = computed(() => speakingParts.value[activePart.value] |
                                     </div>
                                     <div class="bg-amber-50/60 border border-amber-200/60 rounded-xl p-5">
                                         <!-- Question Image -->
+                                        <!-- Capped: a Task 1 chart is a wide image, and uncapped it
+                                             filled the page before the student's own answer. -->
                                         <div v-if="activeTaskAnswer.question_image" class="mb-4">
-                                            <img :src="activeTaskAnswer.question_image" alt="Question image" class="max-w-full rounded-lg border border-amber-200/40 shadow-sm" />
+                                            <img :src="activeTaskAnswer.question_image" alt="Question image" class="max-w-full h-auto max-h-[380px] object-contain rounded-lg border border-amber-200/40 shadow-sm" />
                                         </div>
                                         <!-- Question Text -->
                                         <div v-if="activeTaskAnswer.question_text" class="prose prose-sm max-w-none text-gray-800 leading-relaxed" v-html="activeTaskAnswer.question_text"></div>
@@ -542,7 +544,7 @@ const activePartAnswers = computed(() => speakingParts.value[activePart.value] |
                                         <div v-if="answer.question_text || answer.question_image">
                                             <div class="bg-amber-50/50 border border-amber-200/50 rounded-lg p-4">
                                                 <div v-if="answer.question_image" class="mb-3">
-                                                    <img :src="answer.question_image" alt="Question image" class="max-w-full rounded-lg border border-amber-200/40 shadow-sm" />
+                                                    <img :src="answer.question_image" alt="Question image" class="max-w-full h-auto max-h-[380px] object-contain rounded-lg border border-amber-200/40 shadow-sm" />
                                                 </div>
                                                 <div v-if="answer.question_text" class="prose prose-sm max-w-none text-gray-700 leading-relaxed text-[13px]" v-html="answer.question_text"></div>
                                             </div>

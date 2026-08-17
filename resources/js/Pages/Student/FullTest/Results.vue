@@ -461,8 +461,10 @@ const bandProgressPct = computed(() => {
                                                 <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Question</h4>
                                             </div>
                                             <div class="bg-violet-50/50 border border-violet-200/50 rounded-xl p-5 space-y-4">
+                                                <!-- Capped: a Task 1 chart is a wide image, and uncapped it
+                                                     filled the page before the student's own answer. -->
                                                 <div v-if="activeWritingAnswer.question_image" class="flex justify-center">
-                                                    <img :src="activeWritingAnswer.question_image" alt="Question image" class="max-w-full rounded-lg border border-violet-200/40 shadow-sm" />
+                                                    <img :src="activeWritingAnswer.question_image" alt="Question image" class="max-w-full h-auto max-h-[380px] object-contain rounded-lg border border-violet-200/40 shadow-sm" />
                                                 </div>
                                                 <div v-if="activeWritingAnswer.question_text" class="prose prose-sm max-w-none text-gray-700 leading-relaxed" v-html="activeWritingAnswer.question_text"></div>
                                             </div>

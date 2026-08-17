@@ -1043,7 +1043,10 @@ const isAnswered = (item, type, indexOrKey, number) => {
 
         <main class="flex-1 flex overflow-hidden relative pb-[60px]">
             
-            <div id="passage-section" class="h-full bg-white overflow-y-auto relative custom-scrollbar pb-10">
+            <!-- Exam layout background, same #e8f4fa as the listening surface. Set here rather than
+                 through reading-test.css: that stylesheet paints .passage-section, and this element
+                 carries the name as an id, so its rule never applied. -->
+            <div id="passage-section" class="h-full bg-[#e8f4fa] overflow-y-auto relative custom-scrollbar pb-10">
 
 
                 <div class="px-8 py-8">
@@ -1058,7 +1061,7 @@ const isAnswered = (item, type, indexOrKey, number) => {
                 </div>
             </div>
 
-            <div id="questions-section" class="h-full bg-slate-50 overflow-y-auto px-8 py-8 custom-scrollbar pb-10">
+            <div id="questions-section" class="h-full bg-[#e8f4fa] overflow-y-auto px-8 py-8 custom-scrollbar pb-10">
                 <div v-for="(instructionGroups, partNum) in groupedQuestionsData" :key="'qpart'+partNum" v-show="activePart === Number(partNum)">
                     
                     <div v-for="(items, instruction) in instructionGroups" :key="instruction">

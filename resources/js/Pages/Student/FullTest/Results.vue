@@ -187,7 +187,9 @@ const bandProgressPct = computed(() => {
 
     <StudentDashboardLayout>
     <div class="py-8 bg-gray-50 min-h-screen">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Wider than the usual page: the review puts the source text and the answers side by
+             side, and at 6xl neither pane had a comfortable line length. -->
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
 
             <!-- Header -->
             <div class="flex justify-between items-center mb-6">

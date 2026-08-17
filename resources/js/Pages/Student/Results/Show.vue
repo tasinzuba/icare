@@ -266,7 +266,9 @@ const activePartAnswers = computed(() => speakingParts.value[activePart.value] |
 
     <StudentDashboardLayout>
     <div class="py-12 bg-gray-50 min-h-screen">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <!-- Matches the full test result: both host the same two-pane review, and it should not be
+             a different width depending on which page you reached it from. -->
+        <div class="max-w-[1600px] mx-auto sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="flex justify-between items-center mb-8 px-4 sm:px-0">
                 <h2 class="font-bold text-2xl text-gray-800 leading-tight">

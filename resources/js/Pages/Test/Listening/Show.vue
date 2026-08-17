@@ -254,7 +254,7 @@ const generateQuestionHtml = (q, dItem) => {
         html += `
         <div class="ielts-question-item drag-drop-question" id="question-${q.id}" style="margin-bottom: 28px;">
             <div style="display: flex; gap: 24px; align-items: flex-start;">
-                <div class="dd-content" style="flex: 1 1 auto; max-width: 640px; font-size: 14px; line-height: 2.4; color: #1e293b; min-width: 0;">${processedContent}</div>
+                <div class="dd-content" style="flex: 1 1 auto; max-width: 760px; font-size: 14px; line-height: 2.4; color: #1e293b; min-width: 0;">${processedContent}</div>
                 <div style="flex: 0 0 auto; max-width: 420px; position: sticky; top: 16px;">
                     <div class="dd-source" id="dd-source-${q.id}" style="display: inline-flex; flex-direction: column; gap: 8px; padding: 4px; align-items: stretch;">`;
 
@@ -612,8 +612,6 @@ const syncDOMWithAnswers = () => {
                         const placeholder = zone.querySelector('.dd-placeholder');
                         if (placeholder) placeholder.style.display = 'none';
                         zone.appendChild(optEl);
-                        zone.style.border = '2px solid #1f2937';
-                        zone.style.background = '#f9fafb';
                         styleItemInZone(optEl);
                     }
                 }
@@ -709,9 +707,8 @@ const styleItemInZone = (el) => {
 
     const zone = el.closest('.dd-drop-zone');
     if (zone) {
+        zone.style.border = '1px solid #60a5fa';
         zone.style.background = '#eff6ff';
-        zone.style.borderColor = '#60a5fa';
-        zone.style.borderStyle = 'solid';
         zone.style.outline = 'none';
     }
 };
@@ -755,18 +752,20 @@ const initializeDragDrop = () => {
         if (highlightedZone && highlightedZone !== zone) unhighlightZone(highlightedZone);
         if (!zone) return;
         highlightedZone = zone;
-        zone.style.border = '2px solid #2563eb';
+        zone.style.border = '1px solid #2563eb';
         zone.style.background = '#eff6ff';
     };
 
     const unhighlightZone = (zone) => {
         if (!zone) return;
+        // A filled zone keeps the look styleItemInZone gave it; an empty one returns to the border
+        // it was drawn with. Both used to be re-drawn heavier here, which is what stacked up.
         if (zone.querySelector('.dd-drag-item')) {
-            zone.style.border = '2px solid #1f2937';
-            zone.style.background = '#f9fafb';
+            zone.style.border = '1px solid #60a5fa';
+            zone.style.background = '#eff6ff';
         } else {
-            zone.style.border = '2px dashed #9ca3af';
-            zone.style.background = '#fafafa';
+            zone.style.border = '1px solid #93c5fd';
+            zone.style.background = '#ffffff';
         }
         if (highlightedZone === zone) highlightedZone = null;
     };
@@ -894,9 +893,6 @@ const initializeDragDrop = () => {
 
             zone.appendChild(item);
             styleItemInZone(item);
-
-            zone.style.border = '2px solid #1f2937';
-            zone.style.background = '#f9fafb';
 
             // Save answer
             if (!answers.value[qid]) answers.value[qid] = {};
@@ -1711,10 +1707,10 @@ input.gap-input.q-num-highlight {
 
 /* drop-zone variant */
 .dd-drop-zone.q-num-highlight {
-    border-color: #1f2937 !important;
+    border-color: #3b82f6 !important;
     border-style: solid !important;
-    background: rgba(31, 41, 55, 0.06) !important;
-    box-shadow: 0 0 0 3px rgba(31, 41, 55, 0.12) !important;
+    background: #eff6ff !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.20) !important;
 }
 
 /* Mobile responsive */

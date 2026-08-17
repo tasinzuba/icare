@@ -1232,7 +1232,7 @@ onMounted(() => {
     // Base page styles (layout, typography, containers, etc.)
     listeningStyles = document.createElement('link');
     listeningStyles.rel = 'stylesheet';
-    listeningStyles.href = '/css/listening-style.css?v=20260817-4';
+    listeningStyles.href = '/css/listening-style.css?v=20260817-5';
     document.head.appendChild(listeningStyles);
 
     // Override/fix CSS — loads AFTER listening-style.css to win cascade

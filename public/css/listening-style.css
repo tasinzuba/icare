@@ -227,7 +227,7 @@
             border-spacing: 0 !important;
             margin: 12px 0 !important;
             font-size: 14px !important;
-            background: #ffffff !important;
+            background: transparent !important;
             border: 1px solid #9ca3af !important;
             border-radius: 4px !important;
             overflow: hidden !important;
@@ -239,7 +239,7 @@
         .part-instruction table th,
         .question-item table th,
         .question-content table th {
-            background-color: #ffffff !important;
+            background-color: transparent !important;
             padding: 8px 14px !important;
             text-align: left !important;
             font-weight: 700 !important;
@@ -268,7 +268,7 @@
             border-right: 1px solid #9ca3af !important;
             border-bottom: 1px solid #9ca3af !important;
             color: #212120 !important;
-            background: #ffffff !important;
+            background: transparent !important;
             font-size: 14px !important;
             vertical-align: middle !important;
         }

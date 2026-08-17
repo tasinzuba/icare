@@ -348,3 +348,31 @@ body.ielts-test-mode .question-item .ielts-matching-matrix table thead th {
     color: #374151 !important;
     font-weight: 600 !important;
 }
+/* ==========================================================================
+   Centre the question column on wide screens.
+
+   .content-area spans the full window, so on a large monitor the questions sat
+   hard against the left edge while the drag-option box drifted to the far right.
+   Widening the side padding as the window grows keeps the reading width
+   comfortable and gives the page proper margins. Mobile is untouched.
+   ========================================================================== */
+@media (min-width: 1200px) {
+    .content-area {
+        padding-left: 8% !important;
+        padding-right: 8% !important;
+    }
+}
+
+@media (min-width: 1600px) {
+    .content-area {
+        padding-left: 14% !important;
+        padding-right: 14% !important;
+    }
+}
+
+@media (min-width: 1920px) {
+    .content-area {
+        padding-left: 18% !important;
+        padding-right: 18% !important;
+    }
+}

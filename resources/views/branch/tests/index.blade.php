@@ -284,10 +284,18 @@
                 @foreach($sectionAttempts as $attempt)
                 @if($attempt->user)
                 @php
-                    $slug = $attempt->testSet->section->slug ?? 'unknown';
+                    // TestSection has no `slug` column - it is `name` - so this always fell back to
+                    // 'unknown' and every row showed "Unknown" instead of the real section.
+                    $slug = optional(optional($attempt->testSet)->section)->name ?? 'unknown';
                     $t = $sectionTheme[$slug] ?? ['icon' => 'fa-file', 'badge' => 'bg-gray-100 text-gray-600', 'text' => 'text-gray-700'];
+
+                    // Resolve the band the shared way: attempt band, else teacher evaluation, else AI.
+                    $card = $attempt->status === 'completed'
+                        ? \App\Services\StudentSectionResultService::cardData($attempt, $slug)
+                        : ['state' => 'not_taken'];
                 @endphp
-                <tr class="hover:bg-gray-50/60 transition">
+                <tr class="hover:bg-gray-50/60 transition cursor-pointer"
+                    onclick="window.location='{{ route('branch.tests.show-attempt', $attempt) }}'">
                     <td class="px-5 py-3.5">
                         <p class="text-sm font-semibold text-gray-900">{{ $attempt->user->name }}</p>
                         <p class="text-[11px] text-gray-500 font-mono">{{ $attempt->user->offlineEnrollment->student_id ?? '-' }}</p>
@@ -306,9 +314,13 @@
                         <p class="text-[11px] text-gray-500">{{ $attempt->created_at->format('h:i A') }}</p>
                     </td>
                     <td class="px-5 py-3.5 text-center">
-                        {{-- 0.0 is a real band but falsy in PHP --}}
-                        @if(!is_null($attempt->band_score))
-                            <span class="text-lg font-bold {{ $t['text'] }}">{{ $attempt->band_score }}</span>
+                        @if(in_array($card['state'], ['scored', 'ai'], true))
+                            <span class="text-lg font-bold {{ $t['text'] }}">{{ number_format($card['band'], 1) }}</span>
+                            @if(!empty($card['total']))
+                                <p class="text-[10px] text-gray-500">{{ $card['correct'] ?? 0 }}/{{ $card['total'] }}</p>
+                            @endif
+                        @elseif($card['state'] === 'pending')
+                            <span class="text-[11px] font-semibold text-amber-600">Pending</span>
                         @else
                             <span class="text-gray-300">—</span>
                         @endif

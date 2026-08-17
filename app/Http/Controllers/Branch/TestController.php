@@ -49,7 +49,9 @@ class TestController extends Controller
         // Build Section-only Attempts query (not part of full tests)
         $sectionQuery = StudentAttempt::whereIn('user_id', $branchStudentIds)
             ->whereDoesntHave('fullTestSectionAttempt')
-            ->with('user.offlineEnrollment', 'testSet.section');
+            // the evaluation relation supplies the writing/speaking band when it was not copied
+            // onto the attempt; without it the list would lazy-load one query per row
+            ->with('user.offlineEnrollment', 'testSet.section', 'humanEvaluationRequest.humanEvaluation');
 
         // Date filter
         if ($request->filled('date')) {

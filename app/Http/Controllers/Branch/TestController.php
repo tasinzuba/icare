@@ -3,12 +3,25 @@
 namespace App\Http\Controllers\Branch;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ResultDataTrait;
 use App\Models\StudentAttempt;
 use App\Models\FullTestAttempt;
+use App\Services\AnswerValidator;
 use Illuminate\Http\Request;
 
 class TestController extends Controller
 {
+    use ResultDataTrait;
+
+    /**
+     * Required by ResultDataTrait, which reuses the same answer-checking rules the
+     * student result pages use.
+     */
+    protected function getAnswerValidator(): AnswerValidator
+    {
+        return app(AnswerValidator::class);
+    }
+
     /**
      * Display all tests for branch students - organized by Full Tests and Section Tests
      */
@@ -149,9 +162,32 @@ class TestController extends Controller
             abort(403);
         }
 
-        $attempt->load('user.offlineEnrollment', 'testSet.section', 'answers.question');
+        $attempt->load(
+            'user.offlineEnrollment',
+            'testSet.section',
+            'answers.question',
+            'answers.selectedOption',
+            'answers.speakingRecording',
+            'humanEvaluationRequest.humanEvaluation'
+        );
 
-        return view('branch.tests.results', compact('attempt', 'branch'));
+        // Per-question breakdown for the auto-scored sections, using the same logic as the student,
+        // admin and teacher result screens so everyone sees identical marking.
+        $responses = null;
+        if (in_array(optional($attempt->testSet->section)->name, ['reading', 'listening'], true)) {
+            $questions = $attempt->testSet->questions()
+                ->with('options')
+                ->where('question_type', '!=', 'passage')
+                ->orderBy('part_number')
+                ->orderBy('order_number')
+                ->get();
+
+            $responses = $this->formatQuestionsForVue(
+                $this->buildQuestionsAnalysis($questions, $attempt)
+            );
+        }
+
+        return view('branch.tests.results', compact('attempt', 'branch', 'responses'));
     }
 
     /**

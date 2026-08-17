@@ -198,7 +198,10 @@
                             : ['state' => 'not_taken'];
                         $hasScore = in_array($card['state'], ['scored', 'ai'], true);
                     @endphp
-                    <div class="{{ $t['bg'] }} {{ $t['border'] }} border rounded-lg px-3 py-2.5">
+                    {{-- Clicking a section that has an attempt opens that student's answers. --}}
+                    <{{ $studAttempt ? 'a' : 'div' }}
+                        @if($studAttempt) href="{{ route('branch.tests.show-attempt', $studAttempt) }}" @endif
+                        class="{{ $t['bg'] }} {{ $t['border'] }} border rounded-lg px-3 py-2.5 block {{ $studAttempt ? 'hover:brightness-95 transition cursor-pointer' : '' }}">
                         <div class="flex items-center justify-between gap-2">
                             <div class="flex items-center gap-2 min-w-0">
                                 <i class="fas {{ $t['icon'] }} {{ $t['accent'] }} text-sm"></i>
@@ -224,7 +227,7 @@
                                 @endif
                             </p>
                         @endif
-                    </div>
+                    </{{ $studAttempt ? 'a' : 'div' }}>
                 @endforeach
             </div>
         </article>

@@ -358,21 +358,21 @@ body.ielts-test-mode .question-item .ielts-matching-matrix table thead th {
    ========================================================================== */
 @media (min-width: 1200px) {
     .content-area {
-        padding-left: 8% !important;
-        padding-right: 8% !important;
+        padding-left: 4% !important;
+        padding-right: 4% !important;
     }
 }
 
 @media (min-width: 1600px) {
     .content-area {
-        padding-left: 14% !important;
-        padding-right: 14% !important;
+        padding-left: 7% !important;
+        padding-right: 7% !important;
     }
 }
 
 @media (min-width: 1920px) {
     .content-area {
-        padding-left: 18% !important;
-        padding-right: 18% !important;
+        padding-left: 9% !important;
+        padding-right: 9% !important;
     }
 }

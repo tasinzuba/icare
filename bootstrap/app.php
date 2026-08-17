@@ -75,6 +75,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('attempts:finalize-stale --apply')
             ->dailyAt('01:00')
             ->withoutOverlapping();
+
+        // Safety net for the full test counter. It drifted badly once — a section test completing
+        // charged a full test as well — and a student whose counter runs ahead is refused tests
+        // they have paid for, with nothing on screen to explain why. Rebuilding it weekly from the
+        // attempts that exist means any future drift corrects itself within days instead of
+        // accumulating unnoticed.
+        $schedule->command('enrollments:fix-full-test-counters --apply')
+            ->weeklyOn(1, '02:00')
+            ->withoutOverlapping();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Custom test exceptions are self-rendering (have render() method)

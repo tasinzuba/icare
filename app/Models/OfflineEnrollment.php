@@ -598,18 +598,21 @@ class OfflineEnrollment extends Model
 
     /**
      * Increment full test count (with atomic locking).
-     * Prefer TestAccessService::consumeFullTestQuota() for race-condition safety.
+     * @deprecated Throws. Full test quota is charged by TestAccessService::consumeFullTestQuota().
      * NOTE: Does NOT auto-mark as completed — that's checked on next access via canTakeFullTest().
      */
     public function incrementFullTestCount(): void
     {
-        \Illuminate\Support\Facades\DB::transaction(function () {
-            $locked = self::where('id', $this->id)->lockForUpdate()->first();
-            if (!$locked) return;
-
-            $locked->increment('full_tests_taken');
-            $this->refresh();
-        });
+        // Charging a full test from anywhere but the start of a full test is what put 278 against
+        // students who had never sat one: this used to be called when a standalone section test
+        // finished, on top of the section quota already charged. Nothing calls it now, and quota is
+        // consumed in one place — TestAccessService::consumeFullTestQuota(), at the moment a full
+        // test attempt is created. Kept as a loud failure rather than deleted so a future caller
+        // finds out immediately instead of silently inflating counters again.
+        throw new \LogicException(
+            'incrementFullTestCount() is not the way to charge a full test. '
+            . 'Use TestAccessService::consumeFullTestQuota(), which is called when the attempt is created.'
+        );
     }
 
     /**

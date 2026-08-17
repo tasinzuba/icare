@@ -25,8 +25,12 @@ class TestController extends Controller
         $fullTestQuery = FullTestAttempt::whereIn('user_id', $branchStudentIds)
             ->with([
                 'user.offlineEnrollment',
-                'fullTest',
-                'sectionAttempts.studentAttempt.testSet.section'
+                // testSets is needed to know which sections the full test actually has, and the
+                // evaluation relation supplies the writing/speaking band when the teacher's score
+                // was not copied onto the attempt.
+                'fullTest.testSets',
+                'sectionAttempts.studentAttempt.testSet.section',
+                'sectionAttempts.studentAttempt.humanEvaluationRequest.humanEvaluation',
             ]);
 
         // Build Section-only Attempts query (not part of full tests)

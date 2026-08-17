@@ -163,9 +163,14 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3 flex-shrink-0">
-                    @if($fullTest->overall_band_score)
+                    @php
+                        // Recomputed from the effective section scores; the stored column is often
+                        // null or a partial average. Shown only once every section is scored.
+                        $overallBand = \App\Services\StudentSectionResultService::effectiveOverall($fullTest);
+                    @endphp
+                    @if($overallBand !== null)
                     <div class="text-right pr-3 border-r border-gray-200">
-                        <p class="text-2xl font-bold text-[#C8102E] leading-none">{{ $fullTest->overall_band_score }}</p>
+                        <p class="text-2xl font-bold text-[#C8102E] leading-none">{{ number_format($overallBand, 1) }}</p>
                         <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mt-1">Overall</p>
                     </div>
                     @endif
@@ -183,7 +188,15 @@
                         $t  = $sectionTheme[$sectionSlug];
                         $studAttempt = $sa?->studentAttempt;
                         $isCompleted = $studAttempt?->status === 'completed';
-                        $hasScore = $isCompleted && $studAttempt?->band_score;
+
+                        // Resolve the band the same way every other result screen does: the attempt's
+                        // band_score, else the teacher's evaluation (writing/speaking are scored
+                        // there and the value is not always copied back), else the AI band.
+                        // Compared against null, because a band of 0.0 is a real score.
+                        $card = $isCompleted
+                            ? \App\Services\StudentSectionResultService::cardData($studAttempt, $sectionSlug)
+                            : ['state' => 'not_taken'];
+                        $hasScore = in_array($card['state'], ['scored', 'ai'], true);
                     @endphp
                     <div class="{{ $t['bg'] }} {{ $t['border'] }} border rounded-lg px-3 py-2.5">
                         <div class="flex items-center justify-between gap-2">
@@ -192,7 +205,7 @@
                                 <span class="text-xs font-semibold {{ $t['text'] }} capitalize">{{ $sectionSlug }}</span>
                             </div>
                             @if($hasScore)
-                                <span class="text-lg font-bold {{ $t['text'] }} leading-none">{{ $studAttempt->band_score }}</span>
+                                <span class="text-lg font-bold {{ $t['text'] }} leading-none">{{ number_format($card['band'], 1) }}</span>
                             @elseif($studAttempt && $isCompleted)
                                 <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded {{ $statusBadge['in_progress'] }}">Pending</span>
                             @elseif($studAttempt)
@@ -204,7 +217,11 @@
                         @if($studAttempt)
                             <p class="text-[10px] mt-1.5 font-medium {{ $isCompleted ? 'text-emerald-600' : 'text-amber-600' }}">
                                 <i class="fas {{ $isCompleted ? 'fa-check-circle' : 'fa-clock' }} mr-1"></i>
-                                {{ $isCompleted ? 'Done' : 'In Progress' }}
+                                @if($hasScore && !empty($card['total']))
+                                    {{ $card['correct'] ?? 0 }}/{{ $card['total'] }} correct
+                                @else
+                                    {{ $isCompleted ? 'Done' : 'In Progress' }}
+                                @endif
                             </p>
                         @endif
                     </div>

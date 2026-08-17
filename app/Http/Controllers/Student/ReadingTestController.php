@@ -237,6 +237,15 @@ class ReadingTestController extends Controller
             // blank_answers, mappings.correct, sentence correctAnswer, drop_zone answers) — the
             // whole section_specific_data was being shipped to the student, leaking the answer key.
             $q->setAttribute('section_specific_data', \App\Models\Question::sanitizeSectionDataForStudent($q->section_specific_data));
+
+            // Answer-location markers must not reach the test page. The passage was sent raw, so
+            // {{Q42}}…{{Q42}} rendered as literal braces around the answer — showing the student
+            // both that a wrapped phrase is an answer and which question it belongs to. The result
+            // page turns these into highlight spans; here they go entirely.
+            if ($q->question_type === 'passage') {
+                $q->setAttribute('passage_text', \App\Models\Question::stripAnswerMarkers($q->passage_text));
+                $q->setAttribute('content', \App\Models\Question::stripAnswerMarkers($q->content));
+            }
         });
 
         return \Inertia\Inertia::render('Test/Reading/Show', [

@@ -184,6 +184,25 @@ public function getProgressiveSettings()
     /**
      * Process passage to add data attributes to markers (static method)
      */
+    /**
+     * Remove answer-location markers, leaving the text they wrapped.
+     *
+     * For the test page, where the student must not see them. processPassageForDisplay keeps the
+     * marker as a span so the result page can highlight and scroll to it; during the exam even that
+     * is too much, since a wrapped phrase would give away both that it is an answer and which
+     * question it answers.
+     */
+    public static function stripAnswerMarkers(?string $text): ?string
+    {
+        if ($text === null || $text === '') {
+            return $text;
+        }
+
+        // Unpaired markers are stripped too: a stray {{Q7}} left by an edit would otherwise be
+        // printed to the student as-is.
+        return preg_replace('/\{\{Q\d+\}\}/', '', $text);
+    }
+
     public static function processPassageForDisplay($passageText, $hideMarkers = true): string
     {
         if ($hideMarkers) {

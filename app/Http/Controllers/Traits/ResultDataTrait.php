@@ -25,6 +25,16 @@ trait ResultDataTrait
         $currentNumber = 1;
         $masterQuestionIds = [];
 
+        // The numbers below are counted off in sequence, so they only match what the student saw
+        // during the test if the questions arrive in the same order the test player laid them out:
+        // part first, then order within the part. Sorted here rather than trusted from the caller,
+        // because five controllers build this list and a stray orderBy in any of them would
+        // renumber every answer on the page.
+        $questions = collect($questions)->sort(function ($a, $b) {
+            return [$a->part_number ?? 0, $a->order_number ?? 0]
+               <=> [$b->part_number ?? 0, $b->order_number ?? 0];
+        })->values();
+
         foreach ($questions as $question) {
             if ($question->isMasterMatchingHeading()) {
                 if (!in_array($question->id, $masterQuestionIds)) {

@@ -98,9 +98,19 @@ class TestSet extends Model
         return $this->belongsTo(TestSection::class, 'section_id');
     }
     
+    /**
+     * Part first, then order within the part — the order the test player lays questions out in,
+     * and so the order their numbers are counted off in.
+     *
+     * Ordering by order_number alone put a part-2 question carrying order_number 0 ahead of every
+     * part-1 question. Callers that add ->orderBy('part_number') could not correct it either: the
+     * relation's clause is already on the query, so SQL sorted by order_number first regardless.
+     */
     public function questions(): HasMany
     {
-        return $this->hasMany(Question::class)->orderBy('order_number');
+        return $this->hasMany(Question::class)
+            ->orderBy('part_number')
+            ->orderBy('order_number');
     }
     
     public function attempts(): HasMany

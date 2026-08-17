@@ -929,7 +929,9 @@ const startAudioAndTest = () => {
     }
 
     if (!props.audioUrl) {
-        alert("No audio file is attached to this listening test. Please contact your administrator.");
+        // Covers both "nothing was ever uploaded" and "the file lives on the CDN this environment
+        // cannot reach" — the student can do nothing about either, so the message is the same.
+        alert("The audio for this test is unavailable. Please contact your administrator.");
         return;
     }
 

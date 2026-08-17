@@ -47,6 +47,23 @@ class TestPartAudio extends Model
             return rtrim($r2BaseUrl, '/') . '/' . ltrim($this->audio_path, '/');
         }
 
+        // Everything else resolves to local public storage — but only if the file is really there.
+        // A database imported from another environment brings the records without the files, and a
+        // row stored on R2 lands here too when no R2 URL is configured. Handing back a URL that is
+        // certain to 404 makes the player report a broken link, which sends whoever sees it
+        // hunting for a corrupt file rather than for the missing file or missing config.
+        if (!Storage::disk('public')->exists($this->audio_path)) {
+            \Log::warning('TestPartAudio: audio file is not reachable in this environment.', [
+                'test_part_audio_id' => $this->id,
+                'test_set_id' => $this->test_set_id,
+                'audio_path' => $this->audio_path,
+                'storage_disk' => $disk,
+                'reason' => $disk === 'r2' ? 'stored on R2 and R2_URL is not configured' : 'file missing from local storage',
+            ]);
+
+            return '';
+        }
+
         return asset('storage/' . ltrim($this->audio_path, '/'));
     }
 

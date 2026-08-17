@@ -436,6 +436,23 @@
                     </a>
                     @endif
 
+                    {{-- Question reports. Badged with the open count, since a report sitting
+                         unread is a question students are still getting wrong. --}}
+                    @if($user->is_admin || $user->hasPermission('attempts.view'))
+                    <a href="{{ route('admin.question-reports.index') }}"
+                       class="sidebar-link {{ request()->routeIs('admin.question-reports.*') ? 'active' : '' }}">
+                        <span class="sidebar-link-icon">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+                            </svg>
+                        </span>
+                        <span>Question Reports</span>
+                        @if($openReports = \App\Models\QuestionReport::open()->count())
+                            <span class="sidebar-badge bg-amber-100 text-amber-700">{{ $openReports }}</span>
+                        @endif
+                    </a>
+                    @endif
+
                     @if($user->is_admin || $user->hasPermission('test-categories.view'))
                     <a href="{{ route('admin.test-categories.index') }}"
                        class="sidebar-link {{ request()->routeIs('admin.test-categories.*') ? 'active' : '' }}">

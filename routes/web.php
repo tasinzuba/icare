@@ -357,6 +357,11 @@ Route::middleware(['auth', \App\Http\Middleware\CheckBanned::class])->group(func
             Route::get('/results', [ResultController::class, 'index'])->name('results');
             Route::get('/results/{attempt}', [ResultController::class, 'show'])->name('results.show');
             Route::post('/results/{attempt}/retake', [ResultController::class, 'retake'])->name('results.retake');
+
+            // Report a mistake in a question. The button on the result page has posted here all
+            // along; the route did not exist, so every report 404'd and was dropped.
+            Route::post('/questions/{question}/report', [App\Http\Controllers\Student\QuestionReportController::class, 'store'])
+                ->name('questions.report');
         });
 
         Route::prefix('human-evaluation')->name('evaluation.')->group(function () {
@@ -421,6 +426,13 @@ Route::middleware(['auth', \App\Http\Middleware\CheckBanned::class])->group(func
             Route::patch('/full-tests/{fullTest}/toggle-status', [App\Http\Controllers\Admin\FullTestController::class, 'toggleStatus'])->name('full-tests.toggle-status');
             Route::post('/full-tests/reorder', [App\Http\Controllers\Admin\FullTestController::class, 'reorder'])->name('full-tests.reorder');
             Route::get('/full-tests/user/{userId}/attempts', [App\Http\Controllers\Admin\FullTestController::class, 'userAttempts'])->name('full-tests.user-attempts');
+            // Question reports filed by students. Grouped with attempts rather than tests: it is
+            // student-submitted feedback, and whoever reviews attempts is who acts on it.
+            Route::get('/question-reports', [App\Http\Controllers\Admin\QuestionReportController::class, 'index'])->name('question-reports.index');
+            Route::get('/question-reports/{questionReport}', [App\Http\Controllers\Admin\QuestionReportController::class, 'show'])->name('question-reports.show');
+            Route::patch('/question-reports/{questionReport}', [App\Http\Controllers\Admin\QuestionReportController::class, 'update'])->name('question-reports.update');
+            Route::delete('/question-reports/{questionReport}', [App\Http\Controllers\Admin\QuestionReportController::class, 'destroy'])->name('question-reports.destroy');
+
             Route::get('/full-test-attempts/{fullTestAttempt}', [App\Http\Controllers\Admin\FullTestController::class, 'showAttempt'])->name('full-test-attempts.show');
             Route::patch('/full-test-attempts/{fullTestAttempt}/update-score', [App\Http\Controllers\Admin\FullTestController::class, 'updateScore'])->name('full-test-attempts.update-score');
 

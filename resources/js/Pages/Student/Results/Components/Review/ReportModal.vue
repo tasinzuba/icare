@@ -15,6 +15,7 @@ const issueType = ref('');
 const description = ref('');
 const isSubmitting = ref(false);
 const submitted = ref(false);
+const errorMessage = ref('');
 
 const issueTypes = [
     { value: 'wrong_statement', label: 'Wrong question statement' },
@@ -30,6 +31,7 @@ watch(() => props.open, (isOpen) => {
         issueType.value = '';
         description.value = '';
         submitted.value = false;
+        errorMessage.value = '';
     }
 });
 
@@ -37,6 +39,7 @@ const submit = async () => {
     if (!issueType.value) return;
 
     isSubmitting.value = true;
+    errorMessage.value = '';
     try {
         await axios.post(`/student/test/questions/${props.questionId}/report`, {
             issue_type: issueType.value,
@@ -45,7 +48,12 @@ const submit = async () => {
         });
         submitted.value = true;
     } catch (error) {
+        // Shown rather than only logged: a failure used to leave the form sitting there looking
+        // as though nothing had been pressed, so a student had no way to tell it had not sent.
         console.error('Error submitting report:', error);
+        errorMessage.value = error?.response?.status === 419
+            ? 'Your session expired. Please refresh the page and try again.'
+            : (error?.response?.data?.message || 'Could not send your report. Please try again.');
     } finally {
         isSubmitting.value = false;
     }
@@ -112,6 +120,10 @@ const submit = async () => {
                                               placeholder="Please describe the problem you are experiencing to help us improve."></textarea>
                                 </div>
                             </div>
+
+                            <p v-if="errorMessage" class="px-8 -mt-2 mb-4 text-sm text-red-600 text-center">
+                                {{ errorMessage }}
+                            </p>
 
                             <div class="px-8 pb-8 flex items-center justify-center gap-3">
                                 <button @click="emit('close')" class="px-6 py-2.5 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>

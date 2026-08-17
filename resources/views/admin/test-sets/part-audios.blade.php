@@ -143,33 +143,10 @@
                         </button>
                     </div>
 
-                    {{-- Audioscript for the full audio. It belongs here as well as on the per-part
-                         cards: every set in the bank uploads one full-length audio, which disables
-                         those cards, so without this the script could not be entered at all. --}}
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <div class="flex items-center justify-between mb-1">
-                            <h4 class="text-sm font-medium text-gray-700">Audioscript</h4>
-                            @php $fullMarks = \App\Models\Question::extractMarkersFromPassage((string) $fullAudio->transcript); @endphp
-                            <span id="marker-count-0" class="text-xs text-gray-500">
-                                {{ count($fullMarks) }} answer location{{ count($fullMarks) === 1 ? '' : 's' }} marked
-                            </span>
-                        </div>
-                        <textarea id="transcript-0" rows="8"
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-mono"
-                                  placeholder="Paste the audioscript for the whole test here...">{{ $fullAudio->transcript }}</textarea>
-                        <p class="text-xs text-gray-500 mt-1">
-                            Wrap the answer text as
-                            <code class="bg-gray-100 px-1 rounded">&#123;&#123;Q5&#125;&#125;…&#123;&#123;Q5&#125;&#125;</code>
-                            for question 5 — that question then gets a Location button on the student's result page.
-                        </p>
-                        <div class="flex items-center gap-3 mt-2">
-                            <button type="button" onclick="saveTranscript({{ $testSet->id }}, 0)"
-                                    class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm font-medium">
-                                Save Audioscript
-                            </button>
-                            <span id="transcript-status-0" class="text-sm"></span>
-                        </div>
-                    </div>
+                    <p class="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-500">
+                        The audioscript is written per part — see the Part 1-4 cards below. Students
+                        review one part at a time, so each part shows its own script.
+                    </p>
                 </div>
             @endif
         </div>
@@ -183,7 +160,7 @@
                     $fullAudio = $partAudios[0] ?? null;
                 @endphp
                 
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 part-audio-card {{ $fullAudio ? 'opacity-50 pointer-events-none' : '' }}" data-part="{{ $part }}">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 part-audio-card" data-part="{{ $part }}">
                     <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-medium text-gray-900">Part {{ $part }}</h3>
@@ -197,8 +174,10 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="p-6">
+
+                    {{-- The audio half is disabled while a full audio is active, but the script half
+                         below it is not: the script is written per part whatever the audio is. --}}
+                    <div class="p-6 {{ $fullAudio ? 'opacity-50 pointer-events-none' : '' }}">
                         @if($fullAudio)
                             <!-- Full Audio is Active - Show Notice -->
                             <div class="text-center py-8">
@@ -213,7 +192,7 @@
                                     Delete full audio to upload individual part audio.
                                 </p>
                             </div>
-                        @elseif($partAudio)
+                        @elseif($partAudio && $partAudio->audio_path)
                             <!-- Audio exists -->
                             <div class="space-y-4">
                                 <!-- Audio Player -->
@@ -227,44 +206,17 @@
                                         <span>Size: {{ $partAudio->formatted_size }}</span>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Actions -->
                                 <div class="flex space-x-3">
-                                    <button onclick="replaceAudio({{ $part }})" 
+                                    <button onclick="replaceAudio({{ $part }})"
                                             class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
                                         Replace Audio
                                     </button>
-                                    <button onclick="deleteAudio({{ $testSet->id }}, {{ $part }})" 
+                                    <button onclick="deleteAudio({{ $testSet->id }}, {{ $part }})"
                                             class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium">
                                         Delete
                                     </button>
-                                </div>
-                                
-                                {{-- Audioscript. Editable in place, and the {{Qn}} markers in it drive
-                                     the Location button on the student's result page. --}}
-                                <div class="mt-4">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <h4 class="text-sm font-medium text-gray-700">Audioscript</h4>
-                                        <span id="marker-count-{{ $part }}" class="text-xs text-gray-500">
-                                            @php $marks = \App\Models\Question::extractMarkersFromPassage((string) $partAudio->transcript); @endphp
-                                            {{ count($marks) }} answer location{{ count($marks) === 1 ? '' : 's' }} marked
-                                        </span>
-                                    </div>
-                                    <textarea id="transcript-{{ $part }}" rows="6"
-                                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-mono"
-                                              placeholder="Paste the audioscript here...">{{ $partAudio->transcript }}</textarea>
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        Wrap the answer text as
-                                        <code class="bg-gray-100 px-1 rounded">&#123;&#123;Q5&#125;&#125;…&#123;&#123;Q5&#125;&#125;</code>
-                                        for question 5 — that question then gets a Location button on the result page.
-                                    </p>
-                                    <div class="flex items-center gap-3 mt-2">
-                                        <button type="button" onclick="saveTranscript({{ $testSet->id }}, {{ $part }})"
-                                                class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm font-medium">
-                                            Save Audioscript
-                                        </button>
-                                        <span id="transcript-status-{{ $part }}" class="text-sm"></span>
-                                    </div>
                                 </div>
                             </div>
                         @else
@@ -286,6 +238,35 @@
                                 </div>
                             </div>
                         @endif
+                    </div>
+
+                    {{-- Audioscript for this part, always editable. Students review one part at a
+                         time, so each part carries its own script and its own answer locations. --}}
+                    <div class="px-6 pb-6 pt-4 border-t border-gray-200">
+                        <div class="flex items-center justify-between mb-1">
+                            <h4 class="text-sm font-medium text-gray-700">Part {{ $part }} Audioscript</h4>
+                            @php
+                                $partMarks = \App\Models\Question::extractMarkersFromPassage((string) ($partAudio->transcript ?? ''));
+                            @endphp
+                            <span id="marker-count-{{ $part }}" class="text-xs {{ count($partMarks) ? 'text-green-700 font-medium' : 'text-gray-500' }}">
+                                {{ count($partMarks) }} answer location{{ count($partMarks) === 1 ? '' : 's' }} marked
+                            </span>
+                        </div>
+                        <textarea id="transcript-{{ $part }}" rows="7"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-mono"
+                                  placeholder="Paste the audioscript for Part {{ $part }} here...">{{ $partAudio->transcript ?? '' }}</textarea>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Wrap the answer text as
+                            <code class="bg-gray-100 px-1 rounded">&#123;&#123;Q5&#125;&#125;…&#123;&#123;Q5&#125;&#125;</code>
+                            for question 5 — that question then gets a Location button on the result page.
+                        </p>
+                        <div class="flex items-center gap-3 mt-2">
+                            <button type="button" onclick="saveTranscript({{ $testSet->id }}, {{ $part }})"
+                                    class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm font-medium">
+                                Save Audioscript
+                            </button>
+                            <span id="transcript-status-{{ $part }}" class="text-sm"></span>
+                        </div>
                     </div>
                 </div>
             @endfor

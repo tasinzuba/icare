@@ -252,15 +252,21 @@ class ResultController extends Controller
         // included, with the part's audio alongside so the script can be followed. Only consulted
         // when there is no passage.
         if ($passages->isEmpty()) {
-            $passages = \App\Models\TestPartAudio::where('test_set_id', $attempt->test_set_id)
+            $audios = \App\Models\TestPartAudio::where('test_set_id', $attempt->test_set_id)
                 ->orderBy('part_number')
-                ->get()
+                ->get();
+
+            // Scripts are written per part, but the audio is usually one full-length file on part 0.
+            // A part without its own file still plays that one, so the reader can listen along.
+            $fullAudioUrl = optional($audios->firstWhere('part_number', 0))->audio_url ?: null;
+
+            $passages = $audios
                 ->filter(fn ($audio) => trim((string) $audio->transcript) !== '')
                 ->map(fn ($audio) => (object) [
                     'id' => 'audio-' . $audio->id,
                     'part_number' => $audio->part_number ?: null,
                     'title' => $audio->part_number > 0 ? 'Part ' . $audio->part_number : null,
-                    'audio_url' => $audio->audio_url ?: null,
+                    'audio_url' => ($audio->audio_url ?: null) ?? $fullAudioUrl,
                     'processed_content' => Question::processPassageForDisplay($audio->transcript, true),
                 ])
                 ->values();

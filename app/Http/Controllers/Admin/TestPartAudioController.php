@@ -141,19 +141,14 @@ class TestPartAudioController extends Controller
             'transcript' => 'nullable|string|max:200000',
         ]);
 
-        $partAudio = $testSet->partAudios()
-            ->where('part_number', (int) $partNumber)
-            ->first();
-
-        if (!$partAudio) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Upload the audio for this part first, then add its script.',
-            ], 404);
-        }
-
         $transcript = $request->input('transcript');
-        $partAudio->update(['transcript' => $transcript]);
+
+        // Created if absent: the script is written per part even when the audio is a single
+        // full-length file on part 0, so parts 1-4 hold a transcript and no file of their own.
+        $partAudio = $testSet->partAudios()->updateOrCreate(
+            ['part_number' => (int) $partNumber],
+            ['transcript' => $transcript]
+        );
 
         $markers = \App\Models\Question::extractMarkersFromPassage((string) $transcript);
         sort($markers, SORT_NATURAL);

@@ -174,13 +174,23 @@
                             <i class="fas fa-check-circle mr-0.5"></i> Completed
                         </span>
                     @elseif($inProgressAttempt)
-                        <span class="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-50 text-blue-600 mb-2.5">
-                            <i class="fas fa-spinner fa-spin mr-0.5"></i> In Progress
-                        </span>
+                        @php $attemptExpired = $inProgressAttempt->isExpiredForOfflineStudent(); @endphp
+                        {{-- An expired attempt is finished with, not running: a spinning "In Progress"
+                             read as though the test were still open and waiting. --}}
+                        @if($attemptExpired)
+                            <span class="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full bg-amber-50 text-amber-700 mb-2.5">
+                                <i class="fas fa-hourglass-end mr-0.5"></i> Incomplete
+                            </span>
+                        @else
+                            <span class="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-50 text-blue-600 mb-2.5">
+                                <i class="fas fa-spinner fa-spin mr-0.5"></i> In Progress
+                            </span>
+                        @endif
                     @endif
 
-                    {{-- Time warning --}}
-                    @if($inProgressAttempt && $inProgressAttempt->remaining_time_formatted)
+                    {{-- Time warning. Not shown once the attempt has expired: the countdown reads
+                         "0m remaining to complete" on something that can no longer be completed. --}}
+                    @if($inProgressAttempt && !$inProgressAttempt->isExpiredForOfflineStudent() && $inProgressAttempt->remaining_time_formatted)
                     <div class="mb-2.5 flex items-center gap-1.5 text-[11px] text-amber-600 bg-amber-50 border border-amber-100 rounded px-2.5 py-1.5">
                         <i class="fas fa-clock text-[10px]"></i>
                         <span class="font-medium">{{ $inProgressAttempt->remaining_time_formatted }}</span> to complete
@@ -192,7 +202,17 @@
                         <p class="text-[11px] text-gray-400 text-center py-1">Cannot retake after renewal</p>
                     @elseif($inProgressAttempt)
                         @if($inProgressAttempt->isExpiredForOfflineStudent())
-                            <p class="text-[11px] text-red-500 text-center py-1"><i class="fas fa-exclamation-circle mr-1"></i>Attempt expired (24h limit)</p>
+                            {{-- The attempt is dead either way. If the branch allows retakes there is
+                                 a way forward, so offer it rather than leaving a dead end. --}}
+                            @if($enrollment->branchAllowsRetakes() && $enrollment->canAccessFullTest($fullTest->id))
+                                <a href="{{ route('student.full-test.onboarding', $fullTest) }}"
+                                   class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand-500 text-white text-xs font-medium hover:bg-brand-600 transition">
+                                    <i class="fas fa-redo text-[9px]"></i> Retake
+                                </a>
+                                <p class="text-[10px] text-gray-400 text-center mt-1.5">Previous attempt expired (24h limit)</p>
+                            @else
+                                <p class="text-[11px] text-amber-600 text-center py-1"><i class="fas fa-hourglass-end mr-1"></i>Incomplete — expired (24h limit)</p>
+                            @endif
                         @else
                             <a href="{{ route('student.full-test.section', ['fullTestAttempt' => $inProgressAttempt, 'section' => $inProgressAttempt->current_section]) }}"
                                class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition">

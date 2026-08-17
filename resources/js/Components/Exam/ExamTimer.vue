@@ -63,13 +63,21 @@ const formattedTime = computed(() => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 });
 
+/**
+ * The seconds are shown alongside the minutes rather than only once the minutes run out.
+ *
+ * "1 Minute Left" covered anything from 60 seconds down to 61, so it stood still for a whole
+ * minute at exactly the point a student most needs to know how long they really have.
+ */
 const timeLeftMinutesText = computed(() => {
     const mins = Math.floor(timeLeft.value / 60);
     const secs = timeLeft.value % 60;
     const prefix = props.isReviewPhase ? '⏱ Review: ' : '';
+
     if (mins >= 1) {
-        return `${prefix}${mins} Minute${mins > 1 ? 's' : ''} Left`;
+        return `${prefix}${mins}m ${secs.toString().padStart(2, '0')}s Left`;
     }
+
     return `${prefix}${secs} Second${secs !== 1 ? 's' : ''} Left`;
 });
 

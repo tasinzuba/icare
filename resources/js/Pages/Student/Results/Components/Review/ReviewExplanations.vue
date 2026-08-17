@@ -129,9 +129,10 @@ const locate = (question) => {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
+    // Left in place rather than flashed: the point is to read the sentence, not to catch a blink.
+    // Clearing first keeps exactly one marker lit, so the passage never fills up with highlights.
     document.querySelectorAll('.marker-text.marker-active').forEach((n) => n.classList.remove('marker-active'));
     el.classList.add('marker-active');
-    setTimeout(() => el.classList.remove('marker-active'), 2600);
 };
 
 const isLocationOpen = (question) => openPanel.value === `${question.id}-location`;
@@ -169,11 +170,30 @@ const closeReport = () => { reportFor.value = null; };
             </div>
         </div>
 
-        <!-- Two panes. They stack on small screens, where side-by-side would leave neither readable. -->
+        <!-- Two panes: source text on the left, answers on the right. They stack on small screens,
+             where side-by-side would leave neither readable, and there the answers come first —
+             a passage above them would mean scrolling past the whole text to reach question 1. -->
         <div class="flex flex-col lg:flex-row bg-white">
+            <!-- Source text -->
+            <div v-if="hasSource" class="order-2 lg:order-1 lg:w-1/2 flex flex-col border-t lg:border-t-0 lg:border-r border-gray-200">
+                <div class="px-5 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between gap-3">
+                    <span class="text-xs font-bold uppercase tracking-wide text-gray-500">{{ sourceLabel }}</span>
+                    <span class="text-[11px] text-gray-400">Locate jumps to the highlighted answer</span>
+                </div>
+                <div ref="sourcePane" class="overflow-y-auto p-5 lg:max-h-[calc(70vh-42px)] review-source">
+                    <div v-for="passage in partPassages" :key="passage.id" class="mb-6 last:mb-0">
+                        <h4 v-if="passage.title" class="text-sm font-bold text-gray-900 mb-2">{{ passage.title }}</h4>
+                        <audio v-if="isListening && passage.audio_url" :src="passage.audio_url" controls
+                               class="w-full mb-3" preload="none"></audio>
+                        <div class="prose prose-sm max-w-none text-gray-700 leading-relaxed"
+                             v-html="passage.processed_content"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Answers -->
             <div ref="answerPane"
-                 :class="['overflow-y-auto p-4 sm:p-5 space-y-3', hasSource ? 'lg:w-1/2 lg:max-h-[70vh] lg:border-r border-gray-200' : 'w-full']">
+                 :class="['order-1 lg:order-2 overflow-y-auto p-4 sm:p-5 space-y-3', hasSource ? 'lg:w-1/2 lg:max-h-[70vh]' : 'w-full']">
                 <div v-for="question in partQuestions" :key="question.id"
                      class="rounded-xl border border-gray-200 px-4 py-3">
                     <!-- Correct answer -->
@@ -237,23 +257,6 @@ const closeReport = () => { reportFor.value = null; };
                     No questions in this part.
                 </p>
             </div>
-
-            <!-- Source text -->
-            <div v-if="hasSource" class="lg:w-1/2 flex flex-col border-t lg:border-t-0 border-gray-200">
-                <div class="px-5 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between gap-3">
-                    <span class="text-xs font-bold uppercase tracking-wide text-gray-500">{{ sourceLabel }}</span>
-                    <span class="text-[11px] text-gray-400">Locate jumps to the highlighted answer</span>
-                </div>
-                <div ref="sourcePane" class="overflow-y-auto p-5 lg:max-h-[calc(70vh-42px)] review-source">
-                    <div v-for="passage in partPassages" :key="passage.id" class="mb-6 last:mb-0">
-                        <h4 v-if="passage.title" class="text-sm font-bold text-gray-900 mb-2">{{ passage.title }}</h4>
-                        <audio v-if="isListening && passage.audio_url" :src="passage.audio_url" controls
-                               class="w-full mb-3" preload="none"></audio>
-                        <div class="prose prose-sm max-w-none text-gray-700 leading-relaxed"
-                             v-html="passage.processed_content"></div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Part navigation -->
@@ -284,17 +287,28 @@ const closeReport = () => { reportFor.value = null; };
 </template>
 
 <style scoped>
-/* The source text is injected with v-html, so the marker spans need :deep() to be reachable. */
+/* The source text is injected with v-html, so the marker spans need :deep() to be reachable.
+
+   Marked answers are deliberately invisible until asked for. Highlighting all of them on arrival
+   hands the reader every answer's position at once, which is the thing they are meant to look for,
+   and leaves the passage looking pre-annotated rather than like the one they sat with. */
 .review-source :deep(.marker-text) {
-    background: #fde68a;
+    background: transparent;
     border-radius: 3px;
     padding: 1px 3px;
     scroll-margin-top: 1rem;
+    transition: background 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* The question number rides in front of its highlight, so a marked answer says which question it
-   belongs to without the reader having to click anything. */
-.review-source :deep(.marker-text)::before {
+/* Applied by Locate, and left in place so the answer can be read rather than glimpsed. Only one
+   marker carries it at a time, so the next Locate moves the highlight rather than adding to it. */
+.review-source :deep(.marker-text.marker-active) {
+    background: #fde68a;
+    box-shadow: 0 0 0 3px rgba(253, 230, 138, 0.6);
+}
+
+/* The question number appears with the highlight, naming what was just located. */
+.review-source :deep(.marker-text.marker-active)::before {
     content: attr(data-marker);
     display: inline-block;
     margin-right: 5px;
@@ -305,11 +319,5 @@ const closeReport = () => { reportFor.value = null; };
     font-size: 11px;
     font-weight: 700;
     vertical-align: middle;
-}
-
-.review-source :deep(.marker-text.marker-active) {
-    background: #fbbf24;
-    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35);
-    transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 </style>

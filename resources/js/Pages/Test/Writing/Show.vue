@@ -300,7 +300,7 @@ const confirmSubmit = () => {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            background-color: #e1f3fc;
+            background-color: #e8f4fa;
             height: 100vh;
             overflow: hidden;
         }
@@ -313,7 +313,7 @@ const confirmSubmit = () => {
            dead rule. Every styled element on this page sits inside .main-container,
            so they all inherit it. */
         .main-container {
-            --exam-bg: #e1f3fc;
+            --exam-bg: #e8f4fa;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -383,9 +383,9 @@ const confirmSubmit = () => {
             padding: 20px;
         }
         
-        /* Global Part Header */
+        /* Global Part Header — keeps its original white; only the content below is tinted. */
         .global-part-header {
-            background: var(--exam-bg);
+            background: white;
             border-bottom: 1px solid #e0e0e0;
             padding: 16px 5%;
             z-index: 200;
@@ -492,7 +492,7 @@ const confirmSubmit = () => {
         }
 
         .editor-header {
-            background-color: var(--exam-bg);
+            background-color: #f9fafb;
             border-bottom: 1px solid #e5e7eb;
             padding: 15px 20px;
             display: flex;

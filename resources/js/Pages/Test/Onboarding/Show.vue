@@ -359,7 +359,7 @@ onUnmounted(() => { stopMicCheck(); });
 .onboarding-root {
     min-height: 100vh;
     /* Exam layout background — same tint as the test surfaces that follow. */
-    background-color: #e1f3fc;
+    background-color: #e8f4fa;
     overflow: hidden;
     position: fixed;
     inset: 0;

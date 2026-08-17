@@ -386,5 +386,5 @@ body.ielts-test-mode .question-item .ielts-matching-matrix table thead th {
    grey shows through behind the fixed exam chrome.
    ========================================================================== */
 body.ielts-test-mode {
-    background-color: var(--exam-bg, #e1f3fc);
+    background-color: var(--exam-bg, #e8f4fa);
 }

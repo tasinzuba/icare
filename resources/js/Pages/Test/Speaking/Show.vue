@@ -534,7 +534,7 @@ const finalSubmit = () => {
             --success: #166534;
             --danger: #dc2626;
             /* Exam layout background — same tint as the other test surfaces. */
-            --bg-body: #e1f3fc;
+            --bg-body: #e8f4fa;
             --bg-card: #ffffff;
             --text-main: #0f172a;
             --text-muted: #64748b;
@@ -553,7 +553,7 @@ const finalSubmit = () => {
            them would restyle the whole speaking screen. */
         .main-container {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #e1f3fc;
+            background: #e8f4fa;
             height: 100vh;
             overflow: hidden;
             display: flex;

@@ -1063,66 +1063,79 @@ window.ListeningQuestionTypes = {
     },
     
     // Load Drag Drop Data
+    /**
+     * Restore a saved drag & drop question into the editor.
+     *
+     * This used to leave the panel empty. It read keys the save path never writes — `drag_options`
+     * and `dragDrop` against the stored `draggable_options` — and then cleared
+     * `this.dragDropData.options` on the line *before* copying out of it, so the list it iterated
+     * was always the one it had just emptied. The container was wiped either way, which is why
+     * opening a saved question showed no options at all.
+     */
     loadDragDropData(questionData) {
-        console.log('Loading drag drop data');
-
-        // Parse drag drop data from section_specific_data
-        if (questionData.section_specific_data) {
-            try {
-                const data = typeof questionData.section_specific_data === 'string'
-                    ? JSON.parse(questionData.section_specific_data)
-                    : questionData.section_specific_data;
-
-                console.log('Parsed section specific data for drag drop:', data);
-
-                // Try different possible data structures
-                if (data && data.dragDrop) {
-                    this.dragDropData = data.dragDrop;
-                    console.log('Loaded drag drop data from dragDrop:', this.dragDropData);
-                } else if (data && data.drag_options) {
-                    this.dragDropData = { options: data.drag_options };
-                    console.log('Loaded drag drop data from drag_options:', this.dragDropData);
-                }
-
-                // Load drag zones
-                if (data && data.dragZones) {
-                    this.dragZoneData = data.dragZones;
-                    console.log('Loaded drag zone data from dragZones:', this.dragZoneData);
-                } else if (data && data.drop_zones) {
-                    this.dragZoneData = data.drop_zones;
-                    console.log('Loaded drag zone data from drop_zones:', this.dragZoneData);
-                }
-            } catch (e) {
-                console.error('Error parsing section specific data:', e);
-            }
+        const raw = questionData.section_specific_data;
+        let data = {};
+        try {
+            data = (typeof raw === 'string' ? JSON.parse(raw) : raw) || {};
+        } catch (e) {
+            console.error('drag drop: could not parse section_specific_data', e);
         }
-        
-        // Load draggable options
-        const optionsContainer = document.getElementById('draggable-options-container');
-        if (optionsContainer && this.dragDropData.options) {
-            optionsContainer.innerHTML = '';
-            this.dragDropData.options = [];
-            
-            // Re-add options from loaded data
-            const savedOptions = this.dragDropData.options || [];
-            savedOptions.forEach(option => {
-                this.addDraggableOption();
+
+        // `draggable_options` is what the controller writes; the others are older shapes that may
+        // still be sitting in questions saved before it settled.
+        const savedOptions = data.draggable_options
+            || data.drag_options
+            || (data.dragDrop && data.dragDrop.options)
+            || [];
+
+        // Zones are stored as a list of {zone_number, answer}, but every lookup here is by zone
+        // number — dragZoneData[num]. Assigning the list straight across indexed it by position,
+        // so DRAG_1 read whatever happened to be first and anything non-sequential was lost.
+        const savedZones = data.drop_zones || data.dragZones || [];
+        const zoneMap = {};
+        if (Array.isArray(savedZones)) {
+            savedZones.forEach((zone, i) => {
+                const num = (zone && (zone.zone_number ?? zone.zone)) ?? (i + 1);
+                zoneMap[num] = { answer: (zone && zone.answer) || '' };
             });
-            
-            // Set values
-            setTimeout(() => {
-                const inputs = optionsContainer.querySelectorAll('input[name="drag_drop_options[]"]');
-                inputs.forEach((input, index) => {
-                    if (savedOptions[index]) {
-                        input.value = savedOptions[index];
-                        this.dragDropData.options[index] = savedOptions[index];
-                    }
-                });
-                
-                // Trigger update to show drag zones
-                this.updateDragZones();
-            }, 300);
+        } else if (savedZones && typeof savedZones === 'object') {
+            Object.entries(savedZones).forEach(([num, zone]) => {
+                zoneMap[num] = { answer: (zone && zone.answer) || zone || '' };
+            });
         }
+        this.dragZoneData = zoneMap;
+        this.dragDropData.allowReuse = data.allow_reuse !== false;
+
+        const container = document.getElementById('draggable-options-container');
+        if (!container) {
+            return;
+        }
+
+        // Rebuilt from scratch: initDragDrop() has already put five blank rows here, and appending
+        // to them would leave the saved options buried underneath empties.
+        container.innerHTML = '';
+        this.dragDropData.options = [];
+
+        const optionCount = savedOptions.length || 5;
+        for (let i = 0; i < optionCount; i++) {
+            this.addDraggableOption();
+        }
+
+        container.querySelectorAll('input[name="drag_drop_options[]"]').forEach((input, i) => {
+            if (savedOptions[i] !== undefined && savedOptions[i] !== null) {
+                input.value = savedOptions[i];
+                this.dragDropData.options[i] = savedOptions[i];
+            }
+        });
+
+        const reuse = document.querySelector('input[name="drag_drop_allow_reuse"]');
+        if (reuse) {
+            reuse.checked = this.dragDropData.allowReuse;
+        }
+
+        // Redrawn last so each zone's dropdown is built from the options that now exist; running it
+        // first would offer an empty list and drop the saved answers.
+        this.updateDragZones();
     }
 };
 

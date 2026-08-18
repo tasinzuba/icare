@@ -772,6 +772,34 @@ const annotatorRef = ref(null);
 // Delegated document listeners (survive v-html re-render); writes the shared contract
 // answers[qid].zone_N = <dragged word>. Scoring reads the same shape server-side.
 function ddZoneFrom(el) { return el && el.closest ? el.closest('.dd-drop-zone') : null; }
+
+// The word box entry for a given answer. Words are matched on their text because that is the whole
+// contract here — the zone stores the word, not an id.
+function ddWordEl(qid, word) {
+    if (word == null || word === '') return null;
+    try {
+        return document.querySelector(
+            '.dd-word[data-qid="' + CSS.escape(String(qid)) + '"][data-word="' + CSS.escape(String(word)) + '"]'
+        );
+    } catch (_) {
+        return null;
+    }
+}
+
+/**
+ * Take a word out of the box once it is in use, or put it back when it is freed.
+ *
+ * The author's "options can be used only once" setting reached the page as data-reuse on each word
+ * and was then never read, so a single word could be dropped into every gap and the setting did
+ * nothing. Words that are reusable are left alone.
+ */
+function ddSetWordUsed(qid, word, used) {
+    const el = ddWordEl(qid, word);
+    if (!el || el.dataset.reuse === '1') return;
+    el.style.visibility = used ? 'hidden' : '';
+    el.setAttribute('draggable', used ? 'false' : 'true');
+}
+
 function ddOnDragStart(e) {
     const item = e.target && e.target.closest ? e.target.closest('.dd-word') : null;
     if (!item) return;
@@ -783,24 +811,34 @@ function ddOnDragStart(e) {
 function ddOnDragOver(e) { if (ddZoneFrom(e.target)) e.preventDefault(); }
 function ddPlaceZone(zone, word) {
     if (!zone) return;
+    const qid = zone.dataset.qid, key = zone.dataset.zone;
+
+    // Whatever was in this gap goes back to the box, or dropping a second word onto a filled gap
+    // would strand the first one out of reach.
+    const previous = answers.value[qid] ? answers.value[qid][key] : null;
+    if (previous && previous !== word) ddSetWordUsed(qid, previous, false);
+
     zone.textContent = word;
     zone.classList.add('dd-filled');
     zone.style.background = '#dcfce7';
     zone.style.color = '#166534';
     zone.style.fontWeight = '600';
-    const qid = zone.dataset.qid, key = zone.dataset.zone;
     if (!answers.value[qid]) answers.value[qid] = {};
     answers.value[qid][key] = word;
+    ddSetWordUsed(qid, word, true);
 }
 function ddClearZone(zone) {
     if (!zone) return;
+    const qid = zone.dataset.qid, key = zone.dataset.zone;
+    const previous = answers.value[qid] ? answers.value[qid][key] : null;
+
     zone.innerHTML = '<span class="dd-ph" style="color:#6b7280;font-weight:700;">' + (zone.dataset.ph || '') + '</span>';
     zone.classList.remove('dd-filled');
     zone.style.background = '#eef2ff';
     zone.style.color = '#111827';
     zone.style.fontWeight = 'normal';
-    const qid = zone.dataset.qid, key = zone.dataset.zone;
     if (answers.value[qid]) delete answers.value[qid][key];
+    if (previous) ddSetWordUsed(qid, previous, false);
 }
 function ddOnDrop(e) {
     const zone = ddZoneFrom(e.target);
@@ -816,6 +854,13 @@ function ddOnClick(e) {
     if (zone) ddClearZone(zone); // click a filled gap to clear it
 }
 function ddRestore() {
+    // Every word starts available; the loop below hides the ones the saved answers are using. Without
+    // the reset, re-rendering left words hidden that had since been cleared.
+    document.querySelectorAll('.dd-word').forEach(w => {
+        if (w.dataset.reuse === '1') return;
+        w.style.visibility = '';
+        w.setAttribute('draggable', 'true');
+    });
     document.querySelectorAll('.dd-drop-zone').forEach(zone => {
         const qid = zone.dataset.qid, key = zone.dataset.zone;
         const val = answers.value[qid] ? answers.value[qid][key] : null;
